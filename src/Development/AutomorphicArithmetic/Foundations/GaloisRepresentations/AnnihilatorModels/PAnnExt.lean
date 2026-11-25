@@ -22,35 +22,28 @@ theorem UpperTheory.Gal.crystallineComparison.annExt_of :
     rw [LinearMap.finrank_range_of_inj hinj, Module.finrank_baseChange]
   · unfold AnnD at hA
     dsimp only
-    have comm : ∀ (f : V →ₗ[F] V) (g : B →ₗ[F] B) (y : (L ⊗[F] V) ⊗[F] B),
+    have comm (f : V →ₗ[F] V) (g : B →ₗ[F] B) (y : (L ⊗[F] V) ⊗[F] B) :
         AlgebraTensorModule.assoc F F L L V B (AlgebraTensorModule.map (f.baseChange L) g y) =
-          (AlgebraTensorModule.map f g).lTensor L (AlgebraTensorModule.assoc F F L L V B y) := by
-      intro f g y
-      induction y using TensorProduct.induction_on with
-      | zero => simp
-      | tmul u b =>
-        induction u using TensorProduct.induction_on with
-        | zero => simp
-        | tmul a v => simp
-        | add u₁ u₂ h₁ h₂ => simp only [TensorProduct.add_tmul, map_add (f := _), h₁, h₂]
-      | add y₁ y₂ h₁ h₂ => simp only [map_add (f := _), h₁, h₂]
-    have hmem : AlgebraTensorModule.assoc F F L L V B x ∈ (Dinv σ ρ).baseChange L := by
-      rw [← hD]
-      exact Submodule.mem_map_of_mem hx
+          (AlgebraTensorModule.map f g).lTensor L (AlgebraTensorModule.assoc F F L L V B y) :=
+      let F₁ : (L ⊗[F] V) ⊗[F] B →ₗ[F] L ⊗[F] (V ⊗[F] B) :=
+        (AlgebraTensorModule.assoc F F L L V B).toLinearMap.restrictScalars F ∘ₗ
+          (AlgebraTensorModule.map (f.baseChange L) g).restrictScalars F
+      let F₂ : (L ⊗[F] V) ⊗[F] B →ₗ[F] L ⊗[F] (V ⊗[F] B) :=
+        (AlgebraTensorModule.map f g).lTensor L ∘ₗ
+          (AlgebraTensorModule.assoc F F L L V B).toLinearMap.restrictScalars F
+      LinearMap.congr_fun (TensorProduct.ext' (g := F₁) (h := F₂) fun u b => LinearMap.congr_fun
+        (TensorProduct.ext' (g := F₁ ∘ₗ (TensorProduct.mk F (L ⊗[F] V) B).flip b)
+          (h := F₂ ∘ₗ (TensorProduct.mk F (L ⊗[F] V) B).flip b) fun a v => by simp [F₁, F₂]) u) y
+    have hmem : AlgebraTensorModule.assoc F F L L V B x ∈ (Dinv σ ρ).baseChange L :=
+      hD ▸ Submodule.mem_map_of_mem hx
     apply (AlgebraTensorModule.assoc F F L L V B).injective
-
-    rw [map_sum, map_zero]
-    simp only [map_zsmul, comm]
+    rw [map_sum, map_zero]; simp only [map_zsmul, comm]
     obtain ⟨z, hz⟩ := Submodule.toBaseChange_surjective' L (Dinv σ ρ) hmem
-    rw [← hz]
-    clear hz hmem
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    rw [← hz]; clear hz hmem
+    induction z using TensorProduct.inductionOn with
     | tmul a w =>
-      simp only [Submodule.coe_toBaseChange_tmul, LinearMap.lTensor_tmul]
-      have := hA w w.2
-      calc _ = TensorProduct.mk F L (V ⊗[F] B) a (∑ j ∈ Finset.range (n + 1), ((-1) ^ j * (q : ℤ) ^ j.choose 2) • (AlgebraTensorModule.map (T j) (ψ ^ (n - j))) w) := by
-
-            simp only [map_sum, map_zsmul, TensorProduct.mk_apply]
-        _ = 0 := by rw [this, map_zero]
-    | add z₁ z₂ h₁ h₂ => simp only [map_add (f := _), Submodule.coe_add, Finset.sum_add_distrib, smul_add, h₁, h₂, add_zero]
+      simpa [Submodule.coe_toBaseChange_tmul, LinearMap.lTensor_tmul, map_sum, map_zsmul] using
+        congrArg (TensorProduct.mk F L (V ⊗[F] B) a) (hA w w.2)
+    | add z₁ z₂ h₁ h₂ =>
+      simp only [map_add (f := _), Submodule.coe_add, Finset.sum_add_distrib,
+        smul_add, h₁, h₂, add_zero]

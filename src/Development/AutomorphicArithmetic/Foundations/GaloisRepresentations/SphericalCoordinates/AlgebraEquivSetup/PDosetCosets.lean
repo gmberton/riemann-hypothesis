@@ -7,15 +7,6 @@ public import Development.AutomorphicArithmetic.Foundations.GaloisRepresentation
 open Formalism.UG GlobalTheory.LKDef.HeckeTraceForms UpperTheory.Gal.W2.Seed
 open scoped Classical
 
-private theorem mul_mem_doubleCoset_iff_of_mem {X : Type} [Group X] (K : Subgroup X) (a g k : X) (hk : k ∈ K) :
-    g * k ∈ DoubleCoset.doubleCoset a (K : Set X) K ↔ g ∈ DoubleCoset.doubleCoset a (K : Set X) K := by
-  simp only [DoubleCoset.mem_doubleCoset, SetLike.mem_coe]
-  constructor
-  · rintro ⟨x, hx, y, hy, h⟩
-    exact ⟨x, hx, y * k⁻¹, K.mul_mem hy (K.inv_mem hk), by rw [← mul_assoc, ← h, mul_inv_cancel_right]⟩
-  · rintro ⟨x, hx, y, hy, h⟩
-    exact ⟨x, hx, y * k, K.mul_mem hy hk, by rw [h, mul_assoc]⟩
-
 private theorem loc_mem_doubleCoset_loc_iff {X M' : Type} [Group X] [Group M'] (L' : Loc X M') (K : Subgroup X)
     (Kw : Subgroup M') (hF : L'.Fact K Kw) (t z : M') :
     L'.loc z ∈ DoubleCoset.doubleCoset (L'.loc t) (K : Set X) K ↔
@@ -43,10 +34,12 @@ theorem UpperTheory.Gal.W2.Seed.pDosetCosets :
   have hφf : ∀ x, f (φ x) = dosetInd ℂ Kw t x.out • Ψ (L'.loc x.out) := by
     intro x
     obtain ⟨k, hk⟩ := QuotientGroup.mk_out_eq_mul K (L'.loc x.out)
-    simp only [hf, φ, hk]
-    rw [hΨ k k.2]
-    simp only [dosetInd, Set.indicator, mul_mem_doubleCoset_iff_of_mem K _ _ _ k.2, loc_mem_doubleCoset_loc_iff L' K Kw hF,
-      Pi.one_apply]
+    have hmem : L'.loc x.out * k ∈ DoubleCoset.doubleCoset (L'.loc t) (K : Set X) K ↔
+        x.out ∈ DoubleCoset.doubleCoset t (Kw : Set M') Kw := by
+      rw [← loc_mem_doubleCoset_loc_iff L' K Kw hF]
+      simp only [DoubleCoset.mem_doubleCoset, SetLike.mem_coe, ← DoubleCoset.eq,
+        DoubleCoset.mk_mul_mem]
+    simp only [hf, φ, hk, hΨ k k.2, dosetInd, Set.indicator, hmem, Pi.one_apply]
   have hsupp : Function.support f ⊆ Set.range φ := by
     intro y hy
     rw [Function.mem_support] at hy

@@ -14,9 +14,6 @@ open GlobalTheory.TripleGal (rk1)
 open UpperTheory.V.Af (FrobEig algSat RepIso tw)
 open UpperTheory.Gal.TP.Sub
 
-private theorem scaleRoots_X_sub_C' (a d : ℂ) : (X - C a : ℂ[X]).scaleRoots d = X - C (a * d) := by
-  rw [sub_eq_add_neg, ← C_neg, X_add_C_scaleRoots, neg_mul, C_neg, ← sub_eq_add_neg]
-
 private theorem scaleRoots_unrPol (S : Multiset ℂ) (m : ℤ) (c : ℂ) :
     (unrPol S m).scaleRoots (c ^ (-m)) = unrPol (S.map (· * c)) m := by
   unfold unrPol
@@ -24,7 +21,7 @@ private theorem scaleRoots_unrPol (S : Multiset ℂ) (m : ℤ) (c : ℂ) :
   | empty => simp
   | cons a S ih =>
     simp only [Multiset.map_cons, Multiset.prod_cons, mul_scaleRoots_of_noZeroDivisors, ih,
-      scaleRoots_X_sub_C', mul_zpow]
+      X_sub_C_scaleRoots, mul_zpow]
 
 theorem UpperTheory.Gal.TP.Sub.wDFacts_holds :
     WDFacts := by

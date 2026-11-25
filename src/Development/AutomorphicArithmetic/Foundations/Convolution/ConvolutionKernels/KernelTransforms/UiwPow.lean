@@ -266,15 +266,7 @@ theorem UpperTheory.ConvolutionTheory.Tf.uiwPow :
       IsOpen (GLnLocal.iwahori (w.adicCompletion K) n : Set (GL (Fin n) (w.adicCompletion K))) ∧ IsCompact (GLnLocal.iwahori (w.adicCompletion K) n : Set (GL (Fin n) (w.adicCompletion K))) ∧
       ∃ C : ℝ, ∀ j : ℕ, ‖Uiw μ w ν ^ j‖ ≤ C ^ j := by
   intro K _ _ n μ _ w ν ν' hν hν'
-  have hanti : ∀ j : ℕ, Antitone (j • ν) := by
-    intro j
-    induction j with
-    | zero =>
-      rw [zero_nsmul]
-      exact fun _ _ _ => le_rfl
-    | succ j ih =>
-      rw [succ_nsmul]
-      exact ih.add hν
+  have hanti : ∀ j : ℕ, Antitone (j • ν) := fun j _ _ h => nsmul_le_nsmul_right (hν h) j
   refine ⟨uiw_mul μ w ν ν' hν hν', fun j hj => ?_, GLnLocal.isOpen_iwahori _ n,
     GLnLocal.isCompact_iwahori _ n, ‖Uiw μ w ν‖, fun j => ?_⟩
   · induction j, hj using Nat.le_induction with

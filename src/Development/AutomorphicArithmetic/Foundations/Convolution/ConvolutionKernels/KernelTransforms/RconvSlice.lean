@@ -70,23 +70,13 @@ section SlopeTestRemainingChoices
 
 variable {K : Type} [Field K] [NumberField K] {n : ℕ}
 
-private theorem parts_archP (a : archGroup K n) :
-    ∃ s, infPart K n (archP K n a : AdelicGLn.AdelicGL K n) = a * zInf K n s ∧
-      CuspidalSpectrum.finPart K n (archP K n a : AdelicGLn.AdelicGL K n) = 1 := by
-  refine ⟨(detModule K n (infEmb K n a))⁻¹, ?_, ?_⟩
-  · rw [← retract_infEmb, coe_retractOne, map_mul, infPart_infEmb, ← map_inv, map_inv (zInf K n)]
-    rw [map_inv (centralSection K n), map_inv (infPart K n)]
-    rfl
-  · rw [← retract_infEmb, coe_retractOne, map_mul, finPart_infEmb, map_inv, finPart_centralSection]
-    simp
-
 private theorem tensFun_shift (β : TI K n) (e : TF K n) (a : archGroup K n) (g : normOneGL (K := K) (n := n)) :
     tensFun β e ((archP K n a)⁻¹ * g) =
       kbar β (a⁻¹ * infPart K n (g : AdelicGLn.AdelicGL K n)) *
         e (CuspidalSpectrum.finPart K n (g : AdelicGLn.AdelicGL K n)) := by
-  obtain ⟨s, h1, h2⟩ := parts_archP a
-  rw [tensFun, Subgroup.coe_mul, Subgroup.coe_inv, map_mul, map_mul, map_inv, map_inv, h1, h2, inv_one, one_mul,
-    mul_inv_rev, ← map_inv, mul_assoc, zInf_mul_comm, kbar_mul_zInf]
+  rw [tensFun, Subgroup.coe_mul, Subgroup.coe_inv, map_mul, map_mul, map_inv, map_inv]
+  rw [infPart_archP, finPart_archP, inv_one, one_mul, mul_inv_rev, inv_inv, mul_assoc]
+  rw [zInf_mul_comm, kbar_mul_zInf]
 
 private theorem kbar_conv (hn : 0 < n) (ν : Measure (archGroup K n)) [ν.IsHaarMeasure] (β₁ β₂ : TI K n)
     (x : archGroup K n) :

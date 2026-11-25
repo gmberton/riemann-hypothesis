@@ -229,10 +229,6 @@ private theorem cmType_card_fiber (t₀ : F →+* ℂ) (hr : ∀ τ : F →+* �
       exact hb x
   have hconj : (ComplexEmbedding.conjugate t₀) w = (starRingEnd ℂ) r := by
     rw [ComplexEmbedding.conjugate_coe_eq, ht]
-  have hcne : ComplexEmbedding.conjugate t₀ ≠ t₀ := by
-    intro h
-    rw [h, ht] at hconj
-    exact hne hconj.symm
   rw [Fintype.card_subtype]
   by_cases hτ : τ w = r
   · by_cases h0 : τ = t₀

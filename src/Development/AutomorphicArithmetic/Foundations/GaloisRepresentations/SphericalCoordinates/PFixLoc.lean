@@ -115,13 +115,10 @@ theorem UpperTheory.Gal.W2.fixLoc_of :
     rw [hfix.2, hper.1, hx]
     simp [fibMap, diagAct, Matrix.toLin'_apply]
   obtain ⟨Fx, hFx, hAt⟩ := hLoc D.O D.inv D.g ρ (U.Di i) _ _ _ S (D.n - 1) hsm k _ (sZ X k) (c₁.pw k) (c₂.tw α) h₁ h₂ P Hm hper hHerm co hcoC ga H hfix T hT _ hCorr hrange hinj hdetT hdetF
-  have hpc0 : perC P 0 = P := by
-    ext x s
-    simp [perC, PeriodCoord.realMap]
-  have hpc1 : perC P (H * 0 * (H.map star)⁻¹) = P := by rw [mul_zero, zero_mul, hpc0]
+  have hpc1 : perC P (H * 0 * (H.map star)⁻¹) = P := by rw [mul_zero, zero_mul, perC_zero P]
   have hch := hChart _ _ _ ρ (U.Di i) _ _ _ S k _ (c₁.pw k) (c₂.tw α) P Hm hper hHerm ga H hfix _ hCorr 0
-    (by rw [hpc0]; exact hper) (by rw [hpc1]; exact hper) 0
-  rw [hpc0, hpc1, map_zero] at hch
+    (by rw [perC_zero P]; exact hper) (by rw [hpc1]; exact hper) 0
+  rw [perC_zero P, hpc1, map_zero] at hch
   obtain ⟨hpt1, -, -, -, -⟩ := hPt _ _ _ ρ (U.Di i) _ _ _ S k P hper
   refine ⟨Fx, fun x => by have hx := hFx x; rw [hSu] at hx; exact hx, ⟨⟨S.pt k P 0, ?_⟩, (hFx _).2 ⟨hpt1 0, hch.symm⟩⟩, fun At hTan => ⟨(hAt At hTan).1, fun t => ?_⟩⟩
   · exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ X'.s) (hpt1 0)).trans (S.ov P hper))

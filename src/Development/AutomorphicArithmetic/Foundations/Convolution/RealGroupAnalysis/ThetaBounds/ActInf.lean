@@ -27,21 +27,6 @@ private theorem cont_pInfF : Continuous (TR.pInf F) := continuous_pi fun w =>
   (InfinitePlace.Completion.isometryEquivRealOfIsReal (IsTotallyReal.isReal w)).continuous.comp
     ((continuous_apply w).comp continuous_fst)
 
-private theorem tau_real (τ : E →+* ℂ) (k : F) :
-    τ (algebraMap F E k) =
-      ((InfinitePlace.embedding_of_isReal (IsTotallyReal.isReal (UpperTheory.ConvolutionTheory.R2.Fo.pl F τ)) k : ℝ) : ℂ) := by
-  have hv := IsTotallyReal.isReal (UpperTheory.ConvolutionTheory.R2.Fo.pl F τ)
-  rw [InfinitePlace.embedding_of_isReal_apply hv]
-  have hr : ComplexEmbedding.conjugate (UpperTheory.ConvolutionTheory.R2.Fo.pl F τ).embedding = (UpperTheory.ConvolutionTheory.R2.Fo.pl F τ).embedding :=
-    InfinitePlace.isReal_iff.1 hv
-  rcases InfinitePlace.embedding_mk_eq (τ.comp (algebraMap F E)) with h | h
-  · exact (congrArg (fun f : F →+* ℂ => f k) h).symm
-  · have h' : (UpperTheory.ConvolutionTheory.R2.Fo.pl F τ).embedding = ComplexEmbedding.conjugate (τ.comp (algebraMap F E)) := h
-    have h2 : τ.comp (algebraMap F E) = (UpperTheory.ConvolutionTheory.R2.Fo.pl F τ).embedding := by
-      rw [← hr, h']
-      exact (star_star _).symm
-    exact congrArg (fun f : F →+* ℂ => f k) h2
-
 private theorem pInfF_rat (k : F) (w : InfinitePlace F) :
     TR.pInf F (rt k) w = InfinitePlace.embedding_of_isReal (IsTotallyReal.isReal w) k := by
   have hw := IsTotallyReal.isReal w
@@ -61,7 +46,10 @@ private theorem r_am (τ : E →+* ℂ) (a : A F) :
     have e1 : pInf E (am E ((algebraMap F (InfiniteAdeleRing F) k, 0) : A F)) = pInf E (am E (rt k)) := rfl
     have e2 : TR.pInf F ((algebraMap F (InfiniteAdeleRing F) k, 0) : A F) = TR.pInf F (rt k) := rfl
     simp only [Function.comp_apply]
-    rw [e1, e2, am_rt, pInfF_rat, ← tau_real]
+    rw [e1, e2, am_rt, pInfF_rat, InfinitePlace.embedding_of_isReal_apply]
+    have hτ : (UpperTheory.ConvolutionTheory.R2.Fo.pl F τ).embedding = τ.comp (algebraMap F E) :=
+      InfinitePlace.embedding_mk_eq_of_isReal (IsTotallyReal.complexEmbedding_isReal _)
+    rw [hτ]
     exact coord_algebraMap τ _
   exact congrFun key a.1
 
@@ -77,7 +65,10 @@ private theorem conj_θ (τ : E →+* ℂ) : starRingEnd ℂ (τ D.θ) = -τ D.�
   have hv := IsTotallyReal.isReal (UpperTheory.ConvolutionTheory.R2.Fo.pl F τ)
   have hc := D.neg (InfinitePlace.embedding_of_isReal hv)
   have hz : τ D.θ ^ 2 = ((InfinitePlace.embedding_of_isReal hv D.δ : ℝ) : ℂ) := by
-    rw [← map_pow, D.sq, tau_real]
+    rw [← map_pow, D.sq, InfinitePlace.embedding_of_isReal_apply]
+    exact congrArg (fun f : F →+* ℂ => f D.δ)
+      (InfinitePlace.embedding_mk_eq_of_isReal
+        (IsTotallyReal.complexEmbedding_isReal (τ.comp (algebraMap F E)))).symm
   generalize τ D.θ = z at hz
   generalize InfinitePlace.embedding_of_isReal hv D.δ = c at hz hc
   have h1 := congrArg Complex.re hz

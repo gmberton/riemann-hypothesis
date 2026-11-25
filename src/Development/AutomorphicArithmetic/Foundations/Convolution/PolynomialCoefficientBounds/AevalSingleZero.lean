@@ -9,18 +9,6 @@ public import Mathlib.Basic.Complex.BigOperators
 
 open MvPolynomial Filter Topology PositivityTheory.Rg.Fx
 
-private theorem UpperTheory.ConvolutionTheory.FX.aeval_single_zero {ι ι' : Type} (q : ι → MvPolynomial ι' ℂ)
-    (p : MvPolynomial ι ℂ) :
-    aeval (fun i => (AddMonoidAlgebra.single 0 (q i) : EP ι')) p
-      = (AddMonoidAlgebra.single 0 (aeval q p) : EP ι') := by
-  induction p using MvPolynomial.induction_on with
-  | C a =>
-    rw [aeval_C, aeval_C]
-    rfl
-  | add p r hp hr => rw [map_add (f := _), map_add (f := _), hp, hr, AddMonoidAlgebra.single_add]
-  | mul_X p i hp =>
-    rw [map_mul, map_mul, hp, aeval_X, aeval_X, AddMonoidAlgebra.single_mul_single, add_zero]
-
 private theorem UpperTheory.ConvolutionTheory.FX.lin_delta {ι ι' : Type} [Fintype ι'] [DecidableEq ι'] (δ : ι → ι') (i : ι) :
     lin (fun j => if δ i = j then (1 : ℝ) else 0) = (X (δ i) : MvPolynomial ι' ℂ) := by
   unfold lin
@@ -61,7 +49,15 @@ private theorem UpperTheory.ConvolutionTheory.FX.ren_single {ι ι' : Type} [Fin
   change aeval (fun i => (AddMonoidAlgebra.single 0 (C ((0 : ι → ℂ) i) +
       lin ((Matrix.of fun i j => if δ i = j then (1 : ℝ) else 0) i)) : EP ι')) p *
     (AddMonoidAlgebra.single (Matrix.vecMul v _) (C (expChar 0 (Multiplicative.ofAdd v))) : EP ι') = _
-  rw [UpperTheory.ConvolutionTheory.FX.aeval_single_zero, h1, AddMonoidAlgebra.single_mul_single, zero_add]
+  have ha (q : ι → MvPolynomial ι' ℂ) :
+      aeval (fun i => (AddMonoidAlgebra.single 0 (q i) : EP ι')) p =
+        (AddMonoidAlgebra.single 0 (aeval q p) : EP ι') := by
+    rw [aeval_def, aeval_def,
+      show algebraMap ℂ (EP ι') = (AddMonoidAlgebra.singleZeroRingHom :
+        MvPolynomial ι' ℂ →+* EP ι').comp (algebraMap ℂ _) from RingHom.ext fun _ => rfl]
+    exact (MvPolynomial.hom_eval₂ p (algebraMap ℂ _)
+      (AddMonoidAlgebra.singleZeroRingHom : MvPolynomial ι' ℂ →+* EP ι') q).symm
+  rw [ha, h1, AddMonoidAlgebra.single_mul_single, zero_add]
   have h2 : expChar (0 : ι → ℂ) (Multiplicative.ofAdd v) = 1 := by simp [expChar]
   rw [h2, map_one, mul_one, rename_eq_aeval]
 

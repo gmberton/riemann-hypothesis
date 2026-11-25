@@ -39,11 +39,6 @@ private theorem gen_of_frob {F F' : Type} [Field F] [Field F'] [Algebra F F'] [F
   rw [hs']
   exact ⟨(n.1 : ℤ), by simpa using hn⟩
 
-private theorem card_lift {F F' : Type} [Field F] [Field F'] [Algebra F F'] [Finite F'] :
-    Nat.card F ^ Module.finrank F F' = Nat.card F' := by
-  have : Finite F := Finite.of_injective _ (algebraMap F F').injective
-  exact Module.natCard_eq_pow_finrank.symm
-
 private theorem step (hLH : LiftHc) (hKH : KillsHc) (hNE : NormEx) (hJE : JDEq) (hJC : JDChar) (hLD : LiftDet)
     {F F' : Type} [Field F] [Field F'] [Algebra F F'] [Finite F'] [Finite F] (s : F' ≃ₐ[F] F')
     (hs : ∀ z, s z = z ^ Nat.card F) (ι : AlgebraicClosure F →ₐ[F] AlgebraicClosure F')
@@ -112,7 +107,7 @@ theorem UpperTheory.Gal.InertialTypesAlt.killsTrue :
             refine ⟨hq2', ?_, hLok'⟩
             intro x hx
             obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
-            exact hD' y hy) card_lift
+            exact hD' y hy) Module.natCard_eq_pow_finrank.symm
         refine tr _ _ _ _ ?_ hc
         show deg _ + deg _ = _
         rw [hdegmap, hdegL]

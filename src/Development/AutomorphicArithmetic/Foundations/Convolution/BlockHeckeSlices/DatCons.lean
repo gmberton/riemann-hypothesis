@@ -78,18 +78,9 @@ private theorem sum_Iio_succ {m : ℕ} (f : Fin (m + 1) → ℝ) (j : Fin m) :
   rw [← Finset.filter_gt_eq_Iio, ← Finset.filter_gt_eq_Iio, Finset.sum_filter, Finset.sum_filter, Fin.sum_univ_succ]
   simp
 
-private theorem sum_Ioi_succ {m : ℕ} (f : Fin (m + 1) → ℝ) (j : Fin m) :
-    ∑ l ∈ Finset.Ioi j.succ, f l = ∑ l ∈ Finset.Ioi j, f l.succ := by
-  rw [← Finset.filter_lt_eq_Ioi, ← Finset.filter_lt_eq_Ioi, Finset.sum_filter, Finset.sum_filter, Fin.sum_univ_succ]
-  simp
-
-private theorem sum_Ioi_zero {m : ℕ} (f : Fin (m + 1) → ℝ) : ∑ l ∈ Finset.Ioi 0, f l = ∑ l : Fin m, f l.succ := by
-  rw [← Finset.filter_lt_eq_Ioi, Finset.sum_filter, Fin.sum_univ_succ]
-  simp
-
 theorem rho_zero : (cons b d).rho (z0 b d) = -(s : ℝ) / 2 := by
   have h1 : ∑ l ∈ Finset.Ioi (z0 b d), ((cons b d).size l : ℝ) = ∑ l, ((cons b d).size (sc b d l) : ℝ) :=
-    sum_Ioi_zero (m := d.len) fun l => ((cons b d).size l : ℝ)
+    Fin.sum_Ioi_zero fun l => ((cons b d).size l : ℝ)
   have h2 : ∑ l ∈ Finset.Iio (z0 b d), ((cons b d).size l : ℝ) = 0 :=
     Finset.sum_eq_zero fun l hl => absurd (Finset.mem_Iio.1 hl) (Fin.not_lt_zero (n := d.len + 1) l)
   simp only [size_succ] at h1
@@ -98,7 +89,7 @@ theorem rho_zero : (cons b d).rho (z0 b d) = -(s : ℝ) / 2 := by
 
 theorem rho_succ (j : Fin d.len) : (cons b d).rho (sc b d j) = d.rho j + (r : ℝ) / 2 := by
   have h1 : ∑ l ∈ Finset.Ioi (sc b d j), ((cons b d).size l : ℝ) = ∑ l ∈ Finset.Ioi j, ((cons b d).size (sc b d l) : ℝ) :=
-    sum_Ioi_succ (m := d.len) (fun l => ((cons b d).size l : ℝ)) j
+    Fin.sum_Ioi_succ (fun l => ((cons b d).size l : ℝ)) j
   have h2 : ∑ l ∈ Finset.Iio (sc b d j), ((cons b d).size l : ℝ) =
       ((cons b d).size (z0 b d) : ℝ) + ∑ l ∈ Finset.Iio j, ((cons b d).size (sc b d l) : ℝ) :=
     sum_Iio_succ (m := d.len) (fun l => ((cons b d).size l : ℝ)) j

@@ -132,28 +132,23 @@ namespace UpperTheory.Gal.CongruenceSubgroupGeneration
 
 variable {E : Type} [Field E] [NumberField E] (w : HeightOneSpectrum (𝓞 E)) {a : ℕ}
 
-private theorem isOpen_ball {d : w.adicCompletion E} (hd : d ≠ 0) :
-    IsOpen {y : w.adicCompletion E | Valued.v y ≤ Valued.v d} := by
-  have e : {y : w.adicCompletion E | Valued.v y ≤ Valued.v d} = {y | Valued.v.restrict y ≤ Valued.v.restrict d} := by
-    ext y
-    simp only [Set.mem_ofPred_eq, Valuation.restrict_le_iff]
-  rw [e]
-  exact Valued.isOpen_closedBall _ (by simp [hd])
-
 private theorem isOpen_Jc {d : w.adicCompletion E} (hd : d ≠ 0) (hc : Valued.v d ≤ 1) :
     IsOpen (Jc (a := a) (Valued.v : Valuation (w.adicCompletion E) (WithZero (Multiplicative ℤ))) (Valued.v d) hc : Set (GL (Fin a) (w.adicCompletion E))) := by
   have e : (Jc (a := a) (Valued.v : Valuation (w.adicCompletion E) (WithZero (Multiplicative ℤ))) (Valued.v d) hc : Set (GL (Fin a) (w.adicCompletion E))) =
-      (⋂ i, ⋂ j, {g : GL (Fin a) (w.adicCompletion E) | Valued.v (g.val i j -
-        (1 : Matrix (Fin a) (Fin a) (w.adicCompletion E)) i j) ≤ Valued.v d}) ∩
-      (⋂ i, ⋂ j, {g : GL (Fin a) (w.adicCompletion E) | Valued.v ((g⁻¹).val i j -
-        (1 : Matrix (Fin a) (Fin a) (w.adicCompletion E)) i j) ≤ Valued.v d}) := by
+      (⋂ i, ⋂ j, {g : GL (Fin a) (w.adicCompletion E) | Valued.v.restrict (g.val i j -
+        (1 : Matrix (Fin a) (Fin a) (w.adicCompletion E)) i j) ≤ Valued.v.restrict d}) ∩
+      (⋂ i, ⋂ j, {g : GL (Fin a) (w.adicCompletion E) | Valued.v.restrict ((g⁻¹).val i j -
+        (1 : Matrix (Fin a) (Fin a) (w.adicCompletion E)) i j) ≤ Valued.v.restrict d}) := by
     ext g
-    simp only [SetLike.mem_coe, mem_Jc, Mt, Set.mem_inter_iff, Set.mem_iInter, Set.mem_ofPred_eq, Matrix.sub_apply]
+    simp only [SetLike.mem_coe, mem_Jc, Mt, Set.mem_inter_iff, Set.mem_iInter, Set.mem_ofPred_eq,
+      Matrix.sub_apply, Valuation.restrict_le_iff]
   rw [e]
   refine IsOpen.inter (isOpen_iInter_of_finite fun i => isOpen_iInter_of_finite fun j => ?_)
     (isOpen_iInter_of_finite fun i => isOpen_iInter_of_finite fun j => ?_)
-  · exact (isOpen_ball w hd).preimage ((Units.continuous_val.matrix_elem i j).sub continuous_const)
-  · exact (isOpen_ball w hd).preimage ((Units.continuous_coe_inv.matrix_elem i j).sub continuous_const)
+  · exact (Valued.isOpen_closedBall _ (by simp [hd])).preimage
+      ((Units.continuous_val.matrix_elem i j).sub continuous_const)
+  · exact (Valued.isOpen_closedBall _ (by simp [hd])).preimage
+      ((Units.continuous_coe_inv.matrix_elem i j).sub continuous_const)
 
 private theorem Jc_le_KGL {c : WithZero (Multiplicative ℤ)} (hc : c ≤ 1) :
     Jc (a := a) (Valued.v : Valuation (w.adicCompletion E) (WithZero (Multiplicative ℤ))) c hc ≤ GlobalTheory.LFun.KGL w (n := a) := by

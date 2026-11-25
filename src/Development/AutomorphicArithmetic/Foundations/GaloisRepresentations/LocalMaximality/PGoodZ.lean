@@ -183,15 +183,11 @@ section Chart
 variable {F : Type} (K : Type) [Field F] [Field K] [Algebra ℂ F] [Algebra ℂ K] [Algebra F K] [IsScalarTower ℂ F K] {d : ℕ}
   (x : Fin (d + 1) → Fˣ)
 
-private theorem ratio_mem_rA {I : Finset (Fin (d + 1))} {i : Fin (d + 1)} (hi : i ∈ I) (a : Fin (d + 1)) :
-    (x a : F) / x i ∈ rA ℂ (xv x) I := by
-  unfold rA
-  exact Algebra.subset_adjoin ⟨i, hi, a, rfl⟩
-
 private theorem ratio_mem_rB {I : Finset (Fin (d + 1))} {i : Fin (d + 1)} (hi : i ∈ I) (a : Fin (d + 1)) :
     algebraMap F K ((x a : F) / x i) ∈ rB ℂ K (xv x) I := by
   unfold rB
-  exact (integralClosure (rA ℂ (xv x) I) K).algebraMap_mem (⟨_, ratio_mem_rA x hi a⟩ : rA ℂ (xv x) I)
+  exact (integralClosure (rA ℂ (xv x) I) K).algebraMap_mem
+    (⟨_, div_mem_rA_of_mem (x := xv x) hi a⟩ : rA ℂ (xv x) I)
 
 private theorem sysZ_X (a : ℕ) (b i : Fin (d + 1)) :
     (((sysZ K x a).X b * ((sysZ K x a).X i)⁻¹ : (K ⊗[ℂ] K)ˣ) : K ⊗[ℂ] K) =
@@ -252,7 +248,7 @@ theorem UpperTheory.Gal.productCup_of_system.goodZ_of :
       (fun c hc m hm => mul_mem_omA_of_mem_rA hc hm) (fun c hc m hm => omB_smul _ _ hc hm)
   · intro I J hJ i hi b
     rw [sysP_X]
-    exact tmul_mem_range (ratio_mem_rA x hi b) (Subalgebra.one_mem _)
+    exact tmul_mem_range (div_mem_rA_of_mem (x := xv x) hi b) (Subalgebra.one_mem _)
   · intro I J hI j hj b
     rw [sysP_Y]
     exact tmul_mem_range (Subalgebra.one_mem _) (ratio_mem_rB K x hj b)

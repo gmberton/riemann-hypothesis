@@ -134,21 +134,11 @@ private theorem ab_unif (v : P K) (ϖ : (Kv v)ˣ) (h : IsU ϖ) :
 private theorem ab_unit (v : P K) (x : (Kv v)ˣ) (h : Valued.v (x : Kv v) = 1) : ab (idl v x) = 1 := by
   rw [ab_idl, norm_of_val v _ 0 (by simpa using h), zpow_zero]
 
-private theorem cont_val_lc (v : P K) :
-    Continuous fun g : GL (Fin 2) (Kv v) => ((lc v g : GL (Fin 2) (A K)) : Matrix (Fin 2) (Fin 2) (A K)) := by
-  refine continuous_matrix fun i j => ?_
-  simp only [lc_entry]
-  refine continuous_const.add ((cont_sg v).comp (Continuous.sub ?_ continuous_const))
-  exact Continuous.matrix_elem (Units.continuous_val (M := Matrix (Fin 2) (Fin 2) (Kv v))) i j
-
-private theorem cont_lc (v : P K) : Continuous (lc v) := by
-  refine Units.continuous_iff.2 ⟨cont_val_lc v, ?_⟩
-  have e : (fun g : GL (Fin 2) (Kv v) => (((lc v g)⁻¹ : GL (Fin 2) (A K)) : Matrix (Fin 2) (Fin 2) (A K))) =
-      (fun g : GL (Fin 2) (Kv v) => ((lc v g : GL (Fin 2) (A K)) : Matrix (Fin 2) (Fin 2) (A K))) ∘
-        fun g => g⁻¹ := by
-    funext g
-    simp only [Function.comp, map_inv]
-  exact e ▸ (cont_val_lc v).comp continuous_inv
+private theorem cont_lc (v : P K) : Continuous (lc v) :=
+  (Continuous.units_map _ <| continuous_const.add <|
+    continuous_id.matrix_map (continuous_const.prodMk continuous_id)).comp <|
+  Continuous.units_map _ <| continuous_const.add <|
+    continuous_id.matrix_map (GroundTheory.Global.continuous_finiteAdeleSingleAdd (K := K) v)
 
 end UpperTheory.ConvolutionTheory.R2.H
 

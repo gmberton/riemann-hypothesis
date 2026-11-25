@@ -51,12 +51,6 @@ open CategoryTheory Limits AlgebraicGeometry Opposite
 namespace UpperTheory.Cb.RestrictionCovers
 open LateralTheory.E.CechSigmaProof LateralTheory.E.CechSigma_xy1Pf_Lev
 
-private theorem mem_iInf_fin {T : Type*} [TopologicalSpace T] {m : ℕ}
-    (U : Fin m → TopologicalSpace.Opens T) (x : T) : x ∈ ⨅ k, U k ↔ ∀ k, x ∈ U k := by
-  refine ⟨fun h k => (iInf_le U k) h, fun h => ?_⟩
-  rw [← Finset.inf_univ_eq_iInf, ← SetLike.mem_coe, TopologicalSpace.Opens.coe_finset_inf]
-  simp [Finset.inf_eq_iInf, h]
-
 section
 variable {X : Scheme.{0}} (O : X.Opens) {ι : Type} (V : ι → X.Opens) (hV : ∀ j, V j ≤ O) {n : ℕ}
 
@@ -95,7 +89,7 @@ def PJ (j : Fin (n + 1) → ι) : (P O V hV n).Opens :=
 theorem mem_PJ (j) (x : P O V hV n) : x ∈ PJ O V hV j ↔
     ∀ k, ∃ z, Sigma.ι (fun j => (V j).toScheme) (j k) z =
       WidePullback.π (fun _ : Fin (n + 1) => cov O V hV) k x := by
-  rw [PJ, mem_iInf_fin]
+  rw [PJ, ← SetLike.mem_coe, TopologicalSpace.Opens.coe_iInf, Set.mem_iInter]
   rfl
 
 include hW in
@@ -236,9 +230,9 @@ theorem UpperTheory.Cb.cechLevel_iso_sigma_intersections_of_coprod :
     LateralTheory.E.t_E3Cut.Coprod → LateralTheory.E.CechSigma_xy1Pf_Lev.SchemeLevel := by
   intro _ Y X g O ι V hV n
   have hW : ∀ (j : Fin (n + 1) → ι) x, x ∈ (⨅ k, V (j k)) ↔ ∀ k, x ∈ V (j k) :=
-    fun j x => mem_iInf_fin (fun k => V (j k)) x
+    fun j x => by rw [← SetLike.mem_coe, TopologicalSpace.Opens.coe_iInf, Set.mem_iInter]; rfl
   have hW' : ∀ (j : Fin (n + 1) → ι) x, x ∈ g ⁻¹ᵁ (⨅ k, V (j k)) ↔ ∀ k, x ∈ g ⁻¹ᵁ V (j k) :=
-    fun j x => mem_iInf_fin (fun k => V (j k)) (g x)
+    fun j x => hW j (g x)
   exact ⟨(Arrow.isoMk (asIso (Limits.Sigma.desc (cmp (g ⁻¹ᵁ O) (fun j => g ⁻¹ᵁ V j)
     (fun j => g.preimage_mono (hV j)) _ hW'))) (asIso (Limits.Sigma.desc (cmp O V hV _ hW)))
     (nat_sq g O V hV n hW hW')).symm⟩

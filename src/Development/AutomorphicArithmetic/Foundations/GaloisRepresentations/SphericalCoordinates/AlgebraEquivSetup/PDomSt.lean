@@ -8,11 +8,6 @@ import Development.AbelianVarietyTheory.Definitions.Divisors.ExistsGDatumOneOneO
 open NumberField Matrix GlobalTheory.UPel.HT GlobalTheory.UPel.HT.Gen GlobalTheory.LKTrip GlobalTheory.LKGeo UpperTheory.Gal.W2.Seed
 open scoped TensorProduct
 
-private noncomputable def UpperTheory.Gal.W2.Seed.pDomSt_dL {I : Type} (a : I → ℂ) : (I → ℂ) →ₗ[ℝ] (I → ℂ) where
-  toFun z k := a k * z k
-  map_add' z w := by funext k; simp [mul_add]
-  map_smul' r z := by funext k; simp [mul_left_comm]
-
 private theorem UpperTheory.Gal.W2.Seed.pDomSt_theta_mul {E : Type} [Field E] [NumberField E] [IsCMField E] (A : Arith E) {n : ℕ}
     (Θ : ℝ ⊗[ℤ] (Fin n → 𝓞 E) ≃ₗ[ℝ] (Phi A × Fin n → ℂ))
     (hΘ : ∀ (x : Fin n → 𝓞 E) τ i, Θ (1 ⊗ₜ x) (τ, i) = τ.1 (x i : E))
@@ -90,10 +85,10 @@ theorem UpperTheory.Gal.W2.Seed.pDomSt :
     intro k
     simp only [a, map_mul, Complex.conj_ofReal, Complex.conj_I]
     ring
-  let J := Θ.symm.toLinearMap ∘ₗ pDomSt_dL a ∘ₗ Θ.toLinearMap
+  let J := Θ.symm.toLinearMap ∘ₗ LinearMap.mulLeft ℝ a ∘ₗ Θ.toLinearMap
   have hJ : ∀ x k, Θ (J x) k = a k * Θ x k := by
     intro x k
-    simp [J, pDomSt_dL]
+    simp [J]
   have hpos : ∀ k : Phi A × Fin n, 0 < -(k.1.1 A.δ).im * ((k.1.1 (A.hd n k.2 : E)).re * ε k) := by
     intro k
     have h1 := A.δ_sign k.1.1 k.1.2

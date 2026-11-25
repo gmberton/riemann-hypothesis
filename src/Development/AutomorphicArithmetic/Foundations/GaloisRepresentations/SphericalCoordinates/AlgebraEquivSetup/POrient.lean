@@ -127,12 +127,6 @@ section -- clump:auto
 open NumberField Matrix GlobalTheory.UPel.HT GlobalTheory.UPel.HT.Gen GlobalTheory.LKTrip GlobalTheory.LKGeo UpperTheory.Gal.W2.Seed UpperTheory.Gal.W2.Seed.Ori
 open scoped TensorProduct
 
-private noncomputable def entL {E : Type} [Field E] [NumberField E] {n : ℕ} (i j : Fin n) :
-    Matrix (Fin n) (Fin n) E →ₗ[ℚ] E where
-  toFun x := x i j
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
 private noncomputable def sgL {E : Type} [Field E] [NumberField E] {n : ℕ} (i j : Fin n) :
     E →ₗ[ℚ] Matrix (Fin n) (Fin n) E where
   toFun x := Matrix.single i j x
@@ -141,7 +135,7 @@ private noncomputable def sgL {E : Type} [Field E] [NumberField E] {n : ℕ} (i 
 
 private theorem evaluation_baseChange_entry {E : Type} [Field E] [NumberField E] {n : ℕ} (σ : E →+* ℂ) (i j : Fin n)
     (z : ℝ ⊗[ℚ] Matrix (Fin n) (Fin n) E) :
-    ev1 σ ((entL i j).baseChange ℝ z) = evM σ z i j := by
+    ev1 σ ((Matrix.entryLinearMap ℚ E i j).baseChange ℝ z) = evM σ z i j := by
   induction z using TensorProduct.induction_on with
   | zero => simp
   | tmul r x =>
@@ -164,14 +158,13 @@ private theorem evM_sg {E : Type} [Field E] [NumberField E] {n : ℕ} (σ : E �
 
 private theorem sum_sg_ent {E : Type} [Field E] [NumberField E] {n : ℕ}
     (z : ℝ ⊗[ℚ] Matrix (Fin n) (Fin n) E) :
-    z = ∑ i, ∑ j, (sgL i j).baseChange ℝ ((entL i j).baseChange ℝ z) := by
+    z = ∑ i, ∑ j, (sgL i j).baseChange ℝ ((Matrix.entryLinearMap ℚ E i j).baseChange ℝ z) := by
   induction z using TensorProduct.induction_on with
   | zero => simp
   | tmul r x =>
     simp only [LinearMap.baseChange_tmul]
     conv_lhs => rw [Matrix.matrix_eq_sum_single x]
-    simp [TensorProduct.tmul_sum, entL, sgL]
-    rfl
+    simp [TensorProduct.tmul_sum, Matrix.entryLinearMap_apply, sgL]
   | add a b ha hb =>
     conv_lhs => rw [ha, hb]
     simp only [map_add (f := _), ← Finset.sum_add_distrib]
@@ -182,7 +175,8 @@ theorem UpperTheory.cmField_real_tensor_matrix_bijective_cmType :
   have hb := UpperTheory.cmField_real_tensor_bijective_cmType hT A
   constructor
   · intro z₁ z₂ h
-    have hent : ∀ i j, (entL i j).baseChange ℝ z₁ = (entL (E := E) i j).baseChange ℝ z₂ := by
+    have hent : ∀ i j, (Matrix.entryLinearMap ℚ E i j).baseChange ℝ z₁ =
+        (Matrix.entryLinearMap ℚ E i j).baseChange ℝ z₂ := by
       intro i j
       apply hb.1
       funext τ

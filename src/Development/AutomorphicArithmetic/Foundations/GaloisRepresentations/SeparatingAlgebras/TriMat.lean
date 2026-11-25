@@ -6,24 +6,6 @@ public import Development.AutomorphicArithmetic.Foundations.GaloisRepresentation
 
 open UpperTheory.Gal.Gen
 
-private lemma repr_sum_mul {k X ι : Type*} [Field k] [Fintype X] [DecidableEq X]
-    (b : Module.Basis ι k (X → k)) (v : X → k) (i : ι) :
-    ∑ x, b.repr (Pi.single x 1) i * v x = b.repr v i := by
-  have hv : v = ∑ x, v x • (Pi.single x 1 : X → k) := by
-    ext y
-    simp [Finset.sum_apply, Pi.single_apply]
-  conv_rhs => rw [hv]
-
-  simp [map_sum, Finsupp.finsetSum_apply, mul_comm]
-
-private lemma conj_apply {k X ι : Type*} [Field k] [Fintype X] [DecidableEq X] [Fintype ι]
-    (b : Module.Basis ι k (X → k)) (M : Matrix X X k) (i j : ι) :
-    ((Matrix.of fun i x => b.repr (Pi.single x 1) i : Matrix ι X k) * M *
-      (Matrix.of fun x j => b j x : Matrix X ι k)) i j = b.repr (M.mulVec (b j)) i := by
-  rw [Matrix.mul_assoc, Matrix.mul_apply, ← repr_sum_mul b]
-  refine Finset.sum_congr rfl fun x _ => ?_
-  simp [Matrix.mul_apply, Matrix.mulVec, dotProduct]
-
 theorem UpperTheory.Gal.Gen.triMat_pf :
     UpperTheory.Gal.Gen.Flag → UpperTheory.Gal.Gen.TriMat := by
   intro hF l _ H _ hH X _ _ ρ
@@ -47,19 +29,27 @@ theorem UpperTheory.Gal.Gen.triMat_pf :
   refine ⟨Q, P, fun h i j hij => ?_⟩
   apply (ZMod.intCast_zmod_eq_zero_iff_dvd _ l).1
   have hQ : Q.map (Int.castRingHom (ZMod l)) =
-      (Matrix.of fun i x => b.repr (Pi.single x 1) i : Matrix _ X (ZMod l)) := by
+      LinearMap.toMatrix (Pi.basisFun (ZMod l) X) b LinearMap.id := by
     ext i x
-    change ((((b.repr (Pi.single x 1) i).val : ℤ)) : ZMod l) = b.repr (Pi.single x 1) i
-    rw [Int.cast_natCast, ZMod.natCast_zmod_val]
+    change (((b.repr (Pi.single x 1) i).val : ℤ) : ZMod l) = _
+    rw [Int.cast_natCast, ZMod.natCast_zmod_val, LinearMap.toMatrix_apply,
+      LinearMap.id_apply, Pi.basisFun_apply]
   have hP : P.map (Int.castRingHom (ZMod l)) =
-      (Matrix.of fun x j => b j x : Matrix X _ (ZMod l)) := by
+      LinearMap.toMatrix b (Pi.basisFun (ZMod l) X) LinearMap.id := by
     ext x j
-    change ((((b j x).val : ℤ)) : ZMod l) = b j x
-    rw [Int.cast_natCast, ZMod.natCast_zmod_val]
+    change (((b j x).val : ℤ) : ZMod l) = _
+    rw [Int.cast_natCast, ZMod.natCast_zmod_val, LinearMap.toMatrix_apply,
+      LinearMap.id_apply, Pi.basisFun_repr]
   have hc : (((Q * ρ h * P) i j : ℤ) : ZMod l) = b.repr (ρ' h (b j)) i := by
     have h1 : (((Q * ρ h * P) i j : ℤ) : ZMod l) =
         ((Q * ρ h * P).map (Int.castRingHom (ZMod l))) i j := rfl
-    rw [h1, Matrix.map_mul, Matrix.map_mul, hQ, hP, conj_apply, hρ']
+    rw [h1, Matrix.map_mul, Matrix.map_mul, hQ, hP,
+      ← LinearMap.toMatrix_toLin (Pi.basisFun (ZMod l) X) (Pi.basisFun (ZMod l) X)
+        ((ρ h).map (Int.castRingHom (ZMod l))),
+      ← LinearMap.toMatrix_comp (Pi.basisFun (ZMod l) X) (Pi.basisFun (ZMod l) X) b,
+      ← LinearMap.toMatrix_comp b (Pi.basisFun (ZMod l) X) b,
+      LinearMap.id_comp, LinearMap.comp_id, LinearMap.toMatrix_apply,
+      Matrix.toLin_eq_toLin', Matrix.toLin'_apply, ← hρ']
   have hd := hb h i j hij
   rw [map_sub, Finsupp.sub_apply, sub_eq_zero, Module.Basis.repr_self, Finsupp.single_apply] at hd
   rw [Int.cast_sub, hc, hd]

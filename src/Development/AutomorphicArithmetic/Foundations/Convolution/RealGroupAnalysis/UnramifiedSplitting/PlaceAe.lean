@@ -241,16 +241,6 @@ end Ext
 section Final
 variable {F E : Type} [Field F] [NumberField F] [Field E] [NumberField E] [Algebra F E]
 
-private theorem ev_val (x : E) (hx : x ≠ 0) : ∀ᶠ w : P E in cofinite, w.valuation E x = 1 := by
-  have h1 := HeightOneSpectrum.Support.finite (𝓞 E) x
-  have h3 := HeightOneSpectrum.Support.finite (𝓞 E) x⁻¹
-  filter_upwards [h1.compl_mem_cofinite, h3.compl_mem_cofinite] with w hw hw'
-  have a1 : w.valuation E x ≤ 1 := not_lt.1 hw
-  have a2 : (w.valuation E x)⁻¹ ≤ 1 := by
-    rw [← map_inv₀]; exact not_lt.1 hw'
-  have h0 : w.valuation E x ≠ 0 := (Valuation.ne_zero_iff _).2 hx
-  exact le_antisymm a1 ((inv_le_one₀ (zero_lt_iff.2 h0)).1 a2)
-
 variable (F E) in
 private theorem ev_unram : ∀ᶠ w : P E in cofinite, w.asIdeal.ramificationIdx (𝓞 F) = 1 := by
   have h1 : differentIdeal (𝓞 F) (𝓞 E) ≠ ⊥ := differentIdeal_ne_bot
@@ -269,12 +259,15 @@ theorem UpperTheory.ConvolutionTheory.R2.H.placeAe :
   intro F E _ _ _ _ _ D
   have hθ0 : D.θ ≠ 0 := by
     rw [← D.b1]; exact D.b.ne_zero 1
-  filter_upwards [ev_unram F E, ev_val (2 : E) two_ne_zero, ev_val D.θ hθ0] with w he h2 hθ v hb
+  have hfv : ∀ x : E, x ≠ 0 → ∀ᶠ w : P E in cofinite, Valued.v (algebraMap E (Kv w) x) = 1 :=
+    fun x hx => by
+      simpa [FiniteAdeleRing.algebraMap_apply, HeightOneSpectrum.valuedAdicCompletion_eq_valuation',
+        ← valued_algebraMap_field] using
+        (FiniteAdeleRing.isUnit_iff.1 (hx.isUnit.map (algebraMap E (FiniteAdeleRing (𝓞 E) E)))).2
+  filter_upwards [ev_unram F E, hfv 2 two_ne_zero, hfv D.θ hθ0] with w he h2 hθ v hb
   haveI hl : w.asIdeal.LiesOver v.asIdeal := ⟨hb⟩
-  have hθ' : Valued.v (algebraMap E (Kv w) D.θ) = 1 := by
-    rw [valued_algebraMap_field]; exact hθ
   have h2' : Valued.v (2 : Kv v) = 1 := by
-    rw [← val_iota v w he, map_ofNat, ← map_ofNat (algebraMap E (Kv w)) 2, valued_algebraMap_field]
+    rw [← val_iota v w he, map_ofNat, ← map_ofNat (algebraMap E (Kv w)) 2]
     exact h2
   have hs := sum_ramificationIdx_mul_inertiaDeg E v
   rw [finrank_two D] at hs
@@ -293,7 +286,7 @@ theorem UpperTheory.ConvolutionTheory.R2.H.placeAe :
   by_cases hf : w.asIdeal.inertiaDeg (𝓞 F) = 1
   · exact Or.inl (split_of v w he hf)
   · have hf2 : w.asIdeal.inertiaDeg (𝓞 F) = 2 := by omega
-    refine Or.inr (inert_of D v w he h2' hθ' (fun w' hw' => ?_) hf2)
+    refine Or.inr (inert_of D v w he h2' hθ (fun w' hw' => ?_) hf2)
     by_contra hne
     have hmem : (⟨w', hw'⟩ : PlacesOver E v) ∈ Finset.univ.erase W0 :=
       Finset.mem_erase.2 ⟨fun h => hne (congrArg Subtype.val h), Finset.mem_univ _⟩

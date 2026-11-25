@@ -3,6 +3,7 @@ module
 public import Development.AutomorphicArithmetic.Foundations.Convolution.RealGroupAnalysis.SpecialLinearCosets.GoodU
 public import Development.AutomorphicArithmetic.Foundations.Convolution.RealGroupAnalysis.SpecialLinearCosets.IsCompactBoxSet
 import Mathlib.Tactic.Linter.HaveILetI
+import Mathlib.Topology.Algebra.Group.Matrix
 
 @[expose] public section
 
@@ -93,12 +94,6 @@ private theorem extend_SB {X Y : Type} [TopologicalSpace X] [T2Space X] [Topolog
         exact h (Finset.mem_erase.mpr ⟨hne, hfin.mem_toFinset.mpr ⟨⟨y, subset_tsupport _ hne⟩, rfl⟩⟩)
       exact h0.symm
 
-private theorem closedEmbedding_val (F : Type) [Field F] [NumberField F] (v : P F) :
-    IsClosedEmbedding (Subtype.val : SL v → M2 v) := by
-  have h : IsClosed {m : M2 v | m.det = 1} :=
-    isClosed_singleton.preimage (show Continuous (fun m : M2 v => m.det) from continuous_id.matrix_det)
-  exact h.isClosedEmbedding_subtypeVal
-
 private theorem compactOpen_basis (F : Type) [Field F] [NumberField F] (v : P F) (x : M2 v) (N : Set (M2 v))
     (hN : N ∈ 𝓝 x) : ∃ O : Set (M2 v), IsOpen O ∧ IsCompact O ∧ x ∈ O ∧ O ⊆ N := by
   have h0 : (fun y : M2 v => x + y) ⁻¹' N ∈ 𝓝 (0 : M2 v) :=
@@ -118,5 +113,6 @@ private theorem compactOpen_basis (F : Type) [Field F] [NumberField F] (v : P F)
 theorem UpperTheory.ConvolutionTheory.R2.I.ext :
     ∀ (F : Type) [Field F] [NumberField F] (v : P F) (a : SB (SL v)), ∃ b : SB (M2 v), ∀ m : SL v, b.1 m.1 = a.1 m := by
   intro F _ _ v a
-  obtain ⟨b, hb, h⟩ := extend_SB (closedEmbedding_val F v) (compactOpen_basis F v) a.1 a.2
+  obtain ⟨b, hb, h⟩ := extend_SB (Matrix.SpecialLinearGroup.isClosedEmbedding_val (R := Kv v))
+    (compactOpen_basis F v) a.1 a.2
   exact ⟨⟨b, hb⟩, h⟩

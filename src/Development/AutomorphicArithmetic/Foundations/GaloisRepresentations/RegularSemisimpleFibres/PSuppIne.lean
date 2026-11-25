@@ -47,9 +47,7 @@ private theorem charPol_supp {E Ω : Type} [Field E] [NumberField E] [Field Ω] 
   obtain rfl := (goodSeg (w.adicCompletion E)).2.2 x _ _ hS hs
   rw [L.langlands 𝔪.toList x (by rw [Multiset.coe_toList]; exact hm), segSum, CuspExt.charPol_sumList, List.map_map,
     msupp, Multiset.map_bind, Multiset.prod_bind]
-  have hl : ∀ (l : List (Segment (w.adicCompletion E))) (F : Segment (w.adicCompletion E) → ℂ[X]),
-      (l.map F).prod = ((l : Multiset _).map F).prod := fun l F => by rw [Multiset.map_coe, Multiset.prod_coe]
-  rw [hl, Multiset.coe_toList]
+  rw [← Multiset.prod_coe, ← Multiset.map_coe, Multiset.coe_toList]
   exact congrArg Multiset.prod (Multiset.map_congr rfl fun Δ _ => charPol_seg' L Δ σ)
 
 end UpperTheory.Gal.InertialTypesAlt

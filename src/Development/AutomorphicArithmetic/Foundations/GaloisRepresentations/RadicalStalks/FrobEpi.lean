@@ -8,14 +8,6 @@ open CategoryTheory AlgebraicGeometry Limits MonoidalCategory CartesianMonoidalC
 open ReciprocityTheory.ChartRestriction.G ReciprocityTheory.ChartRestriction.G.Semi ReciprocityTheory.ChartRestriction.G.Geo.Tor GlobalTheory.Cris GlobalTheory.DeRham GlobalTheory.ConjSeq GlobalTheory.UPel.HT GlobalTheory.UPel.HT.ES UpperTheory.Gal.Ord
 open scoped TensorProduct
 
-private theorem pow_inj {R : Type*} [CommRing R] [_root_.IsReduced R] {p : ℕ} (hp : p.Prime)
-    (h : (p : R) = 0) {a b : R} (e : a ^ p = b ^ p) : a = b := by
-  obtain ⟨r, hr⟩ := exists_add_pow_prime_eq hp (a - b) b
-  rw [sub_add_cancel, e, h] at hr
-  have h0 : (a - b) ^ p = 0 := by
-    simpa using hr.symm
-  exact sub_eq_zero.mp (eq_zero_of_pow_eq_zero h0)
-
 private theorem step {p : ℕ} {A B C : CommRingCat} (u : A ⟶ B) (v : A ⟶ C) (FB : B ⟶ B) (FC : C ⟶ C)
     (r : B ⟶ C) (hB : ∀ x, FB x = x ^ p) (hC : ∀ x, FC x = x ^ p)
     (hU : v ≫ FC = (u ≫ FB) ≫ r) (a : A) : (u ≫ r).hom a ^ p = v.hom a ^ p := by
@@ -37,9 +29,13 @@ private theorem frob_epi (p : ℕ) [Fact p.Prime] (X : Scheme.{0}) [IsReduced X]
   have hU := Scheme.Hom.congr_app e.symm U
   rw [Scheme.Hom.comp_app, Scheme.Hom.comp_app] at hU
   ext a
-  apply pow_inj (Fact.out : p.Prime) (hV _)
-  exact step (p := p) (f.app U) (g.app U) ((GlobalTheory.VB.frob X p h).app (f ⁻¹ᵁ U))
-    ((GlobalTheory.VB.frob X p h).app (g ⁻¹ᵁ U)) _ (GlobalTheory.VB.frob_app p h _) (GlobalTheory.VB.frob_app p h _) hU a
+  cases subsingleton_or_nontrivial Γ(X, g ⁻¹ᵁ U) with
+  | inl _ => exact Subsingleton.elim _ _
+  | inr _ =>
+    have : CharP Γ(X, g ⁻¹ᵁ U) p := (CharP.charP_iff_prime_eq_zero Fact.out).mpr (hV _)
+    exact frobenius_inj Γ(X, g ⁻¹ᵁ U) p (step (p := p) (f.app U) (g.app U)
+      ((GlobalTheory.VB.frob X p h).app (f ⁻¹ᵁ U)) ((GlobalTheory.VB.frob X p h).app (g ⁻¹ᵁ U)) _
+      (GlobalTheory.VB.frob_app p h _) (GlobalTheory.VB.frob_app p h _) hU a)
 
 theorem UpperTheory.Gal.Ord.epi :
     ∀ (p : ℕ) [Fact p.Prime] (X : Scheme.{0}) [IsReduced X] (h : (p : Γ(X, ⊤)) = 0), Epi (GlobalTheory.VB.frob X p h) ∧ ∀ j, Epi (frobN p X h j) := by

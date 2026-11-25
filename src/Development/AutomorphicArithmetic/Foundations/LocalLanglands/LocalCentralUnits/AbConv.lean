@@ -26,12 +26,6 @@ private theorem stable_eq_top {ρ : Representation ℂ G V} (hρ : ρ.IsIrreduci
   · exact absurd (congrArg Subrepresentation.toSubmodule h) h0
   · exact congrArg Subrepresentation.toSubmodule h
 
-private theorem nontrivial_of_irr {ρ : Representation ℂ G V} (hρ : ρ.IsIrreducible) : Nontrivial V := by
-  by_contra hV
-  rw [not_nontrivial_iff_subsingleton] at hV
-  obtain ⟨x, y, hxy⟩ := hρ.toNontrivial.exists_pair_ne
-  exact hxy (Subrepresentation.toSubmodule_injective (Subsingleton.elim _ _))
-
 private theorem eq_one_of_dvd [FiniteDimensional ℂ V] (f : Module.End ℂ V) (hf : f.IsSemisimple) (m : ℕ)
     (hd : f.charpoly ∣ (X - 1 : ℂ[X]) ^ m) : f = 1 := by
   have hsq : Squarefree (minpoly ℂ f) := hf.minpoly_squarefree
@@ -41,18 +35,6 @@ private theorem eq_one_of_dvd [FiniteDimensional ℂ V] (f : Module.End ℂ V) (
   have h2 : aeval f (X - 1 : ℂ[X]) = 0 := by rw [hq, map_mul, minpoly.aeval, zero_mul]
   simpa [sub_eq_zero] using h2
 
-private theorem scalar_of_commute [FiniteDimensional ℂ V] {ρ : Representation ℂ G V} (hρ : ρ.IsIrreducible)
-    (f : Module.End ℂ V) (hf : ∀ g, Commute (ρ g) f) : ∃ c : ℂ, ∀ v, f v = c • v := by
-  haveI := nontrivial_of_irr hρ
-  obtain ⟨μ, hμ⟩ := Module.End.exists_eigenvalue f
-  have hS : f.eigenspace μ = ⊤ := stable_eq_top hρ _ (fun g v hv => by
-    rw [Module.End.mem_eigenspace_iff] at hv ⊢
-    have h1 : f (ρ g v) = ρ g (f v) := LinearMap.congr_fun (hf g).eq.symm v
-    rw [h1, hv, map_smul]) hμ
-  refine ⟨μ, fun v => ?_⟩
-  have hv : v ∈ f.eigenspace μ := hS ▸ Submodule.mem_top
-  exact Module.End.mem_eigenspace_iff.1 hv
-
 end LinAlg
 
 variable {E Ω : Type} [Field E] [NumberField E] [Field Ω] [Algebra E Ω] [IsAlgClosure E Ω]
@@ -61,7 +43,9 @@ variable {E Ω : Type} [Field E] [NumberField E] [Field Ω] [Algebra E Ω] [IsAl
 private theorem dim_one {d : ℕ} (b : WDRep h (Fin d → ℂ)) (hb : b.ρ.IsIrreducible)
     (hu : ∀ (σ : Weil h) (t : Ine (F := E) A), ∃ m : ℕ,
       (b.ρ (σ * ineIncl h t * σ⁻¹ * (ineIncl h t)⁻¹)).charpoly ∣ (X - 1 : ℂ[X]) ^ m) : d = 1 := by
-  haveI := nontrivial_of_irr hb
+  have : b.ρ.IsIrreducible := hb
+  have : Nontrivial b.ρ.asModule := IsSimpleModule.nontrivial (MonoidAlgebra ℂ (Weil h)) _
+  have : Nontrivial (Fin d → ℂ) := b.ρ.asModuleEquiv.toEquiv.symm.nontrivial
   have h1 : ∀ (σ : Weil h) (t : Ine (F := E) A), b.ρ (σ * ineIncl h t * σ⁻¹ * (ineIncl h t)⁻¹) = 1 := fun σ t => by
     obtain ⟨m, hm⟩ := hu σ t
     exact eq_one_of_dvd _ (b.semisimple _) m hm
@@ -69,8 +53,13 @@ private theorem dim_one {d : ℕ} (b : WDRep h (Fin d → ℂ)) (hb : b.ρ.IsIrr
     have e : σ * ineIncl h t = (σ * ineIncl h t * σ⁻¹ * (ineIncl h t)⁻¹) * (ineIncl h t * σ) := by group
     show b.ρ σ * b.ρ _ = b.ρ _ * b.ρ σ
     rw [← map_mul, ← map_mul, e, map_mul, h1, one_mul]
-  have h3 : ∀ t : Ine (F := E) A, ∃ c : ℂ, ∀ v, b.ρ (ineIncl h t) v = c • v :=
-    fun t => scalar_of_commute hb _ fun g => h2 g t
+  have h3 : ∀ t : Ine (F := E) A, ∃ c : ℂ, ∀ v, b.ρ (ineIncl h t) v = c • v := fun t => by
+    obtain ⟨c, hc⟩ :=
+      (Representation.IsIrreducible.algebraMap_intertwiningMap_bijective_of_isAlgClosed
+        (ρ := b.ρ)).2
+        (LinearMap.intertwiningMap_of_isIntertwiningMap b.ρ b.ρ (b.ρ (ineIncl h t))
+          fun g v => LinearMap.congr_fun (h2 g t).eq.symm v)
+    exact ⟨c, fun v => by simpa using DFunLike.congr_fun hc.symm v⟩
   obtain ⟨μ, hμ⟩ := Module.End.exists_eigenvalue (b.ρ (frob h))
   obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
   have hv0 : v ≠ 0 := hv.2

@@ -23,11 +23,6 @@ private theorem ieOfPushout {A B C D : CommRingCat.{0}} {f : A ⟶ B} {g : A ⟶
   haveI := etCobase
   MorphismProperty.IsStableUnderCobaseChange.of_isPushout (P := MorphismProperty.ind.{0} Et) s hg
 
-private theorem etComp {A B C : CommRingCat.{0}} {f : A ⟶ B} {g : B ⟶ C} (hf : Et f) (hg : Et g) : Et (f ≫ g) := by
-  change (f ≫ g).hom.Etale
-  rw [CommRingCat.hom_comp]
-  exact RingHom.Etale.stableUnderComposition _ _ hf hg
-
 private theorem etRight {R S W : CommRingCat.{0}} {c : R ⟶ S} {f : S ⟶ W} (h1 : Et c) (h2 : Et (c ≫ f)) : Et f := by
   letI := c.hom.toAlgebra
   letI := f.hom.toAlgebra
@@ -35,10 +30,7 @@ private theorem etRight {R S W : CommRingCat.{0}} {c : R ⟶ S} {f : S ⟶ W} (h
   haveI : IsScalarTower R S W := .of_algebraMap_eq' rfl
   haveI : Algebra.Etale R S := h1
   haveI : Algebra.Etale R W := h2
-  have h3 : Algebra.Etale S W := {
-    formallyEtale := Algebra.FormallyEtale.of_restrictScalars (R := R)
-    finitePresentation := Algebra.FinitePresentation.of_restrict_scalars_finitePresentation R S W }
-  exact h3
+  exact Algebra.Etale.of_restrictScalars R S W
 
 private theorem polySq {A S : CommRingCat.{0}} (f : A ⟶ S) :
     IsPushout (pC A) f (CommRingCat.ofHom (Polynomial.mapRingHom f.hom)) (pC S) := by
@@ -170,9 +162,9 @@ theorem UpperTheory.Cb.strictHenselization_stalk_equiv_of_colimit_presentation :
   refine bcFwd s (hStalk H q i (pushout.inr k (t ≫ pC A)) hqP (fun _ c => Et c) ?_ ?_ ?_ B c hc)
   · intro C D E Z c f g u v sq hc hf hg
     rw [← Category.assoc]
-    exact etComp hf (etOfPushout sq (etRight hc hg))
+    exact RingHom.Etale.stableUnderComposition _ _ hf (etOfPushout sq (etRight hc hg))
   · intro C D c f hc hf
-    exact etComp hc hf
+    exact RingHom.Etale.stableUnderComposition _ _ hc hf
   · intro U c hc
     refine ⟨U, 𝟙 U, ?_, fun r hr => ⟨r, hr, Ideal.comap_id r⟩, ?_, fun r hr => ?_⟩
     · exact RingHom.isIntegral_of_surjective _ Function.surjective_id

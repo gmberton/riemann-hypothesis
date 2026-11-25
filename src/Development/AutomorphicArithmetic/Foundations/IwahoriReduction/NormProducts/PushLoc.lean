@@ -687,19 +687,10 @@ private theorem Gd.gal (hA : SApi) (hS : SBStab) (hN : 0 < N) {n : ℕ} {a b : X
   rw [map_smul] at h
   exact h u
 
-private theorem Gd.sum (hA : SApi) {n : ℕ} {ι : Type*} (S : Finset ι) (a b : ι → X.Fn l)
-    (h : ∀ i ∈ S, Gd X l N w c j n (a i) (b i)) : Gd X l N w c j n (∑ i ∈ S, a i) (∑ i ∈ S, b i) := by
-  classical
-  induction S using Finset.induction_on with
-  | empty => simpa using Gd.zero hA n
-  | insert i S hi ih =>
-    rw [Finset.sum_insert hi, Finset.sum_insert hi]
-    exact Gd.add hA (h i (Finset.mem_insert_self _ _)) (ih fun k hk => h k (Finset.mem_insert_of_mem hk))
-
 private theorem Gd.push (hA : SApi) {n : ℕ} {Γ : Type*} [Group Γ] {C C' : Type*} [Fintype C'] [DecidableEq C] (π : C' → C)
     (a b : Γ → C' → X.Fn l) (s : Γ) (x : C) (h : ∀ y, Gd X l N w c j n (a s y) (b s y)) :
     Gd X l N w c j n (GlobalTheory.KA.push π a s x) (GlobalTheory.KA.push π b s x) :=
-  Gd.sum hA _ _ _ fun y _ => h y
+  Finset.sum_hom_rel (Gd.zero hA n) fun y _ _ hbc => Gd.add hA (h y) hbc
 
 private theorem Gd.mono (hA : SApi) {n : ℕ} {a b : X.Fn l} (h : Gd X l N w c j (n + 1) a b) : Gd X l N w c j n a b := by
   obtain ⟨b₁, rfl, h₁⟩ := h

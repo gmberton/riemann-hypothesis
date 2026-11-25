@@ -18,10 +18,6 @@ open GlobalTheory.CongW (IntMat)
 section
 variable {E : Type} [Field E] [NumberField E] {a : ℕ}
 
-private lemma natCast_int (u : HeightOneSpectrum (𝓞 E)) (l : ℕ) :
-    (l : u.adicCompletion E) ∈ u.adicCompletionIntegers E :=
-  _root_.natCast_mem (u.adicCompletionIntegers E) l
-
 private lemma v_lt_one (u : HeightOneSpectrum (𝓞 E)) {l : ℕ} (hu : ((l : ℕ) : 𝓞 E) ∈ u.asIdeal) :
     Valued.v (l : u.adicCompletion E) < 1 := by
   have h := (u.valuation_lt_one_iff_mem (K := E) ((l : ℕ) : 𝓞 E)).2 hu
@@ -49,7 +45,7 @@ private lemma intMat_mono (u : HeightOneSpectrum (𝓞 E)) (l : ℕ) (m : Matrix
   simp only [Matrix.smul_apply, smul_eq_mul] at h1 ⊢
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hde
   rw [pow_add, mul_comm (_ ^ d), mul_assoc]
-  exact mul_mem (pow_mem (natCast_int u l) k) h1
+  exact mul_mem (pow_mem (natCast_mem _ l) k) h1
 
 private lemma exists_intMat (u : HeightOneSpectrum (𝓞 E)) {l : ℕ} (hu : ((l : ℕ) : 𝓞 E) ∈ u.asIdeal)
     (m : Matrix (Fin a) (Fin a) (u.adicCompletion E)) :
@@ -60,7 +56,7 @@ private lemma exists_intMat (u : HeightOneSpectrum (𝓞 E)) {l : ℕ} (hu : ((l
   obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le hle
   simp only [Matrix.smul_apply, smul_eq_mul]
   rw [hk, pow_add, mul_comm (_ ^ D (i, j)), mul_assoc]
-  exact mul_mem (pow_mem (natCast_int u l) k) (hD (i, j))
+  exact mul_mem (pow_mem (natCast_mem _ l) k) (hD (i, j))
 
 private lemma isOpen_intMat {X : Type*} [TopologicalSpace X] (u : HeightOneSpectrum (𝓞 E)) (c : u.adicCompletion E)
     (f : X → Matrix (Fin a) (Fin a) (u.adicCompletion E)) (hf : Continuous f) :

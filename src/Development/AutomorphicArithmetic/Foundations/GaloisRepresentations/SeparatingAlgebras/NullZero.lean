@@ -23,15 +23,6 @@ private lemma eval_cons_pt {n : ℕ} (s : UnitAddCircle) (θ : Fin n → UnitAdd
     refine Fin.cases ?_ (fun j => ?_) i <;> simp [pt_coe]
   rw [h]
 
-private lemma continuous_eval_pt {n : ℕ} (p : MvPolynomial (Fin n) ℂ) :
-    Continuous fun θ : Fin n → UnitAddCircle => MvPolynomial.eval (fun i => (pt θ i : ℂ)) p := by
-  have h1 : Continuous fun x : Fin n → ℂ => MvPolynomial.eval x p := MvPolynomial.continuous_eval p
-  have h2 : Continuous fun θ : Fin n → UnitAddCircle => (fun i => (pt θ i : ℂ)) := by
-    refine continuous_pi fun i => ?_
-    simp only [pt_coe]
-    exact continuous_subtype_val.comp ((AddCircle.continuous_toCircle).comp (continuous_apply i))
-  exact h1.comp h2
-
 private lemma circle_zero_null (r : Polynomial ℂ) (hr : r ≠ 0) :
     volume {s : UnitAddCircle | r.eval ((AddCircle.toCircle s : Circle) : ℂ) = 0} = 0 := by
   haveI : NullSingletonClass (volume : Measure UnitAddCircle) := ⟨fun x => by
@@ -67,7 +58,9 @@ theorem UpperTheory.Gal.Gen.nullZero_pf :
     set e := MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => UnitAddCircle) 0 with he
     have hclosed : IsClosed {θ : Fin (n + 1) → UnitAddCircle |
         MvPolynomial.eval (fun i => (pt θ i : ℂ)) p = 0} :=
-      isClosed_eq (continuous_eval_pt p) continuous_const
+      isClosed_eq ((MvPolynomial.continuous_eval p).comp (continuous_pi fun i =>
+        continuous_subtype_val.comp (AddCircle.continuous_toCircle.comp (continuous_apply i))))
+        continuous_const
     have hm : MeasurableSet {z : UnitAddCircle × (Fin n → UnitAddCircle) |
         MvPolynomial.eval (fun i => (pt (e.symm z) i : ℂ)) p ≠ 0} :=
       e.symm.measurable hclosed.measurableSet.compl

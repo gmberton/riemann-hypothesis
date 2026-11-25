@@ -44,16 +44,6 @@ private theorem existsUnique_sec {U P : Scheme.{0}} (p' : P ⟶ U) {m : ℕ} (s'
     rw [← pt_comp, ← pt_comp, h4]
   exact congrArg Sigma.fst ((sigmaι_eq_iff _ k j _ _).1 h5)
 
-private theorem finsum_one_singleton {T : Type*} (A : Set T) (a : T) (h : A = {a}) :
-    ∑ᶠ z ∈ A, (1 : ℤ) = 1 := by
-  subst h
-  simp
-
-private theorem finsum_one_empty {T : Type*} (A : Set T) (h : A = ∅) :
-    ∑ᶠ z ∈ A, (1 : ℤ) = 0 := by
-  subst h
-  simp
-
 private theorem tr_split (hCorr : CorrEqQ) (hId : TrIdQ) (l : ℕ) [Fact l.Prime] (n i : ℤ) {U P : Scheme.{0}}
     (p' : P ⟶ U) [IsFinite p'] (wt : IsWt p' (Wt.const P 1)) (wt1 : IsWt (𝟙 U) (Wt.const U 1))
     (hl : IsUnit (l : Γ(U, ⊤))) {m : ℕ} (s' : Fin m → (U ⟶ P)) (hs : ∀ j, s' j ≫ p' = 𝟙 U)
@@ -70,11 +60,12 @@ private theorem tr_split (hCorr : CorrEqQ) (hId : TrIdQ) (l : ℕ) [Fact l.Prime
       (c none).cyc Ω x0 y = if y ≫ p' = x0 then 1 else 0 := by
     intro Ω _ _ x0 y
     split_ifs with h
-    · refine finsum_one_singleton _ y ?_
+    · refine (congrArg (fun A : Set _ => ∑ᶠ z ∈ A, (1 : ℤ)) ?_).trans
+        (finsum_mem_singleton (a := y))
       ext z
       simp only [c, Set.mem_setOf_eq, Set.mem_singleton_iff, Category.comp_id]
       exact ⟨fun hz => hz.2, fun hz => ⟨hz ▸ h, hz⟩⟩
-    · refine finsum_one_empty _ ?_
+    · refine (congrArg (fun A : Set _ => ∑ᶠ z ∈ A, (1 : ℤ)) ?_).trans finsum_mem_empty
       ext z
       simp only [c, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, Category.comp_id]
       rintro ⟨h1, rfl⟩
@@ -83,11 +74,12 @@ private theorem tr_split (hCorr : CorrEqQ) (hId : TrIdQ) (l : ℕ) [Fact l.Prime
       (c (some j)).cyc Ω x0 y = if x0 ≫ s' j = y then 1 else 0 := by
     intro j Ω _ _ x0 y
     split_ifs with h
-    · refine finsum_one_singleton _ x0 ?_
+    · refine (congrArg (fun A : Set _ => ∑ᶠ z ∈ A, (1 : ℤ)) ?_).trans
+        (finsum_mem_singleton (a := x0))
       ext z
       simp only [c, Set.mem_setOf_eq, Set.mem_singleton_iff, Category.comp_id]
       exact ⟨fun hz => hz.1, fun hz => ⟨hz, hz ▸ h⟩⟩
-    · refine finsum_one_empty _ ?_
+    · refine (congrArg (fun A : Set _ => ∑ᶠ z ∈ A, (1 : ℤ)) ?_).trans finsum_mem_empty
       ext z
       simp only [c, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, Category.comp_id]
       rintro ⟨rfl, h1⟩

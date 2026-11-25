@@ -116,12 +116,6 @@ private noncomputable def Bf {F : Type} [Field F] [NumberField F] (δ : F)
     (a y : Fin 4 → FiniteAdeleRing (𝓞 F) F) : FiniteAdeleRing (𝓞 F) F :=
   2 * (a 2 * y 2 - algebraMap F (FiniteAdeleRing (𝓞 F) F) δ * (a 3 * y 3)) - a 1 * y 0 - a 0 * y 1
 
-private theorem continuous_Bf {F : Type} [Field F] [NumberField F] (δ : F) :
-    Continuous fun p : (Fin 4 → FiniteAdeleRing (𝓞 F) F) × (Fin 4 → FiniteAdeleRing (𝓞 F) F) =>
-      Bf δ p.1 p.2 := by
-  unfold Bf
-  fun_prop
-
 private theorem fin_level {F : Type} [Field F] [NumberField F] (δ : F)
     {g : (Fin 4 → FiniteAdeleRing (𝓞 F) F) → ℂ} (hg : g ∈ finiteSchwartzBruhatPi F (ι := Fin 4)) :
     ∃ Λ : OpenAddSubgroup (FiniteAdeleRing (𝓞 F) F), ∀ a : Fin 4 → FiniteAdeleRing (𝓞 F) F,
@@ -146,7 +140,7 @@ private theorem fin_level {F : Type} [Field F] [NumberField F] (δ : F)
     simpa using this
   have hP2 : IsOpen {p : (Fin 4 → FiniteAdeleRing (𝓞 F) F) × (Fin 4 → FiniteAdeleRing (𝓞 F) F) |
       (finiteAdelicChar F (Bf δ p.1 p.2) : ℂ) = 1} :=
-    (hχ.isOpen_fiber 1).preimage (continuous_Bf δ)
+    (hχ.isOpen_fiber 1).preimage (by unfold Bf; fun_prop)
   obtain ⟨u, w, hu, -, h0u, hSw, huw⟩ := generalized_tube_lemma (isCompact_singleton (x := (0 : Fin 4 → FiniteAdeleRing (𝓞 F) F)))
     (t := tsupport g) hc (hP1.inter hP2) (by
       rintro ⟨a, y⟩ ⟨ha, -⟩

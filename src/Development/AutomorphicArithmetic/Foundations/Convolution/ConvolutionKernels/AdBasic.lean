@@ -18,21 +18,16 @@ private theorem finiteAdele_apply_congr {K X : Type} [Field K] [NumberField K] [
   subst h
   exact congrFun ((HeightOneSpectrum.denseRange_algebraMap K w₁).equalizer hf hg (funext e)) _
 
-private theorem infDense {K : Type} [Field K] (u : InfinitePlace K) :
-    DenseRange (algebraMap K u.Completion) := by
-  refine (AbsoluteValue.Completion.denseRange_coe u.1).mono ?_
-  rintro _ ⟨x, rfl⟩
-  refine ⟨x.ofAbs, ?_⟩
-  rw [AbsoluteValue.Completion.algebraMap_def]
-  congr 1
-
 private theorem infiniteAdele_apply_congr {K X : Type} [Field K] [NumberField K] [TopologicalSpace X] [T2Space X]
     {w₁ w₂ : InfinitePlace K} (h : w₁ = w₂) (f : w₁.Completion → X) (g : w₂.Completion → X)
     (hf : Continuous f) (hg : Continuous g)
     (e : ∀ x : K, f (algebraMap K _ x) = g (algebraMap K _ x)) (a : InfiniteAdeleRing K) :
     f (a w₁) = g (a w₂) := by
   subst h
-  exact congrFun ((infDense w₁).equalizer hf hg (funext e)) _
+  exact congrFun
+    (AbsoluteValue.Completion.ext hf hg fun x => by
+      simpa [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply] using
+        e x.ofAbs) _
 
 private theorem completionEquiv_algebraMap {K : Type} [Field K] [NumberField K] (j : K ≃+* K) (v : HeightOneSpectrum (𝓞 K)) (x : K) :
     (CT.compEquiv j.symm v).symm (algebraMap K _ x) = algebraMap K _ (j x) := by

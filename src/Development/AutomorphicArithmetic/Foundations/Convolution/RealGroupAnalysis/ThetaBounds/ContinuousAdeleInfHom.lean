@@ -24,16 +24,6 @@ private theorem inv_map_mulVec {R : Type} [CommRing R] (h : A K →+* R) (g : GL
   rw [map_mulVec_eq, Matrix.mulVec_mulVec, ← Matrix.map_mul, ← Units.val_mul, inv_mul_cancel,
     Units.val_one, Matrix.map_one h (map_zero h) (map_one h), Matrix.one_mulVec]
 
-private theorem continuous_adeleInfHom : Continuous (adeleInfHom : A K → mixedSpace K) :=
-  (homeomorphMixedSpace K).continuous.comp continuous_fst
-
-private theorem continuous_adeleFinHom : Continuous (adeleFinHom : A K → FiniteAdeleRing (𝓞 K) K) :=
-  continuous_snd
-
-private theorem continuous_invEntry (i j : Fin 4) :
-    Continuous fun x : GL (Fin 4) (A K) => (x⁻¹).val i j :=
-  (Units.continuous_val.comp continuous_inv).matrix_elem i j
-
 private theorem wt_nonneg (S : Set (Fin 4 → FiniteAdeleRing (𝓞 K) K)) (N : ℕ) (v : V4 K) :
     0 ≤ wt S N v := by
   unfold wt
@@ -89,13 +79,14 @@ theorem UpperTheory.ConvolutionTheory.R2.Ff.wtLin :
     fun p => (p.1⁻¹).val.map adeleFinHom *ᵥ p.2
   have hψ : Continuous ψ := by
     exact (Continuous.matrix_map (Units.continuous_val.comp (continuous_inv.comp continuous_fst))
-      continuous_adeleFinHom).matrix_mulVec continuous_snd
+      continuous_snd).matrix_mulVec continuous_snd
   refine ⟨ψ '' (C ×ˢ K), (hC.prod hK).image hψ, fun N => ?_⟩
 
   let β : GL (Fin 4) (A F) → ℝ := fun x => ∑ i, ∑ j, ‖(x⁻¹).val.map (adeleInfHom (K := F)) i j‖
   have hβ : Continuous β := by
     refine continuous_finsetSum _ fun i _ => continuous_finsetSum _ fun j _ => ?_
-    exact (continuous_adeleInfHom.comp (continuous_invEntry i j)).norm
+    exact (((homeomorphMixedSpace F).continuous.comp continuous_fst).comp
+      ((Units.continuous_val.comp continuous_inv).matrix_elem i j)).norm
   obtain ⟨B₀, hB₀⟩ := (hC.image hβ).bddAbove
   have hβle : ∀ x ∈ C, β x ≤ B₀ := fun x hx => hB₀ ⟨x, hx, rfl⟩
   set m : ℝ := max 1 B₀ with hm

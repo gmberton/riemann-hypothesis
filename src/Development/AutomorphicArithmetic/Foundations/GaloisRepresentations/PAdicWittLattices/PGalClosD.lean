@@ -19,9 +19,6 @@ private theorem fibre_finite {Y Z : Scheme.{0}} (s : Y ⟶ Z) [IsFinite s] (Ω :
   have h := UpperTheory.Gal.TranscendenceTraces.fibFin_of UpperTheory.Gal.TranscendenceTraces.chart_of s Ω x
   exact h.to_subtype
 
-private theorem epi_of_field {Ω Ω' : Type} [Field Ω] [Field Ω'] (x : sp Ω' ⟶ sp Ω) : Epi x := by
-  exact Flat.epi_of_flat_of_surjective x
-
 private theorem point_over {Z : Scheme.{0}} (z : Z) :
     ∃ (Ω : Type) (_ : Field Ω) (_ : IsAlgClosed Ω) (x : sp Ω ⟶ Z), x (IsLocalRing.closedPoint Ω) = z := by
   refine ⟨AlgebraicClosure (Z.residueField z), inferInstance, inferInstance,
@@ -85,7 +82,7 @@ theorem UpperTheory.Gal.G3.pGalClosD :
     have hinj' : ∀ (Ω' : Type) [Field Ω'] (x' : UpperTheory.Gal.G3.sp Ω' ⟶ UpperTheory.Gal.G3.sp Ω),
         Function.Injective fun j => x' ≫ yy j := by
       intro Ω' _ x' i j hij
-      haveI := UpperTheory.Gal.G3.epi_of_field x'
+      haveI := Flat.epi_of_flat_of_surjective x'
       have h1 : yy i = yy j := (cancel_epi x').1 hij
       have h2 := Subtype.val_injective h1
       exact Fin.cast_injective _ (e.symm.injective h2)
