@@ -76,35 +76,6 @@ theorem _root_.GlobalTheory.isDiscreteValuationRing_and_finite_residueField_valu
   exact ⟨hD, hS⟩
 
 open IsLocalRing IsDedekindDomain NumberField in
-private theorem eq_of_le_of_mem_nonunits_of_dvr {K : Type*} [Field K]
-    (A W : ValuationSubring K) (h : A ≤ W) [IsDiscreteValuationRing A]
-    (a : A) (ha0 : a ≠ 0) (haW : (a : K) ∈ W.nonunits) : A = W := by
-  have hmem : ∀ (B : ValuationSubring K) (hB : A ≤ B) (x : A),
-      x ∈ A.idealOfLE B hB ↔ (x : K) ∈ B.nonunits := by
-    intro B hB x
-    rw [ValuationSubring.mem_nonunits_iff]
-    unfold ValuationSubring.idealOfLE
-    rw [Ideal.mem_comap, ValuationSubring.valuation_lt_one_iff]
-    rfl
-  have hmax : ∀ (B : ValuationSubring K) (hB : A ≤ B), (a : K) ∈ B.nonunits →
-      A.idealOfLE B hB = maximalIdeal A := by
-    intro B hB haB
-    have hne : A.idealOfLE B hB ≠ ⊥ := by
-      intro hbot
-      have : a ∈ A.idealOfLE B hB := (hmem B hB a).2 haB
-      rw [hbot, Ideal.mem_bot] at this
-      exact ha0 this
-    have := (inferInstance : (A.idealOfLE B hB).IsPrime).isMaximal hne
-    exact IsLocalRing.eq_maximalIdeal this
-  have haA : (a : K) ∈ A.nonunits := (ValuationSubring.nonunits_le_nonunits.2 h) haW
-  have hcongr : ∀ (P Q : Ideal A) [P.IsPrime] [Q.IsPrime], P = Q → A.ofPrime P = A.ofPrime Q := by
-    rintro P Q _ _ rfl; rfl
-  calc A = A.ofPrime (A.idealOfLE A le_rfl) := (A.ofPrime_idealOfLE A le_rfl).symm
-    _ = A.ofPrime (A.idealOfLE W h) := hcongr _ _ ((hmax A le_rfl haA).trans (hmax W h haW).symm)
-    _ = W := A.ofPrime_idealOfLE W h
-
-
-open IsLocalRing IsDedekindDomain NumberField in
 theorem _root_.GlobalTheory.isDiscreteValuationRing_and_finite_residueField_of_numberField {L : Type*} [Field L]
     [NumberField L] (W : ValuationSubring L) {n : ℕ} (hn : n ≠ (0 : ℕ))
     (hW : (↑n : L) ∈ W.nonunits) :
@@ -153,13 +124,9 @@ theorem _root_.GlobalTheory.isDiscreteValuationRing_and_finite_residueField_of_n
     exact mul_mem (hint a) t.2
   obtain ⟨hD, hF⟩ :=
     _root_.GlobalTheory.isDiscreteValuationRing_and_finite_residueField_valuationSubringAtPrime L v hfin
-  have hnA : (n : L) ∈ A := natCast_mem A n
-  have heq : A = W := eq_of_le_of_mem_nonunits_of_dvr A W hAW ⟨(n : L), hnA⟩
-    (by
-      intro h0
-      have := congrArg Subtype.val h0
-      simp only [ZeroMemClass.coe_zero] at this
-      exact hn (by exact_mod_cast this)) hnW
+  have heq : A = W := A.eq_of_le_of_ne_top hAW fun htop =>
+    (((ValuationSubring.mem_nonunits_iff_or W).1 hnW).resolve_left (Nat.cast_ne_zero.2 hn))
+      (htop ▸ ValuationSubring.mem_top _)
   rw [← heq]
   exact ⟨hD, hF⟩
 

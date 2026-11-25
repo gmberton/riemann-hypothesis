@@ -44,6 +44,7 @@ import Mathlib.Tactic.NormNum.RealSqrt
 import Mathlib.Tactic.ReduceModChar
 import Mathlib.Topology.Sheaves.Init
 import Formalism.LocalToGlobal.IndefiniteReal.LinksDefs
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.ThetaSeriesSummableOnCovolumeDomain
 
 @[expose] public section
 
@@ -76,41 +77,14 @@ theorem infPart_cA (z : AE D) :
 
 theorem hO_eq_trace (S T : HSp D) (x y : WO S T) :
     hO S T x y = Matrix.trace ((S.gram⁻¹).map (incA D) * (y.map (cA D))ᵀ * T.gram.map (incA D) * x) := by
-  simp only [hO, Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.map_apply, Matrix.transpose_apply,
-    Finset.sum_mul]
-  refine Finset.sum_congr rfl fun a _ => ?_
-  rw [Finset.sum_comm]
-  conv_rhs => rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun c _ => ?_
-  rw [Finset.sum_comm]
+  exact GlobalTheory.SplitHecke.hO_trace S T x y
 
 theorem hO_iso (V W : HSp D) {r : ℕ} (C C' : Matrix (Fin V.rank) (Fin r) D.host.E)
     (hC : adj D C * V.gram * C' = 1) (y : Matrix (Fin W.rank) (Fin r) D.host.E) (κ : Mx D W.rank r) :
     hO V W (isoPart V W C κ) (isoPart V W C' (y.map (incA D))) =
       Matrix.trace ((adj D y * W.gram).map (incA D) * κ) := by
-  have hz : (y * (adj D C' * V.gram))ᴴ = V.gram * C' * adj D y := by
-    rw [conjTranspose_mul, conjTranspose_mul, gram_ct, adj_eq, adj_eq, conjTranspose_conjTranspose,
-      Matrix.mul_assoc]
-  have hu : isoPart V W C' (y.map (incA D)) = (y * (adj D C' * V.gram)).map (incA D) := by
-    rw [Matrix.map_mul]
-    rfl
-  have hu' : ((isoPart V W C' (y.map (incA D))).map (cA D))ᵀ = (V.gram * C' * adj D y).map (incA D) := by
-    rw [hu, ← hz]
-    ext i j
-    simp only [Matrix.transpose_apply, Matrix.map_apply, Matrix.conjTranspose_apply]
-    exact GlobalTheory.DualPairCheck.cA_incA _
-  have e1 : (V.gram⁻¹).map (incA D) * (V.gram * C' * adj D y).map (incA D) * W.gram.map (incA D) =
-      C'.map (incA D) * (adj D y * W.gram).map (incA D) := by
-    rw [← Matrix.map_mul, ← Matrix.map_mul, ← Matrix.map_mul]
-    congr 1
-    rw [Matrix.mul_assoc V.gram, Matrix.nonsing_inv_mul_cancel_left _ _ (Formalism.L2.Theta.gram_det_ne V).isUnit,
-      Matrix.mul_assoc]
-  have e2 : (adj D C * V.gram).map (incA D) * C'.map (incA D) = 1 := by
-    rw [← Matrix.map_mul, hC]
-    exact Matrix.map_one _ (map_zero _) (map_one _)
-  have e3 : isoPart V W C κ = κ * (adj D C * V.gram).map (incA D) := rfl
-  rw [hO_eq_trace, hu', e1, e3, Matrix.mul_assoc, Matrix.trace_mul_comm, Matrix.mul_assoc, Matrix.mul_assoc, e2,
-    Matrix.mul_one]
+  rw [GlobalTheory.TwFour.hO_isoPart, GlobalTheory.TwFour.cT_map_incA, hC,
+    Matrix.map_one _ (map_zero _) (map_one _), Matrix.mul_one, ← Matrix.map_mul]
 
 theorem pairQ_map (W : HSp D) {r : ℕ} (y : Matrix (Fin W.rank) (Fin r) D.host.E) :
     (pairQ W y).map (incA D) = incA D D.host.xi0 • (adj D y * W.gram).map (incA D) := by

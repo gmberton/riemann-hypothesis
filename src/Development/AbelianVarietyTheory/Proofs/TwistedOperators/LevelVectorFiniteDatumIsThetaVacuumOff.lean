@@ -43,6 +43,7 @@ import Mathlib.Tactic.NormNum.Parity
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.NormNum.RealSqrt
 import Development.AbelianVarietyTheory.Definitions.Divisors.EqOfHasValueAtInfinite
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.ExistsLatticeForMatchedFrames
 
 @[expose] public section
 
@@ -63,46 +64,13 @@ variable {D : D7}
 theorem placeIdem_smul_off {S T : HSp D} {LS : Set (Fin S.rank → D.host.E)} {LT : Set (Fin T.rank → D.host.E)}
     {v w : HeightOneSpectrum (𝓞 D.host.F)} {ε : AF D.host.F} (hε : IsPlaceIdem D w ε) (hwv : w ≠ v) {u : WO S T}
     (hu : u ∈ latO S T LS LT fun x => x = v) : algebraMap (AF D.host.F) (AE D) ε • u = 0 := by
-  obtain ⟨β, rfl, -, h0⟩ := hε
-  induction hu using AddSubgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨α, hα, hP, a, ha, s, hs, t, ht, rfl⟩ := hx
-    have hβα : β * α = 0 := by
-      refine RestrictedProduct.ext _ _ fun y => ?_
-      change evalV D.host.F y (β * α) = evalV D.host.F y 0
-      rw [map_mul, map_zero]
-      by_cases hy : y = w
-      · subst hy; rw [hP y hwv, mul_zero]
-      · rw [h0 y hy, zero_mul]
-    have hp : pairA D.host.F 0 β * pairA D.host.F 0 α = 0 := Prod.ext (mul_zero _) hβα
-    ext i j
-    change (pairA D.host.F 0 β ⊗ₜ[D.host.F] (1 : D.host.E)) * (_ ⊗ₜ _) = (0 : AE D)
-    rw [Algebra.TensorProduct.tmul_mul_tmul, one_mul, hp, TensorProduct.zero_tmul]
-  | zero => rw [smul_zero]
-  | add x x' _ _ h h' => rw [smul_add, h, h', add_zero]
-  | neg x _ h => rw [smul_neg, h, neg_zero]
+  exact GlobalTheory.SmallKerInv.placeIdem_smul_offP hε hwv hu
 
 theorem idemSum_mul_off {S T : HSp D} {LS : Set (Fin S.rank → D.host.E)} {LT : Set (Fin T.rank → D.host.E)}
     {v : HeightOneSpectrum (𝓞 D.host.F)} {e : AE D} {Pset : Finset (Pl D.host.E)} (he : IsIdemSum e Pset)
     (hv : ∀ PP ∈ Pset, (_root_.IsDedekindDomain.HeightOneSpectrum.under (𝓞 D.host.F) PP) ≠ v) {u : WO S T} (hu : u ∈ latO S T LS LT fun x => x = v) (a b) :
     e * u a b = 0 ∧ cA D e * u a b = 0 := by
-  obtain ⟨⟨es, hes, rfl⟩, -⟩ := he
-  have key : ∀ PP ∈ Pset, es PP * u a b = 0 ∧ cA D (es PP) * u a b = 0 := by
-    intro PP hPP
-    obtain ⟨⟨a1, a2, w, ε, hε, a3⟩, -⟩ := hes PP hPP
-    have hw : w ≠ v := fun h => hv PP hPP (by
-      rw [← h]; exact GlobalTheory.IdemUnder.under_eq_of_isIdemAt D _ PP w ε (hes PP hPP) hε a3)
-    have h0 := congrFun (congrFun (placeIdem_smul_off hε hw hu) a) b
-    rw [Matrix.smul_apply, smul_eq_mul, ← a3, Matrix.zero_apply] at h0
-    have c1 : cA D (es PP) * cA D (es PP) = cA D (es PP) := by rw [← map_mul, a1]
-    have c2 : cA D (es PP) * es PP = 0 := by rw [mul_comm, a2]
-    refine ⟨?_, ?_⟩
-    · linear_combination es PP * h0 - u a b * a1 - u a b * a2
-    · linear_combination cA D (es PP) * h0 - u a b * c1 - u a b * c2
-  refine ⟨?_, ?_⟩
-  · rw [Finset.sum_mul]; exact Finset.sum_eq_zero fun PP hPP => (key PP hPP).1
-
-  · rw [map_sum, Finset.sum_mul]; exact Finset.sum_eq_zero fun PP hPP => (key PP hPP).2
+  exact GlobalTheory.SmallKerInv.idemSum_mul_offP he hv hu a b
 
 end GlobalTheory.FinZeta.VacOff
 

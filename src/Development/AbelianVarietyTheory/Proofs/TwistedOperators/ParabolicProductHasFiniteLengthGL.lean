@@ -74,57 +74,32 @@ theorem hasFiniteLength_of_exact {α : Representation F G U} {β : Representatio
     {γ : Representation F G X} (ι : α.IntertwiningMap β) (p : β.IntertwiningMap γ)
     (hex : ∀ v, p v = 0 → ∃ u, ι u = v) (hα : HasFiniteLength α) (hγ : HasFiniteLength γ) :
     HasFiniteLength β := by
-  obtain ⟨hα1, hα2⟩ := (hasFiniteLength_iff_wellFounded α).1 hα
-  obtain ⟨hγ1, hγ2⟩ := (hasFiniteLength_iff_wellFounded γ).1 hγ
-  let f : Subrepresentation β → Subrepresentation α × Subrepresentation γ :=
-    fun S => (comapSub ι S, mapSub p S)
-  have hmono : Monotone f := fun S T h =>
-    ⟨fun v hv => h hv, Submodule.map_mono (f := p.toLinearMap) h⟩
-  have hf : StrictMono f := by
-    intro S T hST
-    refine lt_of_le_of_ne (hmono hST.le) fun heq => hST.not_ge ?_
-    have h1 : (comapSub ι S).toSubmodule = (comapSub ι T).toSubmodule := congrArg (fun x => x.1.toSubmodule) heq
-    have h2 : (mapSub p S).toSubmodule = (mapSub p T).toSubmodule := congrArg (fun x => x.2.toSubmodule) heq
-    intro x hx
-    have hpx : p x ∈ (mapSub p T).toSubmodule := ⟨x, hx, rfl⟩
-    rw [← h2] at hpx
-    obtain ⟨y, hy, hyx⟩ := hpx
-    have hyx' : p y = p x := hyx
-    obtain ⟨u, hu⟩ := hex (x - y) (by rw [map_sub, hyx', sub_self])
-    have huT : u ∈ (comapSub ι T).toSubmodule := by
-      show ι u ∈ T.toSubmodule
-      rw [hu]
-      exact T.toSubmodule.sub_mem hx (hST.le hy)
-    rw [← h1] at huT
-    have huS : ι u ∈ S.toSubmodule := huT
-    rw [hu] at huS
-    have := S.toSubmodule.add_mem huS hy
-    rwa [sub_add_cancel] at this
-  exact (hasFiniteLength_iff_wellFounded β).2 ⟨hf.wellFoundedGT, hf.wellFoundedLT⟩
+  let ι' := Representation.IntertwiningMap.equivLinearMapAsModule α β ι
+  let p' := Representation.IntertwiningMap.equivLinearMapAsModule β γ p
+  have hK : LinearMap.ker p' ≤ LinearMap.range ι' := fun v hv =>
+    hex v ((congrArg γ.asModuleEquiv hv).trans γ.asModuleEquiv.map_zero)
+  have h1 : IsFiniteLength (MonoidAlgebra F G) (LinearMap.ker p') :=
+    (IsFiniteLength.of_surjective hα ι'.surjective_rangeRestrict).of_injective
+      (Submodule.inclusion_injective hK)
+  have h2 : IsFiniteLength (MonoidAlgebra F G) (β.asModule ⧸ LinearMap.ker p') :=
+    p'.quotKerEquivRange.symm.isFiniteLength
+      (IsFiniteLength.of_injective hγ (Submodule.injective_subtype (LinearMap.range p')))
+  obtain ⟨h1n, h1a⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp h1
+  obtain ⟨h2n, h2a⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp h2
+  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
+    ⟨(isNoetherian_iff_submodule_quotient (LinearMap.ker p')).mpr ⟨h1n, h2n⟩,
+      (isArtinian_iff_submodule_quotient (LinearMap.ker p')).mpr ⟨h1a, h2a⟩⟩
 
 theorem hasFiniteLength_of_injective {α : Representation F G U} {β : Representation F G V}
     (ι : α.IntertwiningMap β) (hι : Function.Injective ι) (hβ : HasFiniteLength β) :
-    HasFiniteLength α := by
-  obtain ⟨h1, h2⟩ := (hasFiniteLength_iff_wellFounded β).1 hβ
-  have hmono : Monotone (mapSub ι) := fun S T h => Submodule.map_mono (f := ι.toLinearMap) h
-  have hf : StrictMono (mapSub ι) := by
-    intro S T hST
-    refine lt_of_le_of_ne (hmono hST.le) fun heq => hST.not_ge ?_
-    have h3 : (mapSub ι S).toSubmodule = (mapSub ι T).toSubmodule := congrArg (·.toSubmodule) heq
-    intro x hx
-    have hx' : ι x ∈ (mapSub ι T).toSubmodule := ⟨x, hx, rfl⟩
-    rw [← h3] at hx'
-    obtain ⟨y, hy, hyx⟩ := hx'
-    rwa [← hι hyx]
-  exact (hasFiniteLength_iff_wellFounded α).2 ⟨hf.wellFoundedGT, hf.wellFoundedLT⟩
+    HasFiniteLength α :=
+  IsFiniteLength.of_injective hβ
+    (f := Representation.IntertwiningMap.equivLinearMapAsModule α β ι) hι
 
 theorem hasFiniteLength_of_subsingleton [Subsingleton V] (β : Representation F G V) :
     HasFiniteLength β := by
-  haveI : Subsingleton (Subrepresentation β) := ⟨fun S T => by
-    ext v
-    rw [Subsingleton.elim v 0]
-    exact ⟨fun _ => T.toSubmodule.zero_mem, fun _ => S.toSubmodule.zero_mem⟩⟩
-  exact (hasFiniteLength_iff_wellFounded β).2 ⟨Finite.to_wellFoundedGT, Finite.to_wellFoundedLT⟩
+  haveI : Subsingleton β.asModule := β.asModuleEquiv.toEquiv.subsingleton
+  exact IsFiniteLength.of_subsingleton
 
 end General
 

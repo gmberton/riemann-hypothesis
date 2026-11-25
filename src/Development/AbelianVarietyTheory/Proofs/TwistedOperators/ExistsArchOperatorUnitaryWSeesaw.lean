@@ -5,6 +5,7 @@ public import Development.AbelianVarietyTheory.Proofs.DivisorProofs.AdelicSchwar
 public import Development.AbelianVarietyTheory.Proofs.TwistedOperators.ExistsFiniteWeightComplementaryArchimedeanSchwar
 public import Development.AbelianVarietyTheory.Proofs.TwistedOperators.ExistsSchwartzArchimedeanSliceAdelicSchwartz
 public import Development.AbelianVarietyTheory.Proofs.TwistedOperators.HeisenbergCommutingOperatorIndependentOfArchimedeanFiber
+import Development.AbelianVarietyTheory.Proofs.DivisorProofs.ExistsArchOperatorCompactUnitaryW
 import Mathlib.Algebra.Order.Floor.Extended
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Algebra.Order.Interval.Basic
@@ -90,36 +91,11 @@ theorem comm_offI {n d : ℕ} {X : Spc F E n} {W : Spc F E d} {M : Model σ X W}
     (u : AF F) (hu : evI F u = 0) (p q : Fin n × Fin d → AF F) (Φ : (Fin n × Fin d → AF F) → ℂ)
     (hΦ : Φ ∈ GlobalTheory.WeilM.schA F (Fin n × Fin d)) :
     om x (GlobalTheory.WeilM.schr ψ (u • p, u • q) Φ) = GlobalTheory.WeilM.schr ψ (u • p, u • q) (om x Φ) := by
-  have hW := GlobalTheory.WeilM.IsUWeilPair.isUSplitting hw
-  set w := M.co.e.symm (p, q) with hw'
-  have he : M.co.e (u • w) = (u • p, u • q) := by
-    rw [LinearEquiv.map_smul, hw', LinearEquiv.apply_symm_apply, Prod.smul_mk]
-  have h1 : u • (mat x.1 - 1) = 0 := hx1 u hu
-  have h2 : u • (mat x.2 - 1) = 0 := hx2 u hu
-  have e1 : mat x.1 * (u • w) = u • w := by
-    have : mat x.1 * (u • w) - u • w = (u • (mat x.1 - 1)) * w := by
-      rw [Matrix.smul_mul, Matrix.sub_mul, Matrix.one_mul, Matrix.mul_smul, smul_sub]
-    rw [h1, Matrix.zero_mul, sub_eq_zero] at this
-    exact this
-  have e2 : (u • w) * (mat x.2)ᵀ = u • w := by
-    have : (u • w) * (mat x.2)ᵀ - u • w = w * (u • (mat x.2 - 1))ᵀ := by
-      rw [Matrix.transpose_smul, Matrix.mul_smul, Matrix.smul_mul, Matrix.transpose_sub, Matrix.transpose_one,
-        Matrix.mul_sub, Matrix.mul_one, smul_sub]
-    rw [h2, Matrix.transpose_zero, Matrix.mul_zero, sub_eq_zero] at this
-    exact this
-  have hact : GlobalTheory.WeilM.actAB (cA σ) x (u • w) = u • w := by
-    simp only [GlobalTheory.WeilM.actAB]
-    have := e1
-    simp only [mat] at this e2
-    rw [this, e2]
-  have h3 := hW.impl x (u • w) Φ hΦ
-  simp only [GlobalTheory.WeilM.Darboux.rho, he, hact] at h3
-  exact h3
+  exact GlobalTheory.ArchLocalAct.comm_offI hw x hx1 hx2 u hu p q Φ hΦ
 
 theorem schr_trans' (ψ : AddChar (AF F) ℂ) {κ : Type} [Fintype κ] (w : κ → AF F) (Φ : (κ → AF F) → ℂ) :
-    GlobalTheory.WeilM.schr ψ (w, 0) Φ = fun y => Φ (y + w) := by
-  funext y
-  simp [GlobalTheory.WeilM.schr]
+    GlobalTheory.WeilM.schr ψ (w, 0) Φ = fun y => Φ (y + w) :=
+  GlobalTheory.ArchLocalAct.schr_trans' ψ w Φ
 
 end GlobalTheory.ArchFactor
 

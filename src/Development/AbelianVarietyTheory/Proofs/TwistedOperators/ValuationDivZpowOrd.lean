@@ -134,58 +134,34 @@ theorem _root_.GlobalTheory.LocalCartan.exists_diagT (g : GL n k) :
 open ValuativeRel Matrix in
 variable {k : Type} [Field k] [ValuativeRel k] [TopologicalSpace k] [IsNonarchimedeanLocalField k]
   {n : Type} [Fintype n] [DecidableEq n] in
-private lemma ord_one_twisted_operators : _root_.GlobalTheory.SmGL.ord k 1 = 0 :=
-  _root_.GlobalTheory.SmGL.ord_eq_zero_iff.mpr (by simp)
-
-open ValuativeRel Matrix in
-variable {k : Type} [Field k] [ValuativeRel k] [TopologicalSpace k] [IsNonarchimedeanLocalField k]
-  {n : Type} [Fintype n] [DecidableEq n] in
-private lemma ord_inv_twisted_operators (y : kˣ) :
-    _root_.GlobalTheory.SmGL.ord k y⁻¹ = -_root_.GlobalTheory.SmGL.ord k y := by
-  have h := _root_.GlobalTheory.SmGL.ord_mul k y y⁻¹
-  rw [mul_inv_cancel, ord_one_twisted_operators] at h
-  omega
-
-open ValuativeRel Matrix in
-variable {k : Type} [Field k] [ValuativeRel k] [TopologicalSpace k] [IsNonarchimedeanLocalField k]
-  {n : Type} [Fintype n] [DecidableEq n] in
-private lemma ord_zpow_uniformizer' {ϖ : kˣ}
-    (hϖ : valuation k (ϖ : k) = uniformizer k) (m : ℤ) :
-    _root_.GlobalTheory.SmGL.ord k (ϖ ^ m) = m := by
-  have h1 := _root_.GlobalTheory.SmGL.ord_eq_one hϖ
-  induction m using Int.induction_on with
-  | zero => simpa using ord_one_twisted_operators
-  | succ i ih => rw [_root_.zpow_add_one, _root_.GlobalTheory.SmGL.ord_mul, ih, h1]
-  | pred i ih =>
-    rw [_root_.zpow_sub_one, _root_.GlobalTheory.SmGL.ord_mul, ih, ord_inv_twisted_operators, h1]
-    ring
-
-open ValuativeRel Matrix in
-variable {k : Type} [Field k] [ValuativeRel k] [TopologicalSpace k] [IsNonarchimedeanLocalField k]
-  {n : Type} [Fintype n] [DecidableEq n] in
-private lemma exists_unit_mul_zpow_uniformizer {ϖ : kˣ}
-    (hϖ : valuation k (ϖ : k) = uniformizer k) (x : kˣ) :
-    ∃ u : kˣ, ∃ m : ℤ, valuation k (u : k) = 1 ∧ x = u * ϖ ^ m := by
-  refine ⟨x * (ϖ ^ _root_.GlobalTheory.SmGL.ord k x)⁻¹, _root_.GlobalTheory.SmGL.ord k x, ?_, by simp⟩
-  apply _root_.GlobalTheory.SmGL.ord_eq_zero_iff.mp
-  rw [_root_.GlobalTheory.SmGL.ord_mul, ord_inv_twisted_operators,
-    ord_zpow_uniformizer' hϖ]
-  ring
-
-
-open ValuativeRel Matrix in
-variable {k : Type} [Field k] [ValuativeRel k] [TopologicalSpace k] [IsNonarchimedeanLocalField k]
-  {n : Type} [Fintype n] [DecidableEq n] in
 theorem _root_.GlobalTheory.LocalCartan.cartan_decomposition (k : Type) [Field k] [ValuativeRel k]
     [TopologicalSpace k] [IsNonarchimedeanLocalField k] (n : Type) [Fintype n] [DecidableEq n]
     (ϖ : kˣ) (g : GL n k) (hϖ : valuation k (ϖ : k) = uniformizer k) :
     ∃ x ∈ _root_.GlobalTheory.SplitWeil.KO k n, ∃ y ∈ _root_.GlobalTheory.SplitWeil.KO k n,
       ∃ m : n → ℤ, g = x * _root_.GlobalTheory.SmGL.diagT k n (fun i => ϖ ^ m i) * y := by
   obtain ⟨x, hx, y, hy, t, rfl⟩ := _root_.GlobalTheory.LocalCartan.exists_diagT g
-  choose u m hu htu using fun i => exists_unit_mul_zpow_uniformizer hϖ (t i)
+  let ordHom : kˣ →* Multiplicative ℤ :=
+    { toFun := fun z => Multiplicative.ofAdd (_root_.GlobalTheory.SmGL.ord k z)
+      map_one' := by
+        have : _root_.GlobalTheory.SmGL.ord k (1 : kˣ) = 0 :=
+          _root_.GlobalTheory.SmGL.ord_eq_zero_iff.2 (by simp)
+        simp [this]
+      map_mul' := fun a b => by simp [_root_.GlobalTheory.SmGL.ord_mul, ofAdd_add] }
+  let m : n → ℤ := fun i => _root_.GlobalTheory.SmGL.ord k (t i)
+  let u : n → kˣ := fun i => t i * (ϖ ^ m i)⁻¹
+  have hu : ∀ i, valuation k (u i : k) = 1 := fun i =>
+    _root_.GlobalTheory.SmGL.ord_eq_zero_iff.mp <| by
+      have hz : _root_.GlobalTheory.SmGL.ord k (ϖ ^ m i) = m i := by
+        simpa [ordHom, toAdd_zpow, smul_eq_mul, _root_.GlobalTheory.SmGL.ord_eq_one hϖ] using
+          congrArg Multiplicative.toAdd (map_zpow ordHom ϖ (m i))
+      have hi : _root_.GlobalTheory.SmGL.ord k (ϖ ^ m i)⁻¹ = -m i := by
+        simpa [ordHom, toAdd_inv, hz] using
+          congrArg Multiplicative.toAdd (map_inv ordHom (ϖ ^ m i))
+      rw [show u i = t i * (ϖ ^ m i)⁻¹ from rfl, _root_.GlobalTheory.SmGL.ord_mul, hi,
+        add_neg_cancel]
   refine ⟨x * _root_.GlobalTheory.SmGL.diagT k n u,
     mul_mem hx (_root_.GlobalTheory.LocalCartan.diagT_mem_KO hu), y, hy, m, ?_⟩
-  have ht : t = u * fun i => ϖ ^ m i := funext htu
+  have ht : t = u * fun i => ϖ ^ m i := funext fun i => by simp [u]
   rw [ht, map_mul]
   simp only [mul_assoc]
 

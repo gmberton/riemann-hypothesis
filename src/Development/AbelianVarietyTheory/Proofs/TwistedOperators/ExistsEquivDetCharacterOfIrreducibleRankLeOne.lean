@@ -159,34 +159,6 @@ private theorem false_of_forall_sub_smul_bijective {V : Type} [AddCommGroup V] [
   rw [Cardinal.mk_complex] at hC
   exact absurd hC (not_le.2 Cardinal.aleph0_lt_continuum)
 
-private theorem exists_eq_smul_one_of_intertwining {G V : Type} [Group G] [AddCommGroup V] [Module ℂ V]
-    {σ : Representation ℂ G V} (hi : σ.IsIrreducible) {S : Set V} (hS : S.Countable)
-    (hspan : Submodule.span ℂ S = ⊤) {v : V} (hv : v ≠ 0) (T : Module.End ℂ V)
-    (hT : ∀ h x, T (σ h x) = σ h (T x)) : ∃ a : ℂ, T = a • (1 : Module.End ℂ V) := by
-  by_contra! hne
-  refine false_of_forall_sub_smul_bijective hS hspan hv T fun a => ?_
-  have hU : ∀ h x, (T - a • (1 : Module.End ℂ V)) (σ h x) = σ h ((T - a • (1 : Module.End ℂ V)) x) := by
-    intro h x
-    simp only [LinearMap.sub_apply, LinearMap.smul_apply, Module.End.one_apply, map_sub, map_smul, hT]
-  have hU0 : T - a • (1 : Module.End ℂ V) ≠ 0 := fun h0 => hne a (sub_eq_zero.1 h0)
-  let K : Subrepresentation σ := ⟨LinearMap.ker (T - a • (1 : Module.End ℂ V)), fun h x hx => by
-    rw [LinearMap.mem_ker] at hx ⊢
-    rw [hU, hx, map_zero]⟩
-  let R : Subrepresentation σ := ⟨LinearMap.range (T - a • (1 : Module.End ℂ V)), fun h x hx => by
-    obtain ⟨y, rfl⟩ := hx
-    exact ⟨σ h y, hU h y⟩⟩
-  constructor
-  · rcases hi.eq_bot_or_eq_top K with hK | hK
-    · have hK' : LinearMap.ker (T - a • (1 : Module.End ℂ V)) = ⊥ := congrArg Subrepresentation.toSubmodule hK
-      exact LinearMap.ker_eq_bot.1 hK'
-    · have hK' : LinearMap.ker (T - a • (1 : Module.End ℂ V)) = ⊤ := congrArg Subrepresentation.toSubmodule hK
-      exact absurd (LinearMap.ker_eq_top.1 hK') hU0
-  · rcases hi.eq_bot_or_eq_top R with hR | hR
-    · have hR' : LinearMap.range (T - a • (1 : Module.End ℂ V)) = ⊥ := congrArg Subrepresentation.toSubmodule hR
-      exact absurd (LinearMap.range_eq_bot.1 hR') hU0
-    · have hR' : LinearMap.range (T - a • (1 : Module.End ℂ V)) = ⊤ := congrArg Subrepresentation.toSubmodule hR
-      exact LinearMap.range_eq_top.1 hR'
-
 theorem exists_equiv_detRep (k : Type) [Field k] [ValuativeRel k] [TopologicalSpace k] [IsNonarchimedeanLocalField k]
     (c : Type) [Fintype c] [DecidableEq c] [Subsingleton c] (V : Type) [AddCommGroup V] [Module ℂ V]
     (σ : Representation ℂ (GL c k) V) (hs : IsSmooth σ) (hi : σ.IsIrreducible) :
@@ -204,12 +176,8 @@ theorem exists_equiv_detRep (k : Type) [Field k] [ValuativeRel k] [TopologicalSp
             mul_comm (Matrix.GeneralLinearGroup.det g)]
       _ = h * g := by rw [scalar_det_of_subsingleton, scalar_det_of_subsingleton]
 
-  obtain ⟨v, hv⟩ : ∃ v : V, v ≠ 0 := by
-    by_contra! hcon
-    haveI : Subsingleton V := ⟨fun x y => by rw [hcon x, hcon y]⟩
-    apply (bot_ne_top : (⊥ : Subrepresentation σ) ≠ ⊤)
-    apply Subrepresentation.toSubmodule_injective
-    exact (Submodule.eq_bot_of_subsingleton (p := (⊤ : Submodule ℂ V))).symm
+  haveI : Nontrivial V := IsSimpleModule.nontrivial (MonoidAlgebra ℂ (GL c k)) σ.asModule
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
 
   let O : Subrepresentation σ := ⟨Submodule.span ℂ (Set.range fun g : GL c k => σ g v), fun h x hx => by
     have hle : Submodule.map (σ h) (Submodule.span ℂ (Set.range fun g : GL c k => σ g v)) ≤
@@ -265,10 +233,13 @@ theorem exists_equiv_detRep (k : Type) [Field k] [ValuativeRel k] [TopologicalSp
     rintro _ ⟨g, rfl⟩
     exact hsub g
 
-  have hscal : ∀ g : GL c k, ∃ a : ℂ, σ g = a • (1 : Module.End ℂ V) := fun g =>
-    exists_eq_smul_one_of_intertwining hi (hDc.image _) hspan hv (σ g) fun h x => by
-      show (σ g * σ h) x = (σ h * σ g) x
-      rw [← map_mul, ← map_mul, hcomm g h]
+  have hscal : ∀ g : GL c k, ∃ a : ℂ, σ g = a • (1 : Module.End ℂ V) := fun g => by
+    let f : σ.IntertwiningMap σ := ⟨σ g, fun h => by
+      rw [← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp, ← map_mul, ← map_mul, hcomm g h]⟩
+    by_contra! hne
+    refine false_of_forall_sub_smul_bijective (hDc.image _) hspan hv (σ g) fun a => ?_
+    exact (Representation.IsIrreducible.bijective_or_eq_zero (f - a • 1)).resolve_right fun h0 =>
+      hne a (sub_eq_zero.1 (congrArg Representation.IntertwiningMap.toLinearMap h0))
 
   have hline : Submodule.span ℂ {v} = ⊤ := by
     let L : Subrepresentation σ := ⟨Submodule.span ℂ {v}, fun g x hx => by

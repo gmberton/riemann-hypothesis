@@ -45,6 +45,7 @@ import Mathlib.Tactic.ReduceModChar
 import Mathlib.Topology.Sheaves.Init
 import Std.Tactic.BVDecide.Normalize.Prop
 import Formalism.LogVandermondeBounds.LogVandermondeProofs.CardStabilizerVector
+import Development.AbelianVarietyTheory.Proofs.IwasawaDecomposition.PinsCardIndexRanks
 
 @[expose] public section
 
@@ -126,57 +127,22 @@ private theorem blk_mono' (s k : ℕ) {a b : ℕ} (hab : a ≤ b) : StandardLatt
   unfold StandardLattice.blk
   split_ifs <;> omega
 
-private theorem card_excluded_pairs_eq_k (s k : ℕ) :
-    Nat.card {p : Fin (k + 2 * s + 1) × Fin (k + 2 * s + 1) //
-      p.1 < p.2 ∧ (p.2.val = s + k ∧ StandardLattice.blk s k p.1.val = s)} = k := by
-  have hb : ∀ a : ℕ, StandardLattice.blk s k a = s → s ≤ a ∧ a < s + k + 1 := by
-    intro a ha
-    unfold StandardLattice.blk at ha
-    split_ifs at ha <;> omega
-  have hb' : ∀ a : ℕ, s ≤ a → a < s + k + 1 → StandardLattice.blk s k a = s := by
-    intro a h1 h2
-    unfold StandardLattice.blk
-    split_ifs <;> omega
-  have e : {p : Fin (k + 2 * s + 1) × Fin (k + 2 * s + 1) //
-      p.1 < p.2 ∧ (p.2.val = s + k ∧ StandardLattice.blk s k p.1.val = s)} ≃ Fin k :=
-    { toFun := fun p => ⟨p.1.1.val - s, by
-        have h1 := hb _ p.2.2.2
-        have h2 : p.1.1.val < p.1.2.val := p.2.1
-        have h3 := p.2.2.1
-        omega⟩
-      invFun := fun t => ⟨(⟨s + t.val, by omega⟩, ⟨s + k, by omega⟩), by
-        refine ⟨?_, rfl, hb' (s + t.val) (Nat.le_add_right _ _) (by omega)⟩
-        show s + t.val < s + k
-        omega⟩
-      left_inv := fun p => by
-        have h1 := hb _ p.2.2.2
-        have h3 := p.2.2.1
-        apply Subtype.ext
-        apply Prod.ext
-        · apply Fin.ext
-          simp only
-          omega
-        · apply Fin.ext
-          simp only
-          omega
-      right_inv := fun t => by
-        apply Fin.ext
-        simp }
-  rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_fin]
-
 private theorem card_not_excluded_pairs_eq (s k : ℕ) :
     Nat.card {p : Fin (k + 2 * s + 1) × Fin (k + 2 * s + 1) //
       p.1 < p.2 ∧ ¬ (p.2.val = s + k ∧ StandardLattice.blk s k p.1.val = s)} =
       s * (2 * k + 2 * s + 1) + k * (k - 1) / 2 := by
-  classical
-  have hsplit := Finset.card_filter_add_card_filter_not
-    (s := Finset.univ.filter (fun p : Fin (k + 2 * s + 1) × Fin (k + 2 * s + 1) => p.1 < p.2))
-    (fun p => p.2.val = s + k ∧ StandardLattice.blk s k p.1.val = s)
-  rw [Finset.filter_filter, Finset.filter_filter] at hsplit
-  have hall := _root_.Formalism.LogVandermondeBounds.StandardLattice.card_lt_pairs (k + 2 * s + 1)
-  have hex := card_excluded_pairs_eq_k s k
-  rw [Nat.card_eq_fintype_card, Fintype.card_subtype] at hall hex ⊢
-  rw [hex, hall] at hsplit
+  have hsplit := GlobalTheory.Mem.GrpCount.card_pairs_split (r := k + 2 * s + 1)
+    (a := s) (c := s + k) (Nat.le_add_right s k) (by omega)
+  have heq : Nat.card {p : Fin (k + 2 * s + 1) × Fin (k + 2 * s + 1) //
+      p.1 < p.2 ∧ ¬ (p.2.val = s + k ∧ StandardLattice.blk s k p.1.val = s)} =
+    Nat.card {p : Fin (k + 2 * s + 1) × Fin (k + 2 * s + 1) //
+      p.1 < p.2 ∧ ¬ (s ≤ p.1.val ∧ p.1.val < s + k ∧ p.2.val = s + k)} :=
+    Nat.card_congr <| Equiv.subtypeEquivRight fun p => and_congr_right fun hlt => not_congr <| by
+      have hlt' : p.1.val < p.2.val := hlt
+      unfold StandardLattice.blk
+      split_ifs <;> omega
+  rw [_root_.Formalism.LogVandermondeBounds.StandardLattice.card_lt_pairs, ← heq,
+    Nat.add_sub_cancel_left] at hsplit
   have e : (k + 2 * s + 1) * (k + 2 * s + 1 - 1) = k * (k - 1) + (k + s * (2 * k + 2 * s + 1)) * 2 := by
     rw [Nat.add_sub_cancel]
     rcases k with _ | k

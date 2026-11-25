@@ -60,40 +60,9 @@ variable [IsNoetherianRing V] [IsAdicComplete (maximalIdeal V) V]
 theorem isAdicComplete_mvPowerSeries_finite (τ : Type) [Finite τ] :
     IsAdicComplete (maximalIdeal (MvPowerSeries τ V)) (MvPowerSeries τ V) := by
   obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin τ
-
-  have ha : MvPowerSeries.HasSubst
-      (fun i : Fin n => (MvPowerSeries.X (e.symm i) : MvPowerSeries τ V)) :=
-    MvPowerSeries.hasSubst_of_constantCoeff_zero (fun _ => by simp)
-  have hb : MvPowerSeries.HasSubst
-      (fun t : τ => (MvPowerSeries.X (e t) : MvPowerSeries (Fin n) V)) :=
-    MvPowerSeries.hasSubst_of_constantCoeff_zero (fun _ => by simp)
-  have hba : ∀ f : MvPowerSeries (Fin n) V,
-      MvPowerSeries.substAlgHom (R := V) hb (MvPowerSeries.substAlgHom (R := V) ha f) = f := by
-    intro f
-    rw [MvPowerSeries.substAlgHom_comp_substAlgHom_apply]
-    have hX : (fun i : Fin n => MvPowerSeries.substAlgHom (R := V) hb
-        (MvPowerSeries.X (e.symm i) : MvPowerSeries τ V)) = MvPowerSeries.X := by
-      funext i
-      rw [MvPowerSeries.substAlgHom_X, Equiv.apply_symm_apply]
-    rw [MvPowerSeries.substAlgHom_apply, hX, MvPowerSeries.subst_self, id]
-  have hab : ∀ g : MvPowerSeries τ V,
-      MvPowerSeries.substAlgHom (R := V) ha (MvPowerSeries.substAlgHom (R := V) hb g) = g := by
-    intro g
-    rw [MvPowerSeries.substAlgHom_comp_substAlgHom_apply]
-    have hX : (fun t : τ => MvPowerSeries.substAlgHom (R := V) ha
-        (MvPowerSeries.X (e t) : MvPowerSeries (Fin n) V)) = MvPowerSeries.X := by
-      funext t
-      rw [MvPowerSeries.substAlgHom_X, Equiv.symm_apply_apply]
-    rw [MvPowerSeries.substAlgHom_apply, hX, MvPowerSeries.subst_self, id]
-  let E : MvPowerSeries (Fin n) V ≃+* MvPowerSeries τ V :=
-    { toFun := MvPowerSeries.substAlgHom (R := V) ha
-      invFun := MvPowerSeries.substAlgHom (R := V) hb
-      left_inv := hba
-      right_inv := hab
-      map_mul' := map_mul _
-      map_add' := map_add _ }
   have := GlobalTheory.CohenStructure.isAdicComplete_mvPowerSeries V n
-  exact GlobalTheory.CohenStructure.isAdicComplete_of_ringEquiv E
+  exact GlobalTheory.CohenStructure.isAdicComplete_of_ringEquiv
+    (MvPowerSeries.renameEquiv V e.symm).toRingEquiv
 
 variable {σ τ : Type} [Finite σ] [Finite τ]
 

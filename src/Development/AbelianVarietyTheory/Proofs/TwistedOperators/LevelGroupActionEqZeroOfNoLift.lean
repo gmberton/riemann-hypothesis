@@ -41,6 +41,7 @@ import Mathlib.Tactic.ReduceModChar
 import Mathlib.Topology.Sheaves.Init
 import Formalism.LocalToGlobal.IndefiniteReal.ExistsChosenExtremalVector
 import Formalism.LocalToGlobal.ProjectiveLattices.ErealAddIInf
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.LevelGroupActionIsAction
 
 @[expose] public section
 
@@ -69,14 +70,8 @@ theorem goodProjector_coeff_classFunction (D : D7) (g h : G0g D.nd) : D.ntypes.e
 variable {D : D7} {V : HSp D} {β : GL (Fin V.rank) (Lev.EAf D)} {L : Formalism.L2.DIV.LevDat D.host.E ℂ V.rank}
 
 theorem isLift_mul {g g' : G0 L.Pg L.r} {κ κ' : GA D V} (hκ : IsLevelLift V β L g κ) (hκ' : IsLevelLift V β L g' κ') :
-    IsLevelLift V β L (g * g') (κ * κ') := by
-  unfold IsLevelLift at hκ hκ' ⊢
-  obtain ⟨h1, h2, h3⟩ := hκ
-  obtain ⟨h1', h2', h3'⟩ := hκ'
-  refine ⟨mul_mem h1 h1', ?_, ?_⟩
-  · rw [map_mul]
-    exact mul_mem h2 h2'
-  · rw [map_mul, Formalism.L2.DIV.rTup_mul h2 h2', h3, h3']
+    IsLevelLift V β L (g * g') (κ * κ') :=
+  GlobalTheory.FlagAction.isLift_mul hκ hκ'
 
 theorem isLift_inv {g : G0 L.Pg L.r} {κ : GA D V} (hκ : IsLevelLift V β L g κ) :
     IsLevelLift V β L g⁻¹ κ⁻¹ := by
@@ -87,34 +82,10 @@ theorem isLift_inv {g : G0 L.Pg L.r} {κ : GA D V} (hκ : IsLevelLift V β L g �
     exact inv_mem h2
   · rw [map_inv, Formalism.L2.DIV.rTup_inv h2, h3]
 
-private theorem actG0_apply_eq_levChi_inv_mul_choose {g : G0 L.Pg L.r} (hex : ∃ κ, IsLevelLift V β L g κ) (F : GA D V → ℂ) (x : GA D V) :
-    actG0 V β L g F x = (levChi V β (flagL L) hex.choose)⁻¹ * F (x * hex.choose) := by
-  unfold actG0
-  rw [dite_eq_left hex]
-
-private theorem levChi_flagL_mul_of_mem_parLev {κ κ' : GA D V} (hκ : finE V κ ∈ Formalism.L2.DIV.parLev D.sp.cm V.gram β L)
-    (hκ' : finE V κ' ∈ Formalism.L2.DIV.parLev D.sp.cm V.gram β L) :
-    levChi V β (flagL L) (κ * κ') = levChi V β (flagL L) κ * levChi V β (flagL L) κ' := by
-  unfold levChi
-  rw [map_mul, levFn_flag_mul hκ hκ', Units.val_mul]
-
 theorem levelGroupAction_mul_of_lifts {g g' : G0 L.Pg L.r} (hg : ∃ κ, IsLevelLift V β L g κ) (hg' : ∃ κ, IsLevelLift V β L g' κ)
     {F : GA D V → ℂ} (hF : HasType V β (flag1L L) F) :
-    actG0 V β L g (actG0 V β L g' F) = actG0 V β L (g * g') F := by
-  have hex := hg
-  obtain ⟨κ', hκ'⟩ := hg'
-  funext x
-  have hc : IsLevelLift V β L g hex.choose := hex.choose_spec
-  have hm : IsLevelLift V β L (g * g') (hex.choose * κ') := isLift_mul hc hκ'
-  have hpar : finE V hex.choose ∈ Formalism.L2.DIV.parLev D.sp.cm V.gram β L := by
-    unfold IsLevelLift at hc
-    exact hc.2.1
-  have hpar' : finE V κ' ∈ Formalism.L2.DIV.parLev D.sp.cm V.gram β L := by
-    unfold IsLevelLift at hκ'
-    exact hκ'.2.1
-  rw [actG0_apply_eq_levChi_inv_mul_choose hex, level_action_spec hF ⟨κ', hκ'⟩ κ' hκ' (x * hex.choose),
-    level_action_spec hF ⟨_, hm⟩ _ hm x, levChi_flagL_mul_of_mem_parLev hpar hpar', mul_assoc x]
-  ring
+    actG0 V β L g (actG0 V β L g' F) = actG0 V β L (g * g') F :=
+  (GlobalTheory.FlagAction.act_mul hF hg hg').symm
 
 theorem levelGroupAction_eq_zero_of_no_lift {g : G0 L.Pg L.r} (hg : ¬ ∃ κ, IsLevelLift V β L g κ) (F : GA D V → ℂ) :
     actG0 V β L g F = 0 := by

@@ -53,11 +53,6 @@ private theorem lamX_eq_of_snd_eq (I : AutInst) {p q : I.GA} (h : p.2 = q.2) : l
   unfold lamX
   rw [h]
 
-private theorem GL_mulVec_injective {K : Type} [Field K] {m : ℕ} (g : GL (Fin m) K) {u v : Fin m → K}
-    (h : (g : Matrix (Fin m) (Fin m) K) *ᵥ u = (g : Matrix (Fin m) (Fin m) K) *ᵥ v) : u = v := by
-  have h' := congrArg (fun w => ((g⁻¹ : GL (Fin m) K) : Matrix (Fin m) (Fin m) K) *ᵥ w) h
-  simpa [Matrix.mulVec_mulVec] using h'
-
 theorem lamX_move (I : AutInst) (x x' : I.Gf) (h : ∃ γ ∈ I.GFset, ∃ k ∈ I.Kset, γ.2 * x = x' * k) :
     ∃ g : GL (Fin I.n) I.E, g ∈ Formalism.UG.UJ (starRingEnd I.E) I.J ∧
       ∀ y, (g : Matrix (Fin I.n) (Fin I.n) I.E) *ᵥ y ∈ lamX I (1, x') ↔ y ∈ lamX I (1, x) := by
@@ -76,7 +71,7 @@ theorem lamX_move (I : AutInst) (x x' : I.Gf) (h : ∃ γ ∈ I.GFset, ∃ k ∈
   · rintro ⟨z, hz, hzy⟩
     have hzy' : (g : Matrix (Fin I.n) (Fin I.n) I.E) *ᵥ z = (g : Matrix (Fin I.n) (Fin I.n) I.E) *ᵥ y := by
       simpa using hzy
-    rwa [← GL_mulVec_injective g hzy']
+    rwa [← Matrix.mulVec_injective_of_isUnit g.isUnit hzy']
   · intro hy
     exact ⟨y, hy, by simp⟩
 
@@ -114,17 +109,6 @@ theorem gram_mul {E : Type} [CommRing E] [StarRing E] {n p q : ℕ} (J : Matrix 
   rw [Matrix.conjTranspose_mul]
   simp only [Matrix.mul_assoc]
 
-private theorem star_dotProduct_conjTranspose_mulVec {K : Type} [Field K] [StarRing K] {m : ℕ} (N : Matrix (Fin m) (Fin m) K)
-    (t u : Fin m → K) : star t ⬝ᵥ (Nᴴ *ᵥ u) = star (N *ᵥ t) ⬝ᵥ u := by
-  rw [Matrix.dotProduct_mulVec, Matrix.star_mulVec]
-
-private theorem map_mulVec_eq_mulVec_map {K₀ K : Type} [Field K₀] [Field K] {m : ℕ} (e : K₀ ≃+* K)
-    (g : Matrix (Fin m) (Fin m) K₀) (y : Fin m → K₀) :
-    (fun l => e ((g *ᵥ y) l)) = g.map e *ᵥ fun l => e (y l) := by
-  ext l
-
-  simp [Matrix.mulVec, dotProduct, map_sum, map_mul]
-
 theorem adapted_move : ∀ (I I₀ : AutInst) (e : I₀.E ≃+* I.E) (xf : I.Gf) (a : ℕ) (j : Fin a → ℕ) (S : Fin (a + 1) → Submodule (𝓞 I.E) (Fin I.n → I.E)) (Λ : ∀ i, Submodule (𝓞 I.E) (Fin (j i) → I.E)) (x₀ : I₀.Gf) (T T' : ∀ i, Matrix (Fin I.n) (Fin (j i)) I.E) (T₀ : Matrix (Fin I.n) (Fin I₀.n) I.E), (∀ i, 1 ≤ j i) → IsAdapted I I₀ e xf j S Λ x₀ T T' T₀ → ∀ (Λ' : ∀ i, Submodule (𝓞 I.E) (Fin (j i) → I.E)) (x₀' : I₀.Gf), (∀ i, ∃ γ : GL (Fin (j i)) I.E, ∀ y, (γ : Matrix (Fin (j i)) (Fin (j i)) I.E) *ᵥ y ∈ Λ' i ↔ y ∈ Λ i) → (∃ γ ∈ I₀.GFset, ∃ k ∈ I₀.Kset, γ.2 * x₀ = x₀' * k) → ∃ U U' U₀, IsAdapted I I₀ e xf j S Λ' x₀' U U' U₀ := by
   intro I I₀ e xf a j S Λ x₀ T T' T₀ _ hA Λ' x₀' hΛ hx
   obtain ⟨he, hn, hlat, hiso, hdual, h0, hlam, hS⟩ := hA
@@ -142,13 +126,7 @@ theorem adapted_move : ∀ (I I₀ : AutInst) (e : I₀.E ≃+* I.E) (xf : I.Gf)
     intro i
     rw [← Matrix.conjTranspose_mul, Units.inv_mul, Matrix.conjTranspose_one]
   have hG1 : ((g₀⁻¹ : GL (Fin I₀.n) I₀.E).val).map e * (g₀.val).map e = 1 := by
-    have h1 : ((g₀⁻¹ : GL (Fin I₀.n) I₀.E).val * g₀.val).map e = 1 := by
-      rw [Units.inv_mul]
-      exact Matrix.map_one _ (map_zero e) (map_one e)
-    rw [← h1]
-    ext r s
-
-    simp only [Matrix.map_apply, Matrix.mul_apply, map_sum, map_mul]
+    rw [← Matrix.map_mul, Units.inv_mul, Matrix.map_one _ (map_zero e) (map_one e)]
   refine ⟨fun i => T i * ((γ i)⁻¹).val, fun i => T' i * ((γ i).val)ᴴ,
     T₀ * ((g₀⁻¹ : GL (Fin I₀.n) I₀.E).val).map e, he, hn,
     fun i => isLattice_move (Λ i) (Λ' i) (γ i) (hγ i) (hlat i), ?_, ?_, ?_, ?_, ?_⟩
@@ -165,14 +143,7 @@ theorem adapted_move : ∀ (I I₀ : AutInst) (e : I₀.E ≃+* I.E) (xf : I.Gf)
         Matrix.conjTranspose_one]
     · rw [gram_mul, h2, Matrix.mul_zero, Matrix.zero_mul]
     · rw [gram_mul, h3, Matrix.mul_zero, Matrix.zero_mul]
-  · rw [gram_mul, h0]
-    have key : (((g₀⁻¹ : GL (Fin I₀.n) I₀.E).val).map e)ᴴ * I₀.J.map e *
-        ((g₀⁻¹ : GL (Fin I₀.n) I₀.E).val).map e =
-        (((g₀⁻¹ : GL (Fin I₀.n) I₀.E).val)ᴴ * I₀.J * (g₀⁻¹ : GL (Fin I₀.n) I₀.E).val).map e := by
-      ext r s
-
-      simp only [Matrix.map_apply, Matrix.mul_apply, Matrix.conjTranspose_apply, map_sum, map_mul, he]
-    rw [key, hinv]
+  · rw [gram_mul, h0, ← Matrix.conjTranspose_map e he, ← Matrix.map_mul, ← Matrix.map_mul, hinv]
   · intro z
     rw [hlam z]
     constructor
@@ -180,19 +151,21 @@ theorem adapted_move : ∀ (I I₀ : AutInst) (e : I₀.E ≃+* I.E) (xf : I.Gf)
       refine ⟨fun i => (γ i).val *ᵥ u i, fun i => (((γ i)⁻¹).val)ᴴ *ᵥ u' i, g₀.val *ᵥ y,
         fun i => (hγ i _).2 (hu i), fun i t ht => ?_, (hg₀m y).2 hy, ?_⟩
       · have ht' : ((γ i)⁻¹).val *ᵥ t ∈ Λ i := (hγ i _).1 (by simpa [Matrix.mulVec_mulVec] using ht)
-        rw [star_dotProduct_conjTranspose_mulVec]
+        rw [Matrix.dotProduct_mulVec, ← Matrix.star_mulVec]
         exact hu' i _ ht'
-      · simp only [Matrix.mulVec_mulVec, map_mulVec_eq_mulVec_map, Matrix.mul_assoc, Units.inv_mul, hc, hG1,
-          Matrix.mul_one]
+      · simp_rw [← RingEquiv.coe_toRingHom e, RingHom.map_mulVec, RingEquiv.coe_toRingHom e]
+        simp only [Matrix.mulVec_mulVec, Matrix.mul_assoc, Units.inv_mul, hc, hG1, Matrix.mul_one,
+          Function.comp_def]
     · rintro ⟨w, w', y', hw, hw', hy', rfl⟩
       refine ⟨fun i => ((γ i)⁻¹).val *ᵥ w i, fun i => ((γ i).val)ᴴ *ᵥ w' i,
         (g₀⁻¹ : GL (Fin I₀.n) I₀.E).val *ᵥ y', fun i => (hγ i _).1 ?_, fun i t ht => ?_,
         (hg₀m _).1 ?_, ?_⟩
       · simpa [Matrix.mulVec_mulVec] using hw i
-      · rw [star_dotProduct_conjTranspose_mulVec]
+      · rw [Matrix.dotProduct_mulVec, ← Matrix.star_mulVec]
         exact hw' i _ ((hγ i t).2 ht)
       · simpa [Matrix.mulVec_mulVec] using hy'
-      · simp only [Matrix.mulVec_mulVec, map_mulVec_eq_mulVec_map]
+      · simp_rw [← RingEquiv.coe_toRingHom e, RingHom.map_mulVec, RingEquiv.coe_toRingHom e]
+        simp only [Matrix.mulVec_mulVec, Function.comp_def]
   · intro k z
     rw [hS k z]
     constructor

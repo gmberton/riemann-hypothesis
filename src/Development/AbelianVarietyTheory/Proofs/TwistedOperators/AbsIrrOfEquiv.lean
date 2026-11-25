@@ -91,21 +91,8 @@ theorem absIrr_of_equiv {p q : ℕ} (N : GKMod p q) (hI : Formalism.MainNotions.
       have hmem : a g x - c • x ∈ W := W.sub_mem (hW g x hx) (W.smul_mem c hx)
       have hout := Submodule.mem_map_of_mem (f := (e : K →ₗ[ℂ] N.V)) hmem
       simpa [hg] using hout
-    rcases hI.2 _ (act_mem_of_forall_upq_act_mem N _ hst) with h0 | h1
-    · left
-      rw [eq_bot_iff]
-      intro x hx
-      have hx' : (e : K →ₗ[ℂ] N.V) x ∈ W.map (e : K →ₗ[ℂ] N.V) := Submodule.mem_map_of_mem hx
-      rw [h0, Submodule.mem_bot] at hx'
-      rw [Submodule.mem_bot]
-      simpa using hx'
-    · right
-      rw [eq_top_iff]
-      intro x _
-      have hx' : (e : K →ₗ[ℂ] N.V) x ∈ W.map (e : K →ₗ[ℂ] N.V) := by rw [h1]; trivial
-      obtain ⟨y, hyW, hyx⟩ := Submodule.mem_map.mp hx'
-      have hxy : y = x := e.injective hyx
-      exact hxy ▸ hyW
+    exact (hI.2 _ (act_mem_of_forall_upq_act_mem N _ hst)).imp
+      (Submodule.map_eq_bot_iff (e := e)).mp (Submodule.map_eq_top_iff (e := e)).mp
   · have hc : ∀ Z ∈ upq p q, ((e : K →ₗ[ℂ] N.V) ∘ₗ T ∘ₗ (e.symm : N.V →ₗ[ℂ] K)) ∘ₗ N.act Z =
         N.act Z ∘ₗ ((e : K →ₗ[ℂ] N.V) ∘ₗ T ∘ₗ (e.symm : N.V →ₗ[ℂ] K)) := by
       intro Z hZ
@@ -121,31 +108,20 @@ theorem absIrr_of_equiv {p q : ℕ} (N : GKMod p q) (hI : Formalism.MainNotions.
 
 theorem absIrr_kFin : ∀ (D : D7) (V : HSp D) (S : D.what₂.Tau → SPar) (M : DSModel V S) (τ : D.what₂.Tau) (p q : ℕ) (T : GrpData p q) (R : DSRep T) (φ : Mat p q → Matrix (Fin V.rank) (Fin V.rank) ℂ) (m : ℤ) (U : M.H τ ≃ₗ[ℂ] R.U.H) (a : Matrix (Fin V.rank) (Fin V.rank) ℂ → Module.End ℂ (kFin M τ)), GlobalTheory.IndefiniteRowSideFullHecke.BarMatrix.Matches R M τ φ m U → Formalism.MainNotions.SchurIrreducible.IrrGK R.HK → Formalism.MainNotions.SchurIrreducible.AdmGK R.HK → IsKAct M τ a → AbsIrr fun X : lieAt V τ => a X := by
   intro D V S M τ p q T R φ m U a hM hI hA hK
-  have hfin : ∀ x : kFin M τ, U x ∈ LinearMap.range R.ι := fun x =>
-    LinearMap.mem_range.mpr ((hM.kfin x.1).mp x.2)
-  have hequiv : ∃ e : kFin M τ ≃ₗ[ℂ] R.HK.V, ∀ y, R.ι (e y) = U y := by
-    let f : kFin M τ →ₗ[ℂ] LinearMap.range R.ι :=
-      LinearMap.codRestrict (LinearMap.range R.ι) ((U : M.H τ →ₗ[ℂ] R.U.H) ∘ₗ (kFin M τ).subtype) hfin
-    have hf : ∀ y, (f y : R.U.H) = U y := fun y => rfl
-    have hbij : Function.Bijective f := by
-      constructor
-      · intro x y hxy
-        have hv : U x = U y := by rw [← hf, ← hf, hxy]
-        exact Subtype.ext (U.injective hv)
-      · rintro ⟨y, hy⟩
-        have hk : U.symm y ∈ kFin M τ := by
-          refine (hM.kfin _).mpr ?_
-          rw [U.apply_symm_apply]
-          exact LinearMap.mem_range.mp hy
-        refine ⟨⟨U.symm y, hk⟩, Subtype.ext ?_⟩
-        rw [hf]
-        exact U.apply_symm_apply y
-    let e2 := LinearEquiv.ofInjective R.ι R.ι_inj
-    refine ⟨(LinearEquiv.ofBijective f hbij).trans e2.symm, fun y => ?_⟩
-    have h3 := congrArg Subtype.val (e2.apply_symm_apply (f y))
-    rw [LinearEquiv.ofInjective_apply, hf] at h3
-    exact h3
-  obtain ⟨e, hιe⟩ := hequiv
+  have hmap : (kFin M τ).map (U : M.H τ →ₗ[ℂ] R.U.H) = LinearMap.range R.ι := by
+    ext y
+    constructor
+    · rintro ⟨x, hx, rfl⟩
+      exact LinearMap.mem_range.mpr ((hM.kfin x).mp hx)
+    · intro hy
+      refine ⟨U.symm y, (hM.kfin _).mpr ?_, U.apply_symm_apply y⟩
+      rw [U.apply_symm_apply]
+      exact LinearMap.mem_range.mp hy
+  let e2 := LinearEquiv.ofInjective R.ι R.ι_inj
+  let e : kFin M τ ≃ₗ[ℂ] R.HK.V := (U.ofSubmodules _ _ hmap).trans e2.symm
+  have hιe : ∀ y, R.ι (e y) = U y := fun y => by
+    have h3 := congrArg Subtype.val (e2.apply_symm_apply (U.ofSubmodules _ _ hmap y))
+    rwa [LinearEquiv.ofInjective_apply, LinearEquiv.ofSubmodules_apply] at h3
   refine absIrr_of_equiv R.HK hI hA (fun X : lieAt V τ => a X) e ?_
   intro Z hZ
   have hX : IndefiniteRowSideFullHecke.BarMatrix.toFrame M τ (φ Z) ∈ lieAt V τ := by

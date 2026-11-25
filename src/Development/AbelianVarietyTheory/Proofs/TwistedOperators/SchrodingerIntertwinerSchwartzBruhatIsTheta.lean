@@ -133,38 +133,10 @@ theorem isTheta_placeModel : ∀ (D : D7) (ψ : AddChar (AF D.host.F) ℂ), IsSt
       a • u ∈ (latO S T ΛS ΛT fun _ => True) ⊓ half S T a := fun a ha u hu =>
     AddSubgroup.mem_inf.2 ⟨GlobalTheory.LatticeStable.smul_mem_latO D S T _ _ _ a
       (GlobalTheory.AdIdem.idempotent_mem_intAE D _ (by rw [← RingHom.map_mul, ha])) u hu, by rw [mem_half, smul_smul, ha]⟩
-  have hz : IsThetaFunO ψ S T 0 := by
-    refine ⟨?_, ?_, continuous_const, ?_⟩
-    · intro γ w; simp only [Pi.zero_apply, mul_zero]
-    · exact ⟨⊤, isOpen_univ, fun u _ _ => by funext w; simp only [heisO, Pi.zero_apply, mul_zero]⟩
-    · intro k L _ _ w; exact contDiff_const
-  have hadd : ∀ f g : WO S T → ℂ, IsThetaFunO ψ S T f → IsThetaFunO ψ S T g → IsThetaFunO ψ S T (f + g) := by
-    intro f g hf hg
-    refine ⟨?_, ?_, hf.cont.add hg.cont, ?_⟩
-    · intro γ w; simp only [Pi.add_apply, hf.quasi, hg.quasi, mul_add]
-    · obtain ⟨U, hU, h1⟩ := hf.level
-      obtain ⟨U', hU', h2⟩ := hg.level
-      refine ⟨U ⊓ U', hU.inter hU', fun u hu h0 => ?_⟩
-      funext w
-      have e1 := congrFun (h1 u hu.1 h0) w
-      have e2 := congrFun (h2 u hu.2 h0) w
-      unfold heisO at e1 e2 ⊢
-      rw [Pi.add_apply, Pi.add_apply, mul_add, e1, e2]
-    · intro k L h1 h2 w; exact (hf.smooth k L h1 h2 w).add (hg.smooth k L h1 h2 w)
-  have hsmul : ∀ (c : ℂ) (f : WO S T → ℂ), IsThetaFunO ψ S T f → IsThetaFunO ψ S T (c • f) := by
-    intro c f hf
-    refine ⟨?_, ?_, hf.cont.const_smul c, ?_⟩
-    · intro γ w; rw [Pi.smul_apply, Pi.smul_apply, hf.quasi, smul_eq_mul, smul_eq_mul, mul_left_comm]
-    · obtain ⟨U, hU, h1⟩ := hf.level
-      refine ⟨U, hU, fun u hu h0 => ?_⟩
-      funext w
-      have e1 := congrFun (h1 u hu h0) w
-      unfold heisO at e1 ⊢
-      rw [Pi.smul_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul, mul_left_comm, e1]
-    · intro k L h1 h2 w; exact contDiff_const.mul (hf.smooth k L h1 h2 w)
   refine placeModel_induction ψ _ (fun u hu y hy => ?_) (fun x hx h => ?_)
-    (fun k hk => ?_) (fun y hy => ?_) hTm (IsThetaFunO ψ S T) hz
-    hadd hsmul
+    (fun k hk => ?_) (fun y hy => ?_) hTm (IsThetaFunO ψ S T) GlobalTheory.OrientedHeis.theta_zero
+    (fun _ _ => GlobalTheory.OrientedHeis.theta_add)
+    (fun c _ hf => GlobalTheory.OrientedHeis.theta_smul c hf)
     (fun x hx f hf => isTheta_heis_fin hψ hf (infPart_of_half hinf ((isHalf_iff S T).2 hx)))
     (fun y hy f hf => isTheta_heis_fin hψ hf (infPart_of_half (infPart_cA hinf) ((isHalf_iff S T).2 hy))) hf₀ hΦ
   · exact (hdual u (infPart_of_half hinf ((isHalf_iff S T).2 hu.2))).1 hu.1 y hy.1

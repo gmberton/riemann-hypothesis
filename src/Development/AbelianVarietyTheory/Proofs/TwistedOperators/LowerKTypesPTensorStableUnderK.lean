@@ -99,15 +99,12 @@ theorem vmstab_inK_smul {ε : Fin n → Bool} {Y : Matrix (Fin n) (Fin n) ℂ} (
 theorem vmstab_mem_KC {ε : Fin n → Bool} {k : Matrix (Fin n) (Fin n) ℂ} (h : k ∈ Formalism.REAL.Kset ε) :
     k ∈ KC ε ∧ kᴴ ∈ KC ε := by
   obtain ⟨hu, hc⟩ := h
-  have hr : k * kᴴ = 1 := by
-    have := (Matrix.mem_unitaryGroup_iff).1 hu
-    simpa [Matrix.star_eq_conjTranspose] using this
-  have hl : kᴴ * k = 1 := mul_eq_one_comm.1 hr
   have hc' : kᴴ * Formalism.REAL.Jm ε = Formalism.REAL.Jm ε * kᴴ := by
     have := congrArg Matrix.conjTranspose hc
     rw [Matrix.conjTranspose_mul, Matrix.conjTranspose_mul, Jm_conjTranspose] at this
     exact this.symm
-  exact ⟨⟨⟨⟨k, kᴴ, hr, hl⟩, rfl⟩, hc⟩, ⟨⟨kᴴ, k, hl, hr⟩, rfl⟩, hc'⟩
+  exact ⟨⟨Unitary.isUnit_coe (U := ⟨k, hu⟩), hc⟩,
+    ⟨Unitary.isUnit_coe (U := ⟨kᴴ, Matrix.star_eq_conjTranspose k ▸ Unitary.star_mem hu⟩), hc'⟩⟩
 
 theorem vmstab_conj_thE {ε : Fin n → Bool} {k : Matrix (Fin n) (Fin n) ℂ} (h : k ∈ Formalism.REAL.Kset ε)
     (p : Fin n × Fin n) :
@@ -261,13 +258,6 @@ theorem familyArrayLinearMap_matrixUnitFamilyActionGenerator (E : Fin n → Fin 
       (if c then f else 0) v = if c then f v else 0 := by
     intro c _ f v
     split_ifs <;> rfl
-  have hs1 : ∀ (a : Fin n) (g : Fin n → Fin n → V), (∑ x, ∑ x₁, if a = x then g x x₁ else 0) = ∑ x₁, g a x₁ := by
-    intro a g
-    rw [Fintype.sum_eq_single a (fun x hx => by simp [Ne.symm hx])]
-    simp
-  have hs2 : ∀ (b : Fin n) (g : Fin n → Fin n → V), (∑ x, ∑ x₁, if b = x₁ then g x x₁ else 0) = ∑ x, g x b := by
-    intro b g
-    exact Finset.sum_congr rfl fun x _ => by simp
   ext α
   obtain ⟨⟨a, b⟩, rfl⟩ : ∃ p, α = fun _ => p := ⟨α 0, funext fun i => by rw [Subsingleton.elim i 0]⟩
 
@@ -354,27 +344,12 @@ theorem vminus_stable_under_K : ∀ (V W : Type) [NormedAddCommGroup V] [InnerPr
       map_add' := fun v v' => j.injective (by simp only [map_add (f := _), hf])
       map_smul' := fun c v => j.injective (by simp only [map_smul, hf, RingHom.id_apply]) }
   have ha : ∀ v, j (a₀ v) = actM E ((-Y).map star) (j v) := hf
-  have hJJ := Jm_mul_self ε
-  have hJu : IsUnit (Formalism.REAL.Jm ε) := ⟨⟨_, _, hJJ, hJJ⟩, rfl⟩
-  have hcomm : ∀ Z : Matrix (Fin n) (Fin n) ℂ, Z * Formalism.REAL.Jm ε = Formalism.REAL.Jm ε * Z →
-      NormedSpace.exp Z * Formalism.REAL.Jm ε = Formalism.REAL.Jm ε * NormedSpace.exp Z := by
-    intro Z hZ
-    have h := Matrix.exp_conj (Formalism.REAL.Jm ε) Z hJu
-    rw [Matrix.inv_eq_left_inv hJJ] at h
-    have h' : Formalism.REAL.Jm ε * Z * Formalism.REAL.Jm ε = Z := by
-      rw [Matrix.mul_assoc, hZ, ← Matrix.mul_assoc, hJJ, Matrix.one_mul]
-    rw [h'] at h
-    calc NormedSpace.exp Z * Formalism.REAL.Jm ε
-        = Formalism.REAL.Jm ε * NormedSpace.exp Z * Formalism.REAL.Jm ε * Formalism.REAL.Jm ε := by rw [← h]
-      _ = Formalism.REAL.Jm ε * NormedSpace.exp Z := by
-        rw [Matrix.mul_assoc (Formalism.REAL.Jm ε * NormedSpace.exp Z), hJJ, Matrix.mul_one]
-  have hsm : ∀ t : ℝ, ((t : ℂ) • Y) * Formalism.REAL.Jm ε = Formalism.REAL.Jm ε * ((t : ℂ) • Y) :=
-    fun t => (vmstab_inK_smul hY t).2
   have hct : ∀ t : ℝ, (NormedSpace.exp ((t : ℂ) • Y))ᴴ = NormedSpace.exp (((-t : ℝ) : ℂ) • Y) := by
     intro t
     rw [← Matrix.exp_conjTranspose, Matrix.conjTranspose_smul, hYc, Complex.star_def, Complex.conj_ofReal,
       smul_neg, ← neg_smul, Complex.ofReal_neg]
-  have hKC : ∀ t : ℝ, NormedSpace.exp ((t : ℂ) • Y) ∈ KC ε := fun t => ⟨Matrix.isUnit_exp _, hcomm _ (hsm t)⟩
+  have hKC : ∀ t : ℝ, NormedSpace.exp ((t : ℂ) • Y) ∈ KC ε := fun t =>
+    ⟨Matrix.isUnit_exp _, Commute.exp_left (vmstab_inK_smul hY t).2⟩
   have hKC' : ∀ t : ℝ, (NormedSpace.exp ((t : ℂ) • Y))ᴴ ∈ KC ε := fun t => by
     rw [hct]
     exact hKC (-t)

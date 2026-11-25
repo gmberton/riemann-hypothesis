@@ -5,6 +5,7 @@ public import Development.AbelianVarietyTheory.Proofs.HeightProofs.ExistsCompact
 public import Development.AbelianVarietyTheory.Proofs.HeightProofs.ExistsNhdsZeroPrincipalEqZero
 import Development.AbelianVarietyTheory.Proofs.UnitaryExistence.LcscAdelicUnitaryGroup
 public import Formalism.SatakeDualWeyl.AdelicIwasawaHecke.InclusionInjective
+import GroundTheory.AutomorphicForms.ReductionFinite
 import Mathlib.Algebra.Order.Floor.Extended
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Algebra.Order.Interval.Basic
@@ -65,33 +66,6 @@ namespace GlobalTheory.RegSSLattice
 
 open NumberField Topology in
 open scoped TensorProduct in
-private lemma finite_setOf_algebraMap_mem_of_isCompact (F : Type) [Field F] [NumberField F]
-    {K : Set (AdeleRing (𝓞 F) F)} (hK : IsCompact K) :
-    {c : F | algebraMap F (AdeleRing (𝓞 F) F) c ∈ K}.Finite := by
-  obtain ⟨U, hU, hUF⟩ := _root_.GlobalTheory.AdeleDiscrete.exists_nhds_zero_principal_eq_zero F
-  have hsub : Filter.Tendsto (fun p : AdeleRing (𝓞 F) F × AdeleRing (𝓞 F) F => p.1 - p.2)
-      (𝓝 (0, 0)) (𝓝 0) :=
-    (continuous_fst.sub continuous_snd).tendsto' _ _ (by simp)
-  have hpre : (fun p : AdeleRing (𝓞 F) F × AdeleRing (𝓞 F) F => p.1 - p.2) ⁻¹' U ∈
-      𝓝 ((0 : AdeleRing (𝓞 F) F), (0 : AdeleRing (𝓞 F) F)) := hsub hU
-  rw [nhds_prod_eq] at hpre
-  obtain ⟨V, hV, W, hW, hVW⟩ := Filter.mem_prod_iff.mp hpre
-  have hVU : ∀ v ∈ V ∩ W, ∀ w ∈ V ∩ W, v - w ∈ U := fun v hv w hw =>
-    hVW (Set.mk_mem_prod hv.1 hw.2)
-  obtain ⟨t, -, ht⟩ := hK.elim_nhds_subcover (fun k => {y | y - k ∈ V ∩ W}) fun k _ =>
-    (continuous_id.sub continuous_const).continuousAt.preimage_mem_nhds
-      (by simpa using Filter.inter_mem hV hW)
-  refine (t.finite_toSet.biUnion
-    (t := fun k => {c : F | algebraMap F (AdeleRing (𝓞 F) F) c - k ∈ V ∩ W})
-    fun k _ => ?_).subset fun c hc => ?_
-  · refine Set.Subsingleton.finite fun c hc c' hc' => ?_
-    have := hUF (c - c') (by simpa [map_sub] using hVU _ hc _ hc')
-    exact sub_eq_zero.mp this
-  · simpa using ht hc
-
-
-open NumberField Topology in
-open scoped TensorProduct in
 theorem _root_.GlobalTheory.RegSSLattice.tensorLattice : _root_.GlobalTheory.RegSS.TensorLattice := by
   unfold _root_.GlobalTheory.RegSS.TensorLattice
   intro F B _ _ _ _ _
@@ -138,8 +112,9 @@ theorem _root_.GlobalTheory.RegSSLattice.tensorLattice : _root_.GlobalTheory.Reg
   · intro D hD
     have hD' : IsCompact (h '' D) := hD.image h.continuous
     refine ((Set.Finite.pi (t := fun i => {x : F | algebraMap F (AdeleRing (𝓞 F) F) x ∈
-      (fun y => y i) '' (h '' D)}) fun i => finite_setOf_algebraMap_mem_of_isCompact F
-        (hD'.image (continuous_apply i))).preimage b.equivFun.injective.injOn).subset ?_
+      (fun y => y i) '' (h '' D)}) fun i =>
+        _root_.GroundTheory.Automorphic.Reduction.finite_setOf_algebraMap_mem
+          (hD'.image (continuous_apply i))).preimage b.equivFun.injective.injOn).subset ?_
     intro β hβ
     simp only [Set.mem_preimage, Set.mem_univ_pi, Set.mem_setOf_eq]
     intro i
