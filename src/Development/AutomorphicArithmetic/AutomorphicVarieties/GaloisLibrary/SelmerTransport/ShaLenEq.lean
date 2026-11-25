@@ -136,39 +136,6 @@ section -- clump:auto
 
 open ReciprocityTheory.Gal UpperTheory.V.Base
 
-private theorem exists_continuous_mulEquiv_of_map_embedding {G G' : Type} [Group G] [Group G'] [TopologicalSpace G]
-    [TopologicalSpace G'] (φ : G' →* G) (hφ : Topology.IsEmbedding φ) (U' : Subgroup G')
-    (U : Subgroup G) (h : U'.map φ = U) :
-    ∃ e : U' ≃* U, (∀ u' : U', ((e u' : U) : G) = φ u') ∧ Continuous e ∧ Continuous e.symm := by
-  have hmem : ∀ u' : U', φ u' ∈ U := fun u' => h ▸ Subgroup.mem_map_of_mem φ u'.2
-  let f : U' →* U :=
-    { toFun := fun u' => ⟨φ u', hmem u'⟩
-      map_one' := by ext; simp
-      map_mul' := by intro a b; ext; simp }
-  have hinj : Function.Injective f := by
-    intro a b hab
-    apply Subtype.ext
-    apply hφ.injective
-    exact congrArg Subtype.val hab
-  have hsurj : Function.Surjective f := by
-    rintro ⟨g, hg⟩
-    rw [← h] at hg
-    obtain ⟨x, hx, rfl⟩ := Subgroup.mem_map.mp hg
-    exact ⟨⟨x, hx⟩, rfl⟩
-  let e : U' ≃* U := MulEquiv.ofBijective f ⟨hinj, hsurj⟩
-  have he : ∀ u' : U', ((e u' : U) : G) = φ u' := fun _ => rfl
-  refine ⟨e, he, ?_, ?_⟩
-  · change Continuous (fun u' : U' => (⟨φ u', hmem u'⟩ : U))
-    exact (hφ.continuous.comp continuous_subtype_val).subtype_mk _
-  · rw [Topology.IsEmbedding.subtypeVal.isInducing.continuous_iff, hφ.isInducing.continuous_iff]
-    have hc : (⇑φ ∘ Subtype.val ∘ ⇑e.symm) = (Subtype.val : U → G) := by
-      funext u
-      have := he (e.symm u)
-      rw [e.apply_symm_apply] at this
-      exact this.symm
-    rw [hc]
-    exact continuous_subtype_val
-
 theorem UpperTheory.V.Base.selTransport :
     ∀ (R G M : Type) [CommRing R] [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [AddCommGroup M] [Module R M]
       [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousConstSMul R M] [DiscreteTopology M] (ρ : Representation R G M) (G' : Type) [Group G'] [TopologicalSpace G'] (φ : G' →* G), Topology.IsEmbedding φ →
@@ -177,7 +144,13 @@ theorem UpperTheory.V.Base.selTransport :
         ∀ (z' : Z1U (ρ.comp φ : Representation R G' M) U') (z : Z1U ρ U) hz', (∀ (u' : U') (u : U), φ u' = u → z.1 u = z'.1 u') →
           (Φ ⟨Submodule.Quotient.mk z', hz'⟩ : H1U ρ U) = Submodule.Quotient.mk z := by
   intro R G M _ _ _ _ _ _ _ _ _ _ ρ G' _ _ φ hφ U' U hU 𝒟
-  obtain ⟨e, he, hec, hesc⟩ := exists_continuous_mulEquiv_of_map_embedding φ hφ U' U hU
+  let e : U' ≃* U := (U'.equivMapOfInjective φ hφ.injective).trans (MulEquiv.subgroupCongr hU)
+  have he : ∀ u' : U', ((e u' : U) : G) = φ u' := fun _ => rfl
+  have hec : Continuous e := (hφ.continuous.comp continuous_subtypeVal).subtype_mk _
+  have hesc : Continuous e.symm := by
+    rw [Topology.IsEmbedding.subtypeVal.isInducing.continuous_iff, hφ.isInducing.continuous_iff]
+    exact continuous_subtypeVal.congr fun u =>
+      (congrArg Subtype.val (e.apply_symm_apply u)).symm.trans (he (e.symm u))
   have key : ∀ g : U, φ ((e.symm g : U') : G') = g := fun g => by
     rw [← he, e.apply_symm_apply]
   let A : Representation R U' M := (ρ.comp φ).comp U'.subtype

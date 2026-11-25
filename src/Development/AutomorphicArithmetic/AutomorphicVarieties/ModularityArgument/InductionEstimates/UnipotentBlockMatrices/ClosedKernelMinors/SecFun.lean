@@ -9,6 +9,7 @@ public import Development.AutomorphicArithmetic.AutomorphicVarieties.ModularityA
 import Development.AutomorphicArithmetic.AutomorphicVarieties.ModularityArgument.InductionEstimates.UnipotentBlockMatrices.ClosedKernelMinors.SecStr
 import Development.AutomorphicArithmetic.AutomorphicVarieties.ModularityArgument.InductionEstimates.UnipotentBlockMatrices.ClosedKernelMinors.TensInterp
 import Development.AutomorphicArithmetic.AutomorphicVarieties.ModularityArgument.InductionEstimates.UnipotentBlockMatrices.ClosedKernelMinors.UnipBlocks
+import Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.ContinuousLev
 import GroundTheory.AutomorphicForms.CuspidalDiscreteness.CuspFormsHeight
 import GroundTheory.AutomorphicForms.GL2Classical.ConstantTerm
 import GroundTheory.GlobalFields.Adele.Topology
@@ -58,66 +59,6 @@ open PositivityTheory.Rg.Tf.Core PositivityTheory.Rg.Tf.Adel PositivityTheory.Rg
 open scoped ENNReal NumberField.AdeleRing InnerProductSpace ComplexConjugate
 open UpperTheory.V.Z.InvariantSubmoduleMonicPolynomial
 
-private theorem locHeight_blk {E : Type} [NormedField E] (a b : GL (Fin 2) E) :
-    locHeight (blk a b) ≤ locHeight a * locHeight b := by
-  have ha := one_le_locHeight a
-  have hb := one_le_locHeight b
-  have key : ∀ (A B : Matrix (Fin 2) (Fin 2) E), (∀ i j, ‖A i j‖ ≤ locHeight a) → (∀ i j, ‖B i j‖ ≤ locHeight b) →
-      ∀ i j, ‖(Matrix.reindex finSumFinEquiv finSumFinEquiv (Matrix.fromBlocks A 0 0 B)) i j‖ ≤ locHeight a * locHeight b := by
-    intro A B hA hB i j
-    rw [Matrix.reindex_apply, Matrix.submatrix_apply]
-    rcases finSumFinEquiv.symm i with i | i <;> rcases finSumFinEquiv.symm j with j | j
-    · exact (hA i j).trans (le_mul_of_one_le_right (by linarith) hb)
-    · simp only [Matrix.fromBlocks_apply₁₂, Matrix.zero_apply, norm_zero]; positivity
-    · simp only [Matrix.fromBlocks_apply₂₁, Matrix.zero_apply, norm_zero]; positivity
-    · exact (hB i j).trans (le_mul_of_one_le_left (by linarith) ha)
-  exact locHeight_le (one_le_mul_of_one_le_of_one_le ha hb)
-    (key _ _ (norm_apply_le_locHeight a) (norm_apply_le_locHeight b))
-    (key _ _ (norm_inv_apply_le_locHeight a) (norm_inv_apply_le_locHeight b))
-
-private theorem map_blk {R S : Type} [CommRing R] [CommRing S] (φ : R → S) (h0 : φ 0 = 0) (a b : GL (Fin 2) R)
-    (a' b' : GL (Fin 2) S) (g : GL (Fin (2 + 2)) S) (ha : ∀ i j, a' i j = φ (a i j)) (hb : ∀ i j, b' i j = φ (b i j))
-    (hg : ∀ i j, g i j = φ (blk a b i j)) : g = blk a' b' := by
-  ext i j
-  rw [hg]
-  change φ (Matrix.fromBlocks a.val 0 0 b.val (finSumFinEquiv.symm i) (finSumFinEquiv.symm j)) =
-    Matrix.fromBlocks a'.val 0 0 b'.val (finSumFinEquiv.symm i) (finSumFinEquiv.symm j)
-  rcases finSumFinEquiv.symm i with i | i <;> rcases finSumFinEquiv.symm j with j | j <;> simp [h0, ha, hb]
-
-private theorem chain {c M₁ M₂ q x y z u v w : ℝ} (hc : 0 ≤ c) (hq : 0 ≤ q) (hz : 0 ≤ z) (hu : 0 ≤ u)
-    (h1 : w ≤ c * v * 1) (h2 : v ≤ c * x * u) (h3 : u ≤ c * y * z) (hx : x ≤ |M₁|) (hy : y ≤ 4 * q) (hz' : z ≤ |M₂|) :
-    w ≤ c * (c * |M₁| * (c * 4 * |M₂|)) * q := by
-  have b3 : u ≤ c * (4 * q) * |M₂| := h3.trans (mul_le_mul (mul_le_mul_of_nonneg_left hy hc) hz' hz (by positivity))
-  have b4 : v ≤ c * |M₁| * (c * (4 * q) * |M₂|) :=
-    h2.trans (mul_le_mul (mul_le_mul_of_nonneg_left hx hc) b3 hu (by positivity))
-  rw [mul_one] at h1
-  exact h1.trans ((mul_le_mul_of_nonneg_left b4 hc).trans_eq (by ring))
-
-private theorem height_blk {K : Type} [Field K] [NumberField K] (a b : AdelicGLn.AdelicGL K 2) :
-    AutomorphicForm.height (blk a b) ≤ AutomorphicForm.height a * AutomorphicForm.height b := by
-  have ei : ∀ w : InfinitePlace K, infAt w (blk a b) = blk (infAt w a) (infAt w b) := fun w =>
-    map_blk (fun x : 𝔸[K] => x.1 w) rfl a b (infAt w a) (infAt w b) (infAt w (blk a b)) (infAt_apply w a) (infAt_apply w b)
-      (infAt_apply w (blk a b))
-  have ef : ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 K), finAt v (blk a b) = blk (finAt v a) (finAt v b) := fun v =>
-    map_blk (fun x : 𝔸[K] => x.2 v) rfl a b (finAt v a) (finAt v b) (finAt v (blk a b)) (finAt_apply v a) (finAt_apply v b)
-      (finAt_apply v (blk a b))
-  generalize blk a b = g at ei ef ⊢
-  have h1 : ∏ w : InfinitePlace K, locHeight (infAt w g) ^ w.mult ≤
-      (∏ w : InfinitePlace K, locHeight (infAt w a) ^ w.mult) * ∏ w : InfinitePlace K, locHeight (infAt w b) ^ w.mult := by
-    rw [← Finset.prod_mul_distrib]
-    refine Finset.prod_le_prod₀ (fun w _ => (pow_pos (locHeight_pos _) _).le) fun w _ => ?_
-    rw [← mul_pow, ei]
-    exact pow_le_pow_left₀ (locHeight_pos _).le (locHeight_blk _ _) _
-  have fa := finite_mulSupport_locHeight_finAt a
-  have fb := finite_mulSupport_locHeight_finAt b
-  have h2 := finprod_le_finprod₀ (finite_mulSupport_locHeight_finAt g) (fun v => (locHeight_pos _).le)
-    ((fa.union fb).subset (Function.mulSupport_mul _ _)) fun v => by
-      rw [ef]; exact locHeight_blk _ _
-  rw [finprod_mul_distrib fa fb] at h2
-  exact (mul_le_mul h1 h2 (zero_le_one.trans (one_le_finprod_locHeight g))
-    (mul_nonneg (zero_le_one.trans (one_le_prod_locHeight a)) (zero_le_one.trans (one_le_prod_locHeight b)))).trans_eq
-    (mul_mul_mul_comm _ _ _ _)
-
 private theorem ray_bound (K : Type) [Field K] [NumberField K] (R : ℝ) : ∃ M : ℝ, ∀ t, |t| ≤ R →
     AutomorphicForm.height ((lv (1 : G1 K 2) 1 t : G1 K (2 + 2)) : AdelicGLn.AdelicGL K (2 + 2)) ≤ |M| := by
   have hlc : Continuous fun t : ℝ => lv (1 : G1 K 2) 1 t :=
@@ -141,22 +82,25 @@ private theorem unip_bound (K : Type) [Field K] [NumberField K] : ∃ M : ℝ, �
     exact hq p
   exact ⟨ξ, (hM _ ⟨_, hξ, rfl⟩).trans (le_abs_self _)⟩
 
-private theorem one_le_qht {K : Type} [Field K] [NumberField K] (m : G1 K 2) : 1 ≤ qht m :=
-  le_ciInf fun _ => one_le_height _
-
 private theorem near_qht {K : Type} [Field K] [NumberField K] (m : G1 K 2) : ∃ γ : Gam K 2,
     AutomorphicForm.height (((γ : G1 K 2) * m : G1 K 2) : AdelicGLn.AdelicGL K 2) < 2 * qht m :=
-  exists_lt_of_ciInf_lt (show qht m < 2 * qht m by linarith [one_le_qht m])
+  exists_lt_of_ciInf_lt (show qht m < 2 * qht m by
+    linarith [UpperTheory.ConvolutionTheory.BW.Pair.one_le_qht m])
 
 private theorem height_lv {K : Type} [Field K] [NumberField K] (a b : G1 K 2) :
     AutomorphicForm.height ((lv a b 0 : G1 K (2 + 2)) : AdelicGLn.AdelicGL K (2 + 2)) ≤
-      AutomorphicForm.height (a : AdelicGLn.AdelicGL K 2) * AutomorphicForm.height (b : AdelicGLn.AdelicGL K 2) := by
+      heightConst K (2 + 2) * AutomorphicForm.height (a : AdelicGLn.AdelicGL K 2) *
+        AutomorphicForm.height (b : AdelicGLn.AdelicGL K 2) := by
   have hz : zt K 0 = 1 := by
     rw [zt, ← map_one (centralSection K 2)]
     congr 1
     exact Subtype.ext Real.exp_zero
-  rw [blkLaws.1, neg_zero, hz, mul_one, mul_one]
-  exact height_blk _ _
+  have hblk : GlobalTheory.CompanionTheory.CTFin.lev 𝔸[K] 2 2
+      ((a : AdelicGLn.AdelicGL K 2), (b : AdelicGLn.AdelicGL K 2)) =
+      blk (a : AdelicGLn.AdelicGL K 2) (b : AdelicGLn.AdelicGL K 2) :=
+    Units.ext (GlobalTheory.SmGL.val_emb₂ 𝔸[K] _ _)
+  rw [blkLaws.1, neg_zero, hz, mul_one, mul_one, ← hblk]
+  exact UpperTheory.ConvolutionTheory.BW.Pair.height_lev _ _
 
 private theorem lv_nn {K : Type} [Field K] [NumberField K] (a b m₁ m₂ : G1 K 2) (t : ℝ) (X : UPos (2 + 2) 2 → 𝔸[K])
     (k : G1 K (2 + 2)) : ∃ X', lv a b 0 * (nn X * lv m₁ m₂ t * k) = nn X' * lv (a * m₁) (b * m₂) t * k := by
@@ -174,16 +118,28 @@ private theorem lv_eq {K : Type} [Field K] [NumberField K] (a b a' b' : G1 K 2) 
   rw [mul_assoc, h, e1, e2]
   simp only [mul_assoc]
 
-private theorem ht_four {K : Type} [Field K] [NumberField K] {n : ℕ} (x y z k : G1 K n) (hk : k ∈ KG K n) {M₁ M₂ q : ℝ}
-    (hq : 0 ≤ q) (hx : AutomorphicForm.height (x : AdelicGLn.AdelicGL K n) ≤ |M₁|)
-    (hy : AutomorphicForm.height (y : AdelicGLn.AdelicGL K n) ≤ 4 * q)
+private theorem ht_four {K : Type} [Field K] [NumberField K] {n : ℕ} (x y z k : G1 K n)
+    (hk : k ∈ KG K n) {M₁ M₂ q : ℝ} (hq : 0 ≤ q)
+    (hx : AutomorphicForm.height (x : AdelicGLn.AdelicGL K n) ≤ |M₁|)
+    (hy : AutomorphicForm.height (y : AdelicGLn.AdelicGL K n) ≤ heightConst K n * (4 * q))
     (hz : AutomorphicForm.height (z : AdelicGLn.AdelicGL K n) ≤ |M₂|) :
     AutomorphicForm.height ((x * (y * z) * k : G1 K n) : AdelicGLn.AdelicGL K n) ≤
-      heightConst K n * (heightConst K n * |M₁| * (heightConst K n * 4 * |M₂|)) * q := by
-  have h := height_mul_le ((x : AdelicGLn.AdelicGL K n) * ((y : AdelicGLn.AdelicGL K n) * (z : AdelicGLn.AdelicGL K n))) (k : AdelicGLn.AdelicGL K n)
-  rw [height_eq_one_of_mem_maxCompact (k := (k : AdelicGLn.AdelicGL K n)) hk] at h
-  exact chain (zero_le_one.trans one_le_heightConst) hq (height_pos _).le (height_pos _).le h (height_mul_le _ _)
-    (height_mul_le _ _) hx hy hz
+      heightConst K n ^ 4 * (4 * |M₁| * |M₂|) * q := by
+  have hc : 0 ≤ heightConst K n := zero_le_one.trans one_le_heightConst
+  have h1 := height_mul_le ((x : AdelicGLn.AdelicGL K n) *
+    ((y : AdelicGLn.AdelicGL K n) * (z : AdelicGLn.AdelicGL K n))) (k : AdelicGLn.AdelicGL K n)
+  rw [height_eq_one_of_mem_maxCompact (k := (k : AdelicGLn.AdelicGL K n)) hk, mul_one] at h1
+  have h2 := height_mul_le (x : AdelicGLn.AdelicGL K n)
+    ((y : AdelicGLn.AdelicGL K n) * (z : AdelicGLn.AdelicGL K n))
+  have h3 := height_mul_le (y : AdelicGLn.AdelicGL K n) (z : AdelicGLn.AdelicGL K n)
+  have h4 : AutomorphicForm.height ((y : AdelicGLn.AdelicGL K n) * (z : AdelicGLn.AdelicGL K n)) ≤
+      heightConst K n * (heightConst K n * (4 * q)) * |M₂| :=
+    h3.trans (mul_le_mul (mul_le_mul_of_nonneg_left hy hc) hz (height_pos _).le (by positivity))
+  have h5 : AutomorphicForm.height ((x : AdelicGLn.AdelicGL K n) *
+      ((y : AdelicGLn.AdelicGL K n) * (z : AdelicGLn.AdelicGL K n))) ≤
+      heightConst K n * |M₁| * (heightConst K n * (heightConst K n * (4 * q)) * |M₂|) :=
+    h2.trans (mul_le_mul (mul_le_mul_of_nonneg_left hx hc) h4 (height_pos _).le (by positivity))
+  exact (h1.trans (mul_le_mul_of_nonneg_left h5 hc)).trans_eq (by ring)
 
 private theorem ht_bound {K : Type} [Field K] [NumberField K] (R : ℝ) : ∃ M : ℝ, 0 ≤ M ∧
     ∀ (X : UPos (2 + 2) 2 → 𝔸[K]) (m₁ m₂ : G1 K 2) (t : ℝ), ∀ k ∈ KG K (2 + 2), |t| ≤ R → ∃ γ ∈ PK K,
@@ -192,20 +148,22 @@ private theorem ht_bound {K : Type} [Field K] [NumberField K] (R : ℝ) : ∃ M 
   obtain ⟨M₁, hM₁⟩ := unip_bound K
   obtain ⟨M₂, hM₂⟩ := ray_bound K R
   have hc : 0 ≤ heightConst K (2 + 2) := zero_le_one.trans one_le_heightConst
-  refine ⟨heightConst K (2 + 2) * (heightConst K (2 + 2) * |M₁| * (heightConst K (2 + 2) * 4 * |M₂|)),
-    mul_nonneg hc (mul_nonneg (mul_nonneg hc (abs_nonneg _)) (mul_nonneg (mul_nonneg hc zero_le_four) (abs_nonneg _))),
+  refine ⟨heightConst K (2 + 2) ^ 4 * (4 * |M₁| * |M₂|), by positivity,
     fun X m₁ m₂ t k hk ht => ?_⟩
-  have h1 := zero_le_one.trans (one_le_qht m₁)
-  have h2 := zero_le_one.trans (one_le_qht m₂)
+  have h1 := zero_le_one.trans (UpperTheory.ConvolutionTheory.BW.Pair.one_le_qht m₁)
+  have h2 := zero_le_one.trans (UpperTheory.ConvolutionTheory.BW.Pair.one_le_qht m₂)
   obtain ⟨γ₁, hγ₁⟩ := near_qht m₁
   obtain ⟨γ₂, hγ₂⟩ := near_qht m₂
   obtain ⟨X', hX'⟩ := lv_nn (γ₁ : G1 K 2) γ₂ m₁ m₂ t X k
   obtain ⟨ξ, b1⟩ := hM₁ X'
   refine ⟨nn ξ.1 * lv (γ₁ : G1 K 2) γ₂ 0, (pkLaws.2.1 _).2 ⟨ξ, γ₁, γ₂, rfl⟩, ?_⟩
-  have b0 : AutomorphicForm.height ((lv ((γ₁ : G1 K 2) * m₁) ((γ₂ : G1 K 2) * m₂) 0 : G1 K (2 + 2)) : AdelicGLn.AdelicGL K (2 + 2)) ≤
-      4 * (qht m₁ * qht m₂) :=
-    ((height_lv ((γ₁ : G1 K 2) * m₁) ((γ₂ : G1 K 2) * m₂)).trans
-      (mul_le_mul hγ₁.le hγ₂.le (height_pos _).le (mul_nonneg zero_le_two h1))).trans_eq (by ring)
+  have b0 : AutomorphicForm.height ((lv ((γ₁ : G1 K 2) * m₁) ((γ₂ : G1 K 2) * m₂) 0 :
+      G1 K (2 + 2)) : AdelicGLn.AdelicGL K (2 + 2)) ≤
+      heightConst K (2 + 2) * (4 * (qht m₁ * qht m₂)) := by
+    refine (height_lv ((γ₁ : G1 K 2) * m₁) ((γ₂ : G1 K 2) * m₂)).trans ?_
+    rw [mul_assoc]
+    refine (mul_le_mul_of_nonneg_left (mul_le_mul hγ₁.le hγ₂.le (height_pos _).le
+      (mul_nonneg zero_le_two h1)) hc).trans_eq (by ring)
   have e := lv_eq (γ₁ : G1 K 2) γ₂ ((γ₁ : G1 K 2) * m₁) ((γ₂ : G1 K 2) * m₂) t ξ.1 X' (nn X * lv m₁ m₂ t * k) k hX'
   rw [e]
   exact ht_four (nn (ξ.1 + X')) (lv ((γ₁ : G1 K 2) * m₁) ((γ₂ : G1 K 2) * m₂) 0) (lv 1 1 t) k hk (mul_nonneg h1 h2) b1 b0 (hM₂ t ht)
@@ -269,8 +227,8 @@ theorem UpperTheory.V.Z.InvariantSubmoduleMonicPolynomial.secFun :
     rw [hpSpec.1, (hpSpec.2.1 k hk).1, add_zero] at hg
     obtain ⟨γ, hγ, hle⟩ := hM X m₁ m₂ t k hk hg
     refine ⟨γ, hγ, ?_⟩
-    have h1 := zero_le_one.trans (one_le_qht m₁)
-    have h2 := zero_le_one.trans (one_le_qht m₂)
+    have h1 := zero_le_one.trans (UpperTheory.ConvolutionTheory.BW.Pair.one_le_qht m₁)
+    have h2 := zero_le_one.trans (UpperTheory.ConvolutionTheory.BW.Pair.one_le_qht m₂)
     refine (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (height_pos _).le hle N) (norm_nonneg _)).trans ?_
     rw [rep _ _ _ _ k hk]
     refine (mul_le_mul_of_nonneg_right (norm_sum_le_of_le _ fun i _ => norm_sum_le _ _) (pow_nonneg (mul_nonneg hM0 (mul_nonneg h1 h2)) N)).trans ?_

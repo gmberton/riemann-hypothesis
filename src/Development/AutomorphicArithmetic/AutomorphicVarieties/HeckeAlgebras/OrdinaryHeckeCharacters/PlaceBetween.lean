@@ -5,6 +5,8 @@ public import Development.AbelianVarietyTheory.Definitions.AutomorphicMembership
 public import Development.AbelianVarietyTheory.Proofs.FoundationProofs.IntertwiningGlOfUnitary
 public import Development.AbelianVarietyTheory.Proofs.IwasawaDecomposition.ExistsContinuousRetractionOntoUnitaryLocalPoints
 public import Development.AbelianVarietyTheory.Proofs.IwasawaDecomposition.SplitPlaceUnitaryLocalPointsEquivGL
+import Development.AutomorphicArithmetic.AutomorphicVarieties.BuildingsResidueChars.IsSplitAtOfDecompositionLeRestrictionRange
+import Development.AutomorphicArithmetic.AutomorphicVarieties.HeckeAlgebras.LocalUnitCase.UnitaryIdeleSplitPlaceSection
 import Formalism.GradedWeylDivisibility.FinalD
 import Mathlib.RingTheory.Valuation.LocalSubring
 import Mathlib.Topology.Algebra.MvPolynomial
@@ -15,66 +17,6 @@ open NumberField IsDedekindDomain Formalism.ConjugateSelfDual ReciprocityTheory.
 open UpperTheory.V.W (Plc Lp HidaSetting Vl Resid LamObj UniversalOrdinaryDeterminantRing Pair)
 open UpperTheory.V.HV (Coef)
 open scoped TensorProduct
-
-
-private theorem w_under {l : ℕ} [Fact l.Prime] {L Ω : Type} [Field L] [NumberField L] [IsCMField L] [Field Ω] [Algebra L Ω]
-    [IsAlgClosure L Ω] (s : HidaSetting l L Ω) (v : Plc (Lp L)) : (s.w v).under (𝓞 (Lp L)) = v := by
-  ext x
-  exact (s.hw v (algebraMap (𝓞 (Lp L)) (𝓞 L) x)).symm.trans (s.hA v x)
-
-private theorem place_between {K L Ω : Type} [Field K] [NumberField K] [Field L] [NumberField L] [Field Ω]
-    [Algebra K L] [Algebra L Ω] [Algebra K Ω] [IsScalarTower K L Ω]
-    {A : ValuationSubring Ω} {v : HeightOneSpectrum (𝓞 K)} (hA : IsPlaceOver A v) :
-    ∃ w : HeightOneSpectrum (𝓞 L), IsPlaceOver A w ∧ w.under (𝓞 K) = v := by
-  have hint : ∀ x : 𝓞 L, algebraMap L Ω (x : L) ∈ A := fun x => by
-    have h : IsIntegral A (algebraMap L Ω (x : L)) :=
-      (x.isIntegral_coe.map (algebraMap L Ω).toIntAlgHom).tower_top
-    obtain ⟨y, hy⟩ := IsIntegrallyClosed.isIntegral_iff.1 h
-    rw [← hy]
-    exact y.2
-  let f : 𝓞 L →+* A := ((algebraMap L Ω).comp (algebraMap (𝓞 L) L)).codRestrict A hint
-  let P : Ideal (𝓞 L) := (IsLocalRing.maximalIdeal A).comap f
-  have hP : ∀ x : 𝓞 L, A.valuation (algebraMap L Ω (x : L)) < 1 ↔ x ∈ P := fun x =>
-    (A.valuation_lt_one_iff (f x)).symm
-  have hu : v.asIdeal = P.under (𝓞 K) := by
-    ext x
-    rw [← hA x, Ideal.under, Ideal.mem_comap, ← hP, IsScalarTower.algebraMap_apply K L Ω]
-    rfl
-  have hne : P ≠ ⊥ := by
-    intro h
-    apply v.ne_bot
-    rw [hu, h]
-    exact Ideal.comap_bot_of_injective _ (FaithfulSMul.algebraMap_injective _ _)
-  exact ⟨⟨P, inferInstance, hne⟩, hP, HeightOneSpectrum.ext hu.symm⟩
-
-open scoped Pointwise in
-private theorem place_smul {F Ω : Type} [Field F] [NumberField F] [Field Ω] [Algebra F Ω] (g : G F Ω) {A : ValuationSubring Ω}
-    {v : W.Plc F} (h : IsPlaceOver A v) : IsPlaceOver (g • A) v := fun x => by
-  have e : ∀ y : Ω, (g • A).valuation (g y) < 1 ↔ A.valuation y < 1 :=
-    UpperTheory.V.val_lt_one (σ := g.toRingEquiv) (fun _ => ValuationSubring.smul_mem_pointwise_smul_iff (g := g))
-  rw [← h x, ← e, AlgEquiv.commutes]
-
-open scoped Pointwise in
-private theorem w_split {l : ℕ} [Fact l.Prime] {L Ω : Type} [Field L] [NumberField L] [IsCMField L] [Field Ω] [Algebra L Ω]
-    [IsAlgClosure L Ω] {s : HidaSetting l L Ω} (V : s.Lev) (v : Vl l L) : IsSplitAt (s.w v.1) := by
-  have hc : s.c ∉ (W.resP L Ω).range := fun h => by
-    have h1 := (V.hη _).2 h
-    rw [V.η_c] at h1
-    exact absurd h1 (by decide)
-  obtain ⟨u, hu, hu'⟩ := place_between (L := L) (place_smul s.c (s.hA v.1))
-  by_cases h : u = s.w v.1
-  · exfalso
-    subst h
-    obtain ⟨σ, hσ⟩ := exists_smul_eq_of_isPlaceOver (s.hw v.1) hu
-    have h2 : s.c⁻¹ * W.resP L Ω σ ∈ Dec (F := Lp L) (s.A v.1) := by
-      change (s.c⁻¹ * W.resP L Ω σ) • s.A v.1 = s.A v.1
-      have h3 : W.resP L Ω σ • s.A v.1 = s.c • s.A v.1 := hσ
-      rw [mul_smul, h3, inv_smul_smul]
-    have h4 := s.split v.1 (Or.inl v.2) h2
-    have h5 := mul_mem h4 (inv_mem (⟨σ, rfl⟩ : W.resP L Ω σ ∈ (W.resP L Ω).range))
-    rw [mul_inv_cancel_right] at h5
-    exact hc (inv_mem_iff.1 h5)
-  · exact ⟨u, h, hu'.trans (w_under s v.1).symm⟩
 
 section Grp
 
@@ -293,25 +235,26 @@ theorem UpperTheory.V.Hi.formU :
     e.finiteDimensional
   haveI : Finite V.frame.Vl := @Finite.of_fintype _ V.frame.finV
   haveI : ∀ v : V.frame.Vl, Finite (W.Emb l (s.w v.1)) := fun v => GlobalTheory.HeckeGal.finite_contEmb _
-  have hsp : ∀ v : V.frame.Vl, IsSplitAt (s.w v.1) := fun v => w_split V v
-  have hl : ∀ u : Plc L, ((l : ℕ) : 𝓞 L) ∈ u.asIdeal ↔ ((l : ℕ) : 𝓞 (Lp L)) ∈ (u.under (𝓞 (Lp L))).asIdeal := fun u => by
-    change _ ↔ algebraMap (𝓞 (Lp L)) (𝓞 L) (l : 𝓞 (Lp L)) ∈ u.asIdeal
-    rw [map_natCast]
+  have hsp : ∀ v : V.frame.Vl, IsSplitAt (s.w v.1) := fun v =>
+    UpperTheory.isSplitAt_of_decomposition_le_restriction_range L Ω (s.A v.1) v.1 (s.hA v.1)
+      (s.split v.1 (Or.inl v.2)) _ (Pu.w_under s v.1)
   have hsurj : Function.Surjective fun k : finU (E := L) (n := n) => J' k := by
     rintro ⟨a, b⟩
     obtain ⟨x, rfl⟩ := (away l L n).rangeRestrict_surjective a
     haveI := V.frame.finV
     obtain ⟨k, h1, h2⟩ := exists_adjust (fun v : V.frame.Vl => s.w v.1) hsp
-      (fun v v' h => Subtype.ext ((w_under s v.1).symm.trans (h.trans (w_under s v'.1)))) x b Finset.univ
+      (fun v v' h =>
+        Subtype.ext ((Pu.w_under s v.1).symm.trans (h.trans (Pu.w_under s v'.1))))
+      x b Finset.univ
     refine ⟨k, Prod.ext (Subtype.ext (funext fun u => h1 u.1 fun v h => u.2 ?_)) (funext fun v => h2 v (Finset.mem_univ v))⟩
-    rw [hl, h, w_under]
+    rw [← Pu.l_iff, h, Pu.w_under]
     exact v.2
   have hker : ∀ x, J' x = 1 ↔ x ∈ infU L n := fun x => by
     refine ⟨fun h => mem_inf_of fun u => ?_, fun h => Prod.ext (Subtype.ext (funext fun u => cLoc_inf h u.1))
       (funext fun v => cLoc_inf h _)⟩
     by_cases hu : ((l : ℕ) : 𝓞 L) ∈ u.asIdeal
-    · let v : V.frame.Vl := ⟨u.under (𝓞 (Lp L)), (hl u).1 hu⟩
-      exact cLoc_conj (hsp v) x (congrFun (congrArg Prod.snd h) v) (w_under s v.1).symm
+    · let v : V.frame.Vl := ⟨u.under (𝓞 (Lp L)), (Pu.l_iff u).2 hu⟩
+      exact cLoc_conj (hsp v) x (congrFun (congrArg Prod.snd h) v) (Pu.w_under s v.1).symm
     · exact congrFun (congrArg (fun y => y.1.1) h) ⟨u, hu⟩
   have hfin : ∀ k ∈ finU (E := L) (n := n), infRep (V := V) ι lam k = 1 := fun k hk => by
     have h1 : ∀ τ : L →+* ℂ, cEmb τ k = 1 := fun τ => by

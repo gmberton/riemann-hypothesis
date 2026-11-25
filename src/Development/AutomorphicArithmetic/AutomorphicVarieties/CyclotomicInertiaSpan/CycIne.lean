@@ -11,39 +11,11 @@ import Mathlib.Tactic.Linter.Style
 import Development.AutomorphicArithmetic.AutomorphicVarieties.GaloisLibrary.GaloisCohomologyLength.LevelInertiaLeLevelDec
 import Development.AutomorphicArithmetic.AutomorphicVarieties.GaloisLibrary.KummerTheory.Mk0IdMapCongr
 import Development.AutomorphicArithmetic.AutomorphicVarieties.GaloisLibrary.SelmerTransport.RestrictionMemInvariantH1
+import Development.AutomorphicArithmetic.CyclotomicBounds.ClassNumberBounds.TotallyRealRoots.UnitsMapSurjOfZmod
 
 @[expose] public section
 
 open NumberField IsDedekindDomain Formalism.ConjugateSelfDual ReciprocityTheory.Gal Formalism.GaloisCohomology UpperTheory.V UpperTheory.V.LDataCardLeFinrank UpperTheory.V.Base UpperTheory.V.Kum UpperTheory.V.B1
-
-private theorem cycIne_red_surj (l : ℕ) [Fact l.Prime] (n : ℕ) (b : (ZMod (l ^ n))ˣ) :
-    ∃ u : ℤ_[l]ˣ, KStar.TotallyRealRoots.redPow l n u = b := by
-  have hl : l.Prime := Fact.out
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · refine ⟨1, Units.ext ?_⟩
-    have : Subsingleton (ZMod (l ^ 0)) := by
-      rw [pow_zero]
-      infer_instance
-    exact Subsingleton.elim _ _
-  · haveI : NeZero (l ^ n) := ⟨pow_ne_zero _ hl.ne_zero⟩
-    set k := (b : ZMod (l ^ n)).val with hkdef
-    have hcop : Nat.Coprime k (l ^ n) := ZMod.val_coe_unit_coprime b
-    have hk : ¬ (l : ℤ) ∣ (k : ℤ) := by
-      rw [Int.natCast_dvd_natCast]
-      intro hd
-      have hc : Nat.Coprime l k :=
-        Nat.Coprime.symm (Nat.Coprime.coprime_dvd_right (dvd_pow_self l hn.ne') hcop)
-      have hg := Nat.dvd_gcd (dvd_refl l) hd
-      rw [Nat.Coprime.gcd_eq_one hc] at hg
-      exact hl.ne_one (Nat.eq_one_of_dvd_one hg)
-    have hu : IsUnit ((k : ℤ) : ℤ_[l]) := by
-      rw [PadicInt.isUnit_iff]
-      exact le_antisymm (PadicInt.norm_le_one _)
-        (not_lt.mp fun h => hk ((PadicInt.norm_int_lt_one_iff_dvd _).mp h))
-    refine ⟨hu.unit, Units.ext ?_⟩
-    simp only [KStar.TotallyRealRoots.redPow, Units.coe_map, IsUnit.unit_spec, Int.cast_natCast]
-    rw [hkdef]
-    exact (map_natCast (PadicInt.toZModPow n) _).trans (ZMod.natCast_zmod_val _)
 
 theorem UpperTheory.V.B1.cycIne :
     ∀ (Ω : Type) [Field Ω] [Algebra ℚ Ω] [IsAlgClosure ℚ Ω] (N : ℕ) [NeZero N] (p : ℕ) [Fact p.Prime] (B : ValuationSubring Ω), B.valuation (p : Ω) < 1 →
@@ -80,7 +52,8 @@ theorem UpperTheory.V.B1.cycIne :
     exact hcycM g hg
   · intro h hh
     have hh' : ZMod.unitsMap (Nat.ordCompl_dvd N p) h = 1 := hh
-    obtain ⟨u, hu⟩ := cycIne_red_surj p (N.factorization p) (ZMod.unitsMap (Nat.ordProj_dvd N p) h)
+    obtain ⟨u, hu⟩ := KStar.TotallyRealRoots.redPow_surjective (N.factorization p)
+      (ZMod.unitsMap (Nat.ordProj_dvd N p) h)
     obtain ⟨σ, hσ, hσu⟩ := GlobalTheory.CycInertia.cycZ_Ine_surjective Ω p B hB u
     refine Subgroup.mem_map.mpr ⟨σ, hσ, ?_⟩
     rw [cycN_eq_iff]

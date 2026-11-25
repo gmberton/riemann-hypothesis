@@ -15,6 +15,8 @@ import Mathlib.Tactic.Linter.HaveILetI
 import Std.Tactic.BVDecide.Normalize.Prop
 import Mathlib.FieldTheory.Galois.Profinite
 import Mathlib.Tactic.Linter.Style
+import Development.AutomorphicArithmetic.AutomorphicVarieties.SymplecticGSp4.ExDefs
+import Development.AutomorphicArithmetic.AutomorphicVarieties.SymplecticGSp4.SgnMulSelf
 
 -- This file was produced by scripts/clump.py from the modules listed below.
 -- Members: Development.AutomorphicArithmetic.IntegralCasts.CapelliIdentities.MajorantSquareBound, Development.AutomorphicArithmetic.AutomorphicVarieties.PadicHodgeTheory.SplAdjUnit
@@ -198,49 +200,9 @@ section Gen
 
 variable {R K H : Type} [CommRing R] [CommRing K] [Group H] (f : R →+* K)
 
-private theorem spl_rep (r : H →* M4 R) (g : H) : mapRep f r g = f.mapMatrix (r g) := rfl
-
-private theorem spl_smul (a : R) (X : M4 R) : f.mapMatrix (a • X) = f a • f.mapMatrix X := by
-  ext i j
-  simp
-
-private theorem spl_adj (X : M4 R) : adj (f.mapMatrix X) = f.mapMatrix (adj X) := by
-  ext i j
-  simp only [adj_apply, RingHom.mapMatrix_apply, Matrix.map_apply, map_zsmul]
-
-private theorem spl_gsp {ν : R} {X : M4 R} (h : IsGSp ν X) : IsGSp (f ν) (f.mapMatrix X) := by
-  unfold IsGSp at *
-  rw [spl_adj, ← map_mul, h, spl_smul, map_one]
-
-private theorem spl_prj (c : Fin 4 → R) (X : M4 R) (i : Fin 4) :
-    prj (fun a => f (c a)) (f.mapMatrix X) i = f.mapMatrix (prj c X i) := by
-  unfold prj
-  have h : ∀ p : Polynomial R,
-      Polynomial.aeval (f.mapMatrix X) (p.map f) = f.mapMatrix (Polynomial.aeval X p) := by
-    intro p
-    induction p using Polynomial.induction_on' with
-    | add p q hp hq => rw [Polynomial.map_add (f := _), map_add (f := _), map_add (f := _), map_add (f := _), hp, hq]
-    | monomial n a =>
-      rw [Polynomial.map_monomial, Polynomial.aeval_monomial, Polynomial.aeval_monomial, map_mul, map_pow,
-        Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, spl_smul, map_one]
-  rw [← h, Polynomial.map_prod]
-  simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C]
-
-private theorem spl_ord {I : Subgroup H} {ps : Fin 4 → H → R} {s₀ : H} {r : H →* M4 R} (h : Ord I ps s₀ r) :
-    Ord I (fun i g => f (ps i g)) s₀ (mapRep f r) := by
-  refine ⟨?_, ?_, ?_⟩
-  · rw [spl_rep, RingHom.mapMatrix_apply, Matrix.charpoly_map, h.charpoly, Polynomial.map_prod]
-    simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C]
-  · intro g i j hij
-    rw [spl_rep, spl_rep, spl_prj f (fun a => ps a s₀), spl_prj f (fun a => ps a s₀), ← map_mul, ← map_mul,
-      h.stable g i j hij, map_zero]
-  · intro s hs i
-    rw [spl_rep, spl_rep, spl_prj f (fun a => ps a s₀), ← map_one f.mapMatrix, ← spl_smul, ← map_sub, ← map_mul,
-      ← map_mul, h.inert s hs i, map_zero]
-
 private theorem spl_tr (c : Fin 4 → R) (X Y : M4 R) (i : Fin 4) :
     (prj (fun a => f (c a)) (f.mapMatrix X) i * f.mapMatrix Y).trace = f (prj c X i * Y).trace := by
-  rw [spl_prj, ← map_mul, RingHom.mapMatrix_apply, AddMonoidHom.map_trace]
+  rw [Ex.prj_map, ← map_mul, RingHom.mapMatrix_apply, AddMonoidHom.map_trace]
 
 private theorem spl_tr_diag (c a : Fin 4 → R) (i : Fin 4) :
     (prj c (Matrix.diagonal c) i * Matrix.diagonal a).trace = (∏ j ∈ Finset.univ.erase i, (c i - c j)) * a i := by
@@ -258,26 +220,18 @@ private theorem spl_tr_diag (c a : Fin 4 → R) (i : Fin 4) :
     rw [Finset.prod_eq_zero (i := b) (by simp [hb]) (sub_self _), zero_mul]
   · simp
 
-private theorem spl_adj_mul (X Y : M4 R) : adj (X * Y) = adj Y * adj X := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [adj_apply, Matrix.mul_apply, Fin.sum_univ_four, sgn, Fin.rev] <;> ring
-
-private theorem spl_adj_one : adj (1 : M4 R) = 1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [adj_apply, sgn, Fin.rev]
-
 private theorem spl_conj {ν : R} {X : M4 R} (h : IsGSp ν X) (u v : M4 R) (hv : v * u = 1) :
     adj (u * X * v) * (adj v * v) * (u * X * v) = ν • (adj v * v) := by
   have h1 : adj u * adj v = 1 := by
-    rw [← spl_adj_mul, hv, spl_adj_one]
+    rw [← (grp R).1, hv, (grp R).2.2.2.2.1]
   unfold IsGSp at h
-  rw [spl_adj_mul, spl_adj_mul]
+  rw [(grp R).1, (grp R).1]
   calc _ = adj v * (adj X * (adj u * adj v) * (v * u) * X) * v := by simp only [Matrix.mul_assoc]
     _ = _ := by rw [h1, hv, Matrix.mul_one, Matrix.mul_one, h, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one]
 
 private theorem spl_adj_unit (u : (M4 R)ˣ) : IsUnit (adj (u : M4 R)) :=
-  IsUnit.of_mul_eq_one (adj ((u⁻¹ : (M4 R)ˣ) : M4 R)) (by rw [← spl_adj_mul, Units.inv_mul, spl_adj_one])
+  IsUnit.of_mul_eq_one (adj ((u⁻¹ : (M4 R)ˣ) : M4 R))
+    (by rw [← (grp R).1, Units.inv_mul, (grp R).2.2.2.2.1])
 
 end Gen
 
@@ -376,8 +330,11 @@ private theorem spl_red {l : ℕ} [Fact l.Prime] {O B H : Type} [CommRing O] [Is
     rw [← h1, map_prod]
     simp only [map_sub]
     exact hκ
-  obtain ⟨u, k, h1, h2, -, h4⟩ := ordFlag I (FractionRing B) _ s₀ _
-    (fun a b e => hinj (hB (IsFractionRing.injective B (FractionRing B) e))) (spl_ord (algebraMap B (FractionRing B)) hρ)
+  obtain ⟨u, k, h1, h2, -, h4⟩ := ordFlag I (FractionRing B)
+    (fun i g => algebraMap B (FractionRing B) (algebraMap O B (ps i g))) s₀
+    (mapRep (algebraMap B (FractionRing B)) ρ)
+    (fun a b e => hinj (hB (IsFractionRing.injective B (FractionRing B) e)))
+    (Ex.ord_map (algebraMap B (FractionRing B)) (fun _ => rfl) (fun _ _ => rfl) hρ)
   have hint : IsIntegral B (k i g : FractionRing B) := h2 g i ▸ spl_int (ρ g) u (h1 g) i
   have hk : algebraMap B (FractionRing B) (algebraMap O B d) * k i g = algebraMap B _ t := by
     rw [← spl_tr (algebraMap B (FractionRing B)), map_prod, map_prod]
@@ -425,10 +382,12 @@ theorem UpperTheory.V.Loc.spPtL :
   rw [er]
   have hy : ∀ a : c.O, (y : B →+* PadicAlgCl l) (algebraMap c.O B a) = algebraMap c.O _ a := fun a => y.commutes a
   have hO : Function.Injective (algebraMap c.O (PadicAlgCl l)) := Subtype.val_injective
-  have hord := spl_ord (y : B →+* PadicAlgCl l) hρ.2
-  simp only [hy] at hord
-  have hgsp : ∀ g : D.Gp l, IsGSp (algebraMap c.O _ (D.th g)) (mapRep (y : B →+* PadicAlgCl l) ρ.hom g) := fun g => by
-    have h := spl_gsp (y : B →+* PadicAlgCl l) (hρ.1 g)
+  have hord := Ex.ord_map (y : B →+* PadicAlgCl l)
+    (r' := mapRep (y : B →+* PadicAlgCl l) ρ.hom) (fun _ => rfl)
+    (ps' := fun i g => algebraMap c.O _ (D.ps i g)) (fun i g => (hy _).symm) hρ.2
+  have hgsp : ∀ g : D.Gp l, IsGSp (algebraMap c.O _ (D.th g))
+      (mapRep (y : B →+* PadicAlgCl l) ρ.hom g) := fun g => by
+    have h := Ex.isGSp_map (y : B →+* PadicAlgCl l) (hρ.1 g)
     rwa [hy] at h
   obtain ⟨u, κ, h1, h2, h3, h4⟩ := ordFlag _ (PadicAlgCl l) _ D.s0 _ (fun a b e => hinj (hO e)) hord
   haveI : HenselianLocalRing B := GlobalTheory.henselianLocalRing_of_henselianRing B

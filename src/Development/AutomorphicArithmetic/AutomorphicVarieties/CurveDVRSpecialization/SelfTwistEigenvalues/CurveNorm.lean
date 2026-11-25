@@ -120,47 +120,6 @@ section -- clump:auto
 
 open Polynomial Matrix
 
-private theorem curveDVR_prec_cofinal {R : Type} [CommRing R] {I J : Ideal R} (hJI : J ≤ I) {e : ℕ}
-    (he : I ^ e ≤ J) (hJ : IsPrecomplete J R) : IsPrecomplete I R := ⟨fun f hf => by
-  simp only [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top] at hf ⊢
-  obtain ⟨L, hL⟩ := IsPrecomplete.prec' (I := J) (fun k => f ((e + 1) * k))
-    (fun {m n} hmn => by
-      rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
-      have h := hf (Nat.mul_le_mul_left (e + 1) hmn)
-      rw [pow_mul] at h
-      exact Ideal.pow_right_mono ((Ideal.pow_le_pow_right (Nat.le_succ e)).trans he) m h)
-  refine ⟨L, fun n => ?_⟩
-  have h1 := hL n
-  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top] at h1
-  have h2 := hf (m := n) (n := (e + 1) * n) (Nat.le_mul_of_pos_left n (Nat.succ_pos e))
-  simpa using (I ^ n).add_mem h2 (Ideal.pow_right_mono hJI n h1)⟩
-
-open IsLocalRing in
-private theorem curveDVR_complete {R R' : Type} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
-    [IsAdicComplete (maximalIdeal R) R] [CommRing R'] [Algebra R R'] [Module.Finite R R']
-    [IsLocalRing R'] : IsAdicComplete (maximalIdeal R') R' := by
-  haveI hN : IsNoetherianRing R' := IsNoetherianRing.of_finite R R'
-  have hcomap : (maximalIdeal R').comap (algebraMap R R') = maximalIdeal R :=
-    eq_maximalIdeal (Ideal.isMaximal_comap_of_isIntegral_of_isMaximal (algebraMap _ _) (RingHom.Finite.to_isIntegral (RingHom.finite_algebraMap.mpr inferInstance)) (maximalIdeal R'))
-  have hle : (maximalIdeal R).map (algebraMap R R') ≤ maximalIdeal R' :=
-    Ideal.map_le_iff_le_comap.2 hcomap.ge
-  have hrad : maximalIdeal R' ≤ ((maximalIdeal R).map (algebraMap R R')).radical := by
-    rw [Ideal.radical_eq_sInf]
-    refine le_sInf fun P hP => ?_
-    obtain ⟨h1, h2⟩ := hP
-    have h3 : P.comap (algebraMap R R') = maximalIdeal R :=
-      ((maximalIdeal.isMaximal R).eq_of_le (Ideal.comap_ne_top _ h2.ne_top)
-        (Ideal.map_le_iff_le_comap.1 h1)).symm
-    have h4 : P.IsMaximal :=
-      Ideal.isMaximal_of_isIntegral_of_isMaximal_comap (algebraMap R R')
-        (RingHom.Finite.to_isIntegral (RingHom.finite_algebraMap.mpr inferInstance)) P
-        (h3 ▸ maximalIdeal.isMaximal R)
-    exact (eq_maximalIdeal h4).ge
-  obtain ⟨e, he⟩ := Ideal.exists_pow_le_of_le_radical_of_fg hrad (IsNoetherian.noetherian _)
-  have hP : IsPrecomplete (maximalIdeal R') R' :=
-    curveDVR_prec_cofinal hle he (IsPrecomplete.map_algebraMap_iff.2 (_root_.UpperTheory.Reformulated.B.PrecompleteOfFiniteOverAdicComplete.curveDVR_prec_finite _))
-  exact { toIsHausdorff := inferInstance, toIsPrecomplete := hP }
-
 open IsLocalRing in
 private theorem exists_dvr_quotient_of_complete_local {A R : Type} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
     [IsAdicComplete (maximalIdeal A) A] [CommRing R] [IsDomain R] [IsLocalRing R] [IsNoetherianRing R]
@@ -191,7 +150,7 @@ private theorem exists_dvr_quotient_of_complete_local {A R : Type} [CommRing A] 
   haveI hl : IsLocalHom f := hf.to_isIntegral.isLocalHom hinj
   haveI : IsLocalHom (algebraMap R (integralClosure A (FractionRing R))) := hl
   refine ⟨integralClosure A (FractionRing R), inferInstance, inferInstance, hdvr, f,
-    curveDVR_complete (R := R), ?_, hinj, hl, hf⟩
+    GlobalTheory.FormalIsogeny.isAdicComplete_maximalIdeal_of_finite R _, ?_, hinj, hl, hf⟩
   exact Module.finite_of_finite (ResidueField R)
 
 theorem UpperTheory.V.Pr.T.curveDVR :

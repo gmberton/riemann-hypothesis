@@ -6,6 +6,7 @@ import Mathlib.Algebra.Order.Floor.Extended
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Algebra.Order.Interval.Basic
 import Mathlib.Algebra.Order.Star.Real
+import Mathlib.Algebra.QuadraticAlgebra.Integral
 import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 import Mathlib.Analysis.Normed.Algebra.GelfandRadius
 import Mathlib.Analysis.SpecialFunctions.Bernstein
@@ -66,43 +67,6 @@ section Gen
 
 variable {O K : Type} [CommRing O] [Field K] [Algebra O K] {a b : K}
 
-private theorem int_star {x : QuadraticAlgebra K a b} (h : IsIntegral O x) : IsIntegral O (star x) :=
-  h.map_of_comp_eq (RingHom.id O) (starRingEnd (QuadraticAlgebra K a b)) (by
-    ext r <;> simp [IsScalarTower.algebraMap_apply O K (QuadraticAlgebra K a b), starRingEnd_apply])
-
-private theorem int_alg {r : K} : IsIntegral O (algebraMap K (QuadraticAlgebra K a b) r) ↔ IsIntegral O r :=
-  isIntegral_algHom_iff (IsScalarTower.toAlgHom O K (QuadraticAlgebra K a b)) (algebraMap K (QuadraticAlgebra K a b)).injective
-
-private theorem int_trace {x : QuadraticAlgebra K a b} (h : IsIntegral O x) : IsIntegral O (QuadraticAlgebra.trace x) := by
-  rw [← int_alg (a := a) (b := b), QuadraticAlgebra.algebraMap_trace_eq_add_star]
-  exact h.add (int_star h)
-
-private theorem int_norm {x : QuadraticAlgebra K a b} (h : IsIntegral O x) : IsIntegral O (QuadraticAlgebra.norm x) := by
-  rw [← int_alg (a := a) (b := b), QuadraticAlgebra.algebraMap_norm_eq_mul_star]
-  exact h.mul (int_star h)
-
-private theorem int_of {x : QuadraticAlgebra K a b} (ht : IsIntegral O (QuadraticAlgebra.trace x))
-    (hn : IsIntegral O (QuadraticAlgebra.norm x)) : IsIntegral O x := by
-  let t : integralClosure O (QuadraticAlgebra K a b) := ⟨_, int_alg.2 ht⟩
-  let n : integralClosure O (QuadraticAlgebra K a b) := ⟨_, int_alg.2 hn⟩
-  have h : IsIntegral (integralClosure O (QuadraticAlgebra K a b)) x := by
-    refine ⟨X ^ 2 - C t * X + C n, by monicity!, ?_⟩
-    have := QuadraticAlgebra.sq_sub_trace_smul_add_norm_eq_zero x
-    rw [Algebra.smul_def] at this
-    simpa [t, n] using this
-  exact isIntegral_trans x h
-
-private theorem ex_mult [IsDomain O] [IsFractionRing O K] (x : QuadraticAlgebra K a b) :
-    ∃ c : K, c ≠ 0 ∧ IsIntegral O (c • x) := by
-  have h : IsAlgebraic O x := (IsFractionRing.isAlgebraic_iff O K _).2 (Algebra.IsAlgebraic.isAlgebraic x)
-  obtain ⟨y, hy, hi⟩ := h.exists_integral_multiple
-  refine ⟨algebraMap O K y, by simpa using hy, ?_⟩
-  rwa [algebraMap_smul]
-
-private theorem int_map {A B : Type} [CommRing A] [CommRing B] [Algebra O B] (f : A →+* B) {x : A} (h : IsIntegral ℤ x) :
-    IsIntegral O (f x) :=
-  (map_isIntegral_int f h).tower_top
-
 private theorem id1 (x : QuadraticAlgebra K a b) (d n p q : K) : x * ⟨d * n * p, d * n * q⟩ =
     d • x * (algebraMap _ _ (n * p) + algebraMap _ _ q * (⟨0, n⟩ : QuadraticAlgebra K a b)) := by
   ext <;> simp <;> ring
@@ -113,7 +77,8 @@ private theorem id2 (x : QuadraticAlgebra K a b) {d n : K} (k l : K) (hd : d ≠
 
 private theorem cint_of {τ : K} {u : (Etau K τ)ˣ} (h : IsIntegral O (u : Etau K τ))
     (h' : IsIntegral O ((u⁻¹ : (Etau K τ)ˣ) : Etau K τ)) : u ∈ Cint O τ :=
-  ⟨h.mul (int_star h'), h'.mul (by rw [inv_inv]; exact int_star h)⟩
+  ⟨h.mul (QuadraticAlgebra.isIntegral_star_iff.2 h'),
+    h'.mul (by rw [inv_inv]; exact QuadraticAlgebra.isIntegral_star_iff.2 h)⟩
 
 private def quoH (τ : K) : (Etau K τ)ˣ →* Etau K τ where
   toFun := quo
@@ -200,27 +165,22 @@ section Glo
 
 variable {F : Type} [Field F] [NumberField F]
 
-private theorem mem_of_int {v : Pl F} {k : Kv v} (h : IsIntegral (Ov v) k) : k ∈ v.adicCompletionIntegers F := by
-  obtain ⟨y, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.1 h
-  exact y.2
-
-private theorem int_of_mem {v : Pl F} {k : Kv v} (h : k ∈ v.adicCompletionIntegers F) : IsIntegral (Ov v) k :=
-  isIntegral_algebraMap (x := (⟨k, h⟩ : Ov v))
-
-private theorem glob_int {t : F} (h : ∀ v : Pl F, IsIntegral (Ov v) (cv v t)) : IsIntegral ℤ t := by
-  obtain ⟨y, rfl⟩ := HeightOneSpectrum.mem_integers_of_valuation_le_one (R := 𝓞 F) F t fun v => by
+private theorem glob_int {t : F}
+    (h : ∀ v : Pl F, cv v t ∈ Set.range (algebraMap (Ov v) (Kv v))) :
+    t ∈ Set.range (algebraMap (𝓞 F) F) :=
+  HeightOneSpectrum.mem_integers_of_valuation_le_one (R := 𝓞 F) F t fun v => by
     rw [← GroundTheory.Global.coe_mem_adicCompletionIntegers_iff]
-    have := mem_of_int (h v)
-    simpa [HeightOneSpectrum.algebraMap_adicCompletion] using this
-  exact y.isIntegral_coe
+    obtain ⟨y, hy⟩ := h v
+    have hy' : cv v t ∈ v.adicCompletionIntegers F := by rw [← hy]; exact y.2
+    simpa [HeightOneSpectrum.algebraMap_adicCompletion] using hy'
 
 private theorem loc_int {t : F} (h : IsIntegral ℤ t) (v : Pl F) : IsIntegral (Ov v) (cv v t) :=
-  int_map (cv v) h
+  h.map_of_comp_eq (Int.castRingHom (Ov v)) (cv v) (RingHom.ext_int _ _)
 
 private theorem approx (a : ∀ v : Pl F, Kv v) (h : ∀ᶠ v in Filter.cofinite, a v ∈ v.adicCompletionIntegers F) :
     ∃ k : F, ∀ v, IsIntegral (Ov v) (a v - cv v k) := by
   obtain ⟨k, hk⟩ := GroundTheory.Global.exists_sub_mem_integralFiniteAdeles (R := 𝓞 F) (K := F) ⟨a, h⟩
-  exact ⟨k, fun v => int_of_mem (hk v)⟩
+  exact ⟨k, fun v => isIntegral_algebraMap (x := (⟨_, hk v⟩ : Ov v))⟩
 
 private theorem den (k : F) : ∃ d : F, d ≠ 0 ∧ IsIntegral ℤ d ∧ IsIntegral ℤ (d * k) := by
   have h : IsAlgebraic ℤ k := (IsFractionRing.isAlgebraic_iff ℤ ℚ _).2 (Algebra.IsAlgebraic.isAlgebraic k)
@@ -229,23 +189,26 @@ private theorem den (k : F) : ∃ d : F, d ≠ 0 ∧ IsIntegral ℤ d ∧ IsInte
 
 variable {τ : F}
 
-private theorem loc_intE {e : Etau F τ} (h : IsIntegral ℤ e) (v : Pl F) : IsIntegral (Ov v) (emap (cv v) τ e) :=
-  int_map (emap (cv v) τ) h
-
-private theorem glob_intE {e : Etau F τ} (h : ∀ v : Pl F, IsIntegral (Ov v) (emap (cv v) τ e)) : IsIntegral ℤ e := by
-  refine int_of (glob_int fun v => ?_) (glob_int fun v => ?_)
-  · convert int_trace (h v) using 1
-    simp [QuadraticAlgebra.trace_def, emap, map_ofNat]
-  · convert int_norm (h v) using 1
-    simp [QuadraticAlgebra.norm_def, emap]
+private theorem glob_intE {e : Etau F τ}
+    (h : ∀ v : Pl F, IsIntegral (Ov v) (emap (cv v) τ e)) : IsIntegral ℤ e := by
+  refine isIntegral_trans e (QuadraticAlgebra.isIntegral_of_trace_mem_range_of_norm_mem_range
+    (R := 𝓞 F) (glob_int fun v => ?_) (glob_int fun v => ?_))
+  · rw [show cv v (QuadraticAlgebra.trace e) = QuadraticAlgebra.trace (emap (cv v) τ e) by
+      simp [QuadraticAlgebra.trace_def, emap, map_ofNat]]
+    exact QuadraticAlgebra.trace_mem_range_of_isIntegral (h v)
+  · rw [show cv v (QuadraticAlgebra.norm e) = QuadraticAlgebra.norm (emap (cv v) τ e) by
+      simp [QuadraticAlgebra.norm_def, emap]]
+    exact QuadraticAlgebra.norm_mem_range_of_isIntegral (h v)
 
 private theorem denE (x : ∀ v : Pl F, Etau (Kv v) (cv v τ)) (h : ∀ᶠ v in Filter.cofinite, IsIntegral (Ov v) (x v)) :
     ∃ d : F, d ≠ 0 ∧ IsIntegral ℤ d ∧ ∀ v, IsIntegral (Ov v) (cv v d • x v) := by
   have h1 : ∀ v : Pl F, ∃ c : Kv v, c ≠ 0 ∧ IsIntegral (Ov v) (c • x v) ∧ (IsIntegral (Ov v) (x v) → c = 1) := fun v => by
     by_cases hv : IsIntegral (Ov v) (x v)
     · exact ⟨1, one_ne_zero, by rwa [one_smul], fun _ => rfl⟩
-    · obtain ⟨c, hc, hi⟩ := ex_mult (O := Ov v) (x v)
-      exact ⟨c, hc, hi, fun h => absurd h hv⟩
+    · obtain ⟨y, hy, hi⟩ := ((IsFractionRing.isAlgebraic_iff (Ov v) (Kv v) _).2
+        (Algebra.IsAlgebraic.isAlgebraic (x v))).exists_integral_multiple
+      exact ⟨algebraMap (Ov v) (Kv v) y, by simpa using hy, by rwa [algebraMap_smul],
+        fun h => absurd h hv⟩
   choose c hc0 hci hc1 using h1
   obtain ⟨k, hk⟩ := approx (fun v => (c v)⁻¹) (h.mono fun v hv => by rw [hc1 v hv, inv_one]; exact one_mem _)
   obtain ⟨d, hd, hdi, hdk⟩ := den k
@@ -253,7 +216,7 @@ private theorem denE (x : ∀ v : Pl F, Etau (Kv v) (cv v τ)) (h : ∀ᶠ v in 
   have h2 : IsIntegral (Ov v) (cv v d * (c v)⁻¹) := by
     have := ((loc_int hdi v).mul (hk v)).add (loc_int hdk v)
     rwa [map_mul, ← mul_add, sub_add_cancel] at this
-  have := (int_alg.2 h2).mul (hci v)
+  have := h2.algebraMap.mul (hci v)
   rwa [← Algebra.smul_def, smul_smul, mul_assoc, inv_mul_cancel₀ (hc0 v), mul_one] at this
 
 private theorem den2 (x : ∀ v : Pl F, Etau (Kv v) (cv v τ)) (h : ∀ᶠ v in Filter.cofinite, IsIntegral (Ov v) (x v)) :
@@ -263,12 +226,14 @@ private theorem den2 (x : ∀ v : Pl F, Etau (Kv v) (cv v τ)) (h : ∀ᶠ v in 
   obtain ⟨n, hn, hni, hnt⟩ := den τ
   refine ⟨d * n, mul_ne_zero hd hn, hdi.mul hni, fun v p q hp hq => ?_⟩
   have hw : IsIntegral (Ov v) (⟨0, cv v n⟩ : Etau (Kv v) (cv v τ)) := by
-    refine int_of ?_ ?_
-    · have := loc_int hnt v
-      rw [map_mul, mul_comm] at this
-      simpa [QuadraticAlgebra.trace_def] using this
-    · simpa [QuadraticAlgebra.norm_def] using (loc_int hni v).mul (loc_int hni v)
-  have := (hx v).mul ((int_alg.2 ((loc_int hni v).mul hp)).add ((int_alg.2 hq).mul hw))
+    refine QuadraticAlgebra.isIntegral_of_trace_mem_range_of_norm_mem_range ?_ ?_
+    · exact IsIntegrallyClosed.isIntegral_iff.1 (by
+        have := loc_int hnt v
+        rw [map_mul, mul_comm] at this
+        simpa [QuadraticAlgebra.trace_def] using this)
+    · exact IsIntegrallyClosed.isIntegral_iff.1 (by
+        simpa [QuadraticAlgebra.norm_def] using (loc_int hni v).mul (loc_int hni v))
+  have := (hx v).mul ((((loc_int hni v).mul hp).algebraMap).add (hq.algebraMap.mul hw))
   rwa [map_mul, id1]
 
 private theorem recover (x xi yi : ∀ v : Pl F, Etau (Kv v) (cv v τ)) (hx : ∀ v, xi v * x v = 1)
@@ -329,7 +294,9 @@ private theorem fin_quo [IsTotallyReal F] (hτ : IsCM τ) :
   have h1 := Embeddings.finite_of_norm_le F ℂ 2
   refine Set.Finite.of_finite_fibers (fun u : Etau F τ => QuadraticAlgebra.trace u) (h1.subset ?_) ?_
   · rintro _ ⟨u, ⟨hi, hu⟩, rfl⟩
-    refine ⟨int_trace hi, fun σ => ?_⟩
+    refine ⟨(QuadraticAlgebra.algebraMap_trace_eq_add_star u ▸
+      hi.add (QuadraticAlgebra.isIntegral_star_iff.2 hi)).tower_bot
+      QuadraticAlgebra.algebraMap_injective, fun σ => ?_⟩
     let ρ := (IsTotallyReal.complexEmbedding_isReal σ).embedding
     have h2 := congrArg ρ (key u hu)
     have h3 := hτ ρ
@@ -386,7 +353,8 @@ private theorem part1 [IsTotallyReal F] (hτ : IsCM τ) (φ : (Etau F τ)ˣ →*
     exact (ha v).add (hb v)
   · intro x r a hr ha v
     rw [map_mul, mul_left_comm]
-    exact (loc_intE hr v).mul (ha v)
+    exact (hr.map_of_comp_eq (Int.castRingHom (Ov v)) (emap (cv v) τ)
+      (RingHom.ext_int _ _)).mul (ha v)
   · intro x
     obtain ⟨d, hd, hdi, h⟩ := denE _ (ta_int x)
     refine ⟨algebraMap F _ d, (_root_.map_ne_zero _).2 hd, hI d hdi, fun a ha => glob_intE fun v => ?_⟩

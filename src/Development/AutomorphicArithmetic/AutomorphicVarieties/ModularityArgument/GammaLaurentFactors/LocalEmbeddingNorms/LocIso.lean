@@ -40,6 +40,7 @@ import Mathlib.Tactic.NormNum.Ordinal
 import Mathlib.Tactic.NormNum.Parity
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.NormNum.RealSqrt
+import Development.AutomorphicArithmetic.WhittakerHecke.LocGLEqLocalEmbeddingAndKGLEqIntegralGL
 
 @[expose] public section
 
@@ -48,23 +49,6 @@ noncomputable section
 open NumberField IsDedekindDomain GlobalTheory.CuspRep GlobalTheory.LocGL UpperTheory.V.Z.Inf
 open GroundTheory.Automorphic GroundTheory.Automorphic.AutomorphicForm GroundTheory.Automorphic.GJStandardLCuspidal
 open scoped Classical
-
-namespace UpperTheory.V.Z.Gam
-
-private theorem localEmbedding_eq {K : Type} [Field K] [NumberField K] {n : ℕ}
-    (w : HeightOneSpectrum (𝓞 K)) (g : GL (Fin n) (w.adicCompletion K)) :
-    AdelicGLn.localEmbedding w g = locGL K n w g := by
-  refine Units.ext <| Matrix.ext fun a b => FiniteAdeleRing.ext K fun v => ?_
-  change ((AdelicGLn.finiteRestrictedEquiv K n).symm _ : AdelicGLn.FiniteAdelicGL K n) a b v = _
-  rw [AdelicGLn.finiteRestrictedEquiv_symm_apply, RestrictedProduct.coe_mulSingle_apply]
-  by_cases h : v = w
-  · subst h
-    rw [Pi.mulSingle_eq_same]
-    exact (congrArg (fun x : GL (Fin n) (v.adicCompletion K) => x a b) (pLoc_locGL v g)).symm
-  · rw [Pi.mulSingle_eq_of_ne h]
-    exact (congrArg (fun x : GL (Fin n) (v.adicCompletion K) => x a b) (pLoc_locGL_of_ne h g)).symm
-
-end UpperTheory.V.Z.Gam
 
 open UpperTheory.V UpperTheory.V.Z.Gam in
 theorem UpperTheory.V.Z.Gam.locIso :
@@ -82,7 +66,7 @@ theorem UpperTheory.V.Z.Gam.locIso :
       rw [Iv_self] at e'
       exact phi_ne D a x hx ha hx0 e'
     · refine ((congrArg (Cm.carrierEq σ) (Iv_int D a x hx v g y)).trans (Cm.carrierEq_τ σ _ _)).trans ?_
-      rw [localEmbedding_eq]
+      rw [← (UpperTheory.locGL_eq_localEmbedding_and_KGL_eq_integralGL K n v).1]
       rfl
   refine ⟨?_, fun B hB => ?_⟩
   · rintro s ⟨σ', h1, h2⟩

@@ -54,36 +54,17 @@ namespace UpperTheory.V.Z.Int
 section
 variable {l : ℕ} [Fact l.Prime] (ι : Qbar l ≃+* ℂ)
 
-private theorem nu_mul (x y : ℂ) : nu ι (x * y) = nu ι x * nu ι y := by simp [nu]
-private theorem nu_one : nu ι 1 = 1 := by simp [nu]
-private theorem nu_zero : nu ι 0 = 0 := by simp [nu]
-private theorem nu_nonneg (x : ℂ) : 0 ≤ nu ι x := norm_nonneg _
-private theorem nu_pos {x : ℂ} (hx : x ≠ 0) : 0 < nu ι x := by
-  simpa [nu] using hx
-private theorem nu_neg (x : ℂ) : nu ι (-x) = nu ι x := by simp [nu]
-private theorem nu_add_le (x y : ℂ) : nu ι (x + y) ≤ max (nu ι x) (nu ι y) := by
-  simpa [nu] using IsUltrametricDist.norm_add_le_max (ι.symm x) (ι.symm y)
-private theorem nu_sum_le {α : Type} (s : Finset α) (f : α → ℂ) {C : ℝ} (hC : 0 ≤ C)
-    (h : ∀ i ∈ s, nu ι (f i) ≤ C) : nu ι (∑ i ∈ s, f i) ≤ C := by
-  unfold nu
-
-  rw [map_sum]
-  exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hC h
-private theorem nu_zpow (x : ℂ) (k : ℤ) : nu ι (x ^ k) = nu ι x ^ k := by
-  simp [nu, map_zpow₀, norm_zpow]
-private theorem nu_prod {α : Type} (s : Finset α) (f : α → ℂ) :
-    nu ι (∏ i ∈ s, f i) = ∏ i ∈ s, nu ι (f i) := by
-  simp [nu, map_prod, norm_prod]
-
 private def ball : Subring ℂ where
   carrier := {x | nu ι x ≤ 1}
   mul_mem' {a b} ha hb := by
-    simp only [Set.mem_setOf_eq] at *
-    rw [nu_mul]; exact mul_le_one₀ ha (nu_nonneg ι _) hb
-  one_mem' := (nu_one ι).le
-  add_mem' {a b} ha hb := (nu_add_le ι a b).trans (max_le ha hb)
-  zero_mem' := by simp [nu_zero]
-  neg_mem' {a} ha := by simpa [nu_neg] using ha
+    simp only [Set.mem_setOf_eq, nu, map_mul, norm_mul] at *
+    exact mul_le_one₀ ha (norm_nonneg _) hb
+  one_mem' := by simp [nu]
+  add_mem' {a b} ha hb := by
+    simpa [nu] using
+      (IsUltrametricDist.norm_add_le_max (ι.symm a) (ι.symm b)).trans (max_le ha hb)
+  zero_mem' := by simp [nu]
+  neg_mem' {a} ha := by simpa [nu] using ha
 
 private theorem prod_zpow_sum {α : Type} {p : ℝ} (hp : p ≠ 0) (s : Finset α) (f : α → ℤ) :
     ∏ i ∈ s, p ^ f i = p ^ ∑ i ∈ s, f i := by
@@ -91,28 +72,17 @@ private theorem prod_zpow_sum {α : Type} {p : ℝ} (hp : p ≠ 0) (s : Finset �
   | empty => simp
   | insert a s ha ih => rw [Finset.prod_insert ha, Finset.sum_insert ha, ih, zpow_add₀ hp]
 
-private theorem mat_bound {κ : Type} [Fintype κ] [DecidableEq κ] (A B : Matrix κ κ ℂ) (c : κ → ℂ) {X : ℝ}
-    (hX : 0 ≤ X) (hA : ∀ i j, nu ι (A i j) ≤ 1) (hB : ∀ i j, nu ι (B i j) ≤ 1)
-    (hc : ∀ m, nu ι (c m) ≤ X) (i j : κ) : nu ι ((A * diagonal c * B) i j) ≤ X := by
-  rw [Matrix.mul_apply]
-  refine nu_sum_le ι _ _ hX fun m _ => ?_
-  rw [Matrix.mul_diagonal, nu_mul, nu_mul]
-  calc _ ≤ 1 * X * 1 :=
-        mul_le_mul (mul_le_mul (hA _ _) (hc _) (nu_nonneg ι _) zero_le_one) (hB _ _) (nu_nonneg ι _)
-          (by simpa using hX)
-    _ = X := by ring
-
 private theorem mat_bound' {κ δ : Type} [Fintype κ] (P : Matrix δ κ ℂ) (M : Matrix κ κ ℂ) (Q : Matrix κ δ ℂ)
     {c Y : ℝ} (hc : 0 ≤ c) (hY : 0 ≤ Y) (hP : ∀ i j, nu ι (P i j) ≤ c) (hQ : ∀ i j, nu ι (Q i j) ≤ c)
     (hM : ∀ i j, nu ι (M i j) ≤ Y) (i j : δ) : nu ι ((P * M * Q) i j) ≤ c * c * Y := by
   have h0 : 0 ≤ c * c * Y := by positivity
-  rw [Matrix.mul_apply]
-  refine nu_sum_le ι _ _ h0 fun y _ => ?_
-  rw [nu_mul, Matrix.mul_apply]
-  have h1 : nu ι (∑ x, P i x * M x y) ≤ c * Y :=
-    nu_sum_le ι _ _ (by positivity) fun x _ => by
-      rw [nu_mul]; exact mul_le_mul (hP _ _) (hM _ _) (nu_nonneg ι _) hc
-  calc _ ≤ (c * Y) * c := mul_le_mul h1 (hQ _ _) (nu_nonneg ι _) (by positivity)
+  rw [Matrix.mul_apply, nu, map_sum]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg h0 fun y _ => ?_
+  rw [map_mul, norm_mul, Matrix.mul_apply, map_sum]
+  have h1 : ‖∑ x, ι.symm (P i x * M x y)‖ ≤ c * Y :=
+    IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun x _ => by
+      rw [map_mul, norm_mul]; exact mul_le_mul (hP _ _) (hM _ _) (norm_nonneg _) hc
+  calc _ ≤ (c * Y) * c := mul_le_mul h1 (hQ _ _) (norm_nonneg _) (by positivity)
     _ = c * c * Y := by ring
 
 private theorem entries_le_one {n : ℕ} (lam : DomWeight n) {κ : Type} [Fintype κ] [DecidableEq κ]
@@ -160,10 +130,10 @@ private theorem nu_unit (hψ : ∀ x, Valued.v x ≤ 1 → nu ι (ψ x) ≤ 1) {
   have h1 := hψ x hx.le
   have h2 := hψ x⁻¹ (by rw [map_inv₀, hx, inv_one])
   have h3 : nu ι (ψ x) * nu ι (ψ x⁻¹) = 1 := by
-    rw [← nu_mul, ← map_mul, mul_inv_cancel₀ h0, map_one, nu_one]
+    simp only [nu, ← norm_mul, ← map_mul, mul_inv_cancel₀ h0, map_one, norm_one]
   refine le_antisymm h1 ?_
   calc (1 : ℝ) = _ := h3.symm
-    _ ≤ nu ι (ψ x) * 1 := mul_le_mul_of_nonneg_left h2 (nu_nonneg ι _)
+    _ ≤ nu ι (ψ x) * 1 := mul_le_mul_of_nonneg_left h2 (norm_nonneg _)
     _ = _ := mul_one _
 
 private theorem side {n : ℕ} (lam : DomWeight n) {κ : Type} [Fintype κ] [DecidableEq κ]
@@ -184,7 +154,8 @@ private theorem side {n : ℕ} (lam : DomWeight n) {κ : Type} [Fintype κ] [Dec
     refine hK _ (fun i j => hψ _ (Formalism.UG.P.cartan_entries_of_mem _ k hk i j)) fun i j => ?_
     rw [← map_inv]
     exact hψ _ (Formalism.UG.P.cartan_entries_of_mem _ _ (inv_mem hk) i j)
-  have hp : nu ι (ψ ϖ) ≠ 0 := (nu_pos ι ((map_ne_zero ψ).2 ϖ.ne_zero)).ne'
+  have hp : nu ι (ψ ϖ) ≠ 0 :=
+    norm_ne_zero_iff.2 ((map_ne_zero ι.symm).2 ((map_ne_zero ψ).2 ϖ.ne_zero))
   let c : κ → ℂ := fun m => ∏ i, ψ ((ϖ ^ a i : (u.adicCompletion E)ˣ) : u.adicCompletion E) ^ μ m i
   have hDm : LinearMap.toMatrix b b (GlobalTheory.Branching.sqRep ℂ n lam (GeneralLinearGroup.map ψ (dg ϖ a))) =
       diagonal c := by
@@ -201,12 +172,13 @@ private theorem side {n : ℕ} (lam : DomWeight n) {κ : Type} [Fintype κ] [Dec
       LinearMap.toMatrix b b (GlobalTheory.Branching.sqRep ℂ n lam x) * LinearMap.toMatrix b b (GlobalTheory.Branching.sqRep ℂ n lam y) :=
     fun x y => by rw [map_mul, Module.End.mul_eq_comp, LinearMap.toMatrix_comp b b b]
   rw [(GeneralLinearGroup.map ψ).map_mul, (GeneralLinearGroup.map ψ).map_mul, hT, hT, hDm]
-  refine mat_bound ι _ _ c hX (hKm k₁ h₁) (hKm k₂ h₂) (fun m => ?_) i j
-  have e : ∀ i, nu ι (ψ ((ϖ ^ a i : (u.adicCompletion E)ˣ) : u.adicCompletion E) ^ μ m i) =
-      nu ι (ψ ϖ) ^ (a i * μ m i) := fun i => by
-    rw [nu_zpow, Units.val_zpow_eq_zpow_val, map_zpow₀, nu_zpow, _root_.zpow_mul]
-  simp only [c, nu_prod, e, prod_zpow_sum hp]
-  exact hc m
+  have hdiag : ∀ p q, nu ι (diagonal c p q) ≤ X := fun p q => by
+    rcases eq_or_ne p q with rfl | h
+    · rw [diagonal_apply_eq, nu, map_prod, norm_prod]
+      simp only [Units.val_zpow_eq_zpow_val, map_zpow₀, norm_zpow, ← _root_.zpow_mul]
+      exact (prod_zpow_sum hp _ _).trans_le (hc p)
+    · simp [diagonal_apply_ne _ h, nu, hX]
+  simpa using mat_bound' ι _ _ _ zero_le_one hX (hKm k₁ h₁) (hKm k₂ h₂) hdiag i j
 
 private theorem decomp (hψ : ∀ x, Valued.v x ≤ 1 → nu ι (ψ x) ≤ 1) {n : ℕ} (ϖ : (u.adicCompletion E)ˣ)
     (hϖ : Formalism.UG.IsUnifV E u ϖ) (g : GL (Fin n) (u.adicCompletion E)) (hg : ∀ i j, Valued.v (g.val i j) ≤ 1) :
@@ -227,7 +199,8 @@ private theorem decomp (hψ : ∀ x, Valued.v x ≤ 1 → nu ι (ψ x) ≤ 1) {n
     exact (Units.val_zpow_eq_zpow_val _ _).symm)
   have hdet : ∀ k ∈ Formalism.UG.GLint (Fin n) (Formalism.UG.Ov E u), nu ι (ψ k.val.det) = 1 := fun k hk =>
     nu_unit ι ψ hψ (Formalism.UG.P.cartan_val_det _ Valued.v (Formalism.UG.P.cartan_mem_Ov E u) k hk)
-  have hp : nu ι (ψ ϖ) ≠ 0 := (nu_pos ι ((map_ne_zero ψ).2 ϖ.ne_zero)).ne'
+  have hp : nu ι (ψ ϖ) ≠ 0 :=
+    norm_ne_zero_iff.2 ((map_ne_zero ι.symm).2 ((map_ne_zero ψ).2 ϖ.ne_zero))
   refine ⟨a, ha, fun i => ?_, ?_, ⟨k₁, hk₁, k₂, hk₂, e'⟩, ?_⟩
   · have h1 : k₁⁻¹ * g * k₂⁻¹ = dg ϖ a := by rw [e']; group
     have h2 : ((k₁⁻¹ * g * k₂⁻¹).val i i) ∈ Formalism.UG.Ov E u := by
@@ -248,10 +221,12 @@ private theorem decomp (hψ : ∀ x, Valued.v x ≤ 1 → nu ι (ψ x) ≤ 1) {n
       simp only [Units.val_mul, Matrix.det_mul]
       congr 2
       exact det_diagonal
-    rw [h1, map_mul, map_mul, nu_mul, nu_mul, hdet k₁ hk₁, hdet k₂ hk₂, one_mul, mul_one, map_prod, nu_prod,
-      ← prod_zpow_sum hp]
+    rw [h1, ← prod_zpow_sum hp]
+    simp only [nu, map_mul, norm_mul, map_prod, norm_prod]
+    rw [show ‖ι.symm (ψ k₁.val.det)‖ = 1 from hdet k₁ hk₁,
+      show ‖ι.symm (ψ k₂.val.det)‖ = 1 from hdet k₂ hk₂, one_mul, mul_one]
     refine Finset.prod_congr rfl fun i _ => ?_
-    rw [Units.val_zpow_eq_zpow_val, map_zpow₀, nu_zpow]
+    simp only [Units.val_zpow_eq_zpow_val, map_zpow₀, norm_zpow]
   · obtain ⟨S₁, h₁, e₁⟩ := Formalism.UG.P.cartan_perm_glint (Formalism.UG.Ov E u) (Fin.revPerm (n := n)).symm
     obtain ⟨S₂, h₂, e₂⟩ := Formalism.UG.P.cartan_perm_glint (Formalism.UG.Ov E u) (Fin.revPerm (n := n))
     have h3 : dg ϖ a = S₁ * dg ϖ (a ∘ Fin.rev) * S₂ := Units.ext (by
@@ -274,24 +249,15 @@ theorem UpperTheory.V.Z.Int.repBound :
   have hK := entries_le_one ι lam b h1
   let P := e.toMatrix b
   let Q := b.toMatrix e
-  obtain ⟨c, hc, hP, hQ⟩ : ∃ c : ℝ, 0 ≤ c ∧ (∀ i j, nu ι (P i j) ≤ c) ∧ ∀ i j, nu ι (Q i j) ≤ c := by
-    have s1 : 0 ≤ ∑ i, ∑ j, nu ι (P i j) :=
-      Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => nu_nonneg ι _
-    have s2 : 0 ≤ ∑ i, ∑ j, nu ι (Q i j) :=
-      Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => nu_nonneg ι _
-    refine ⟨(∑ i, ∑ j, nu ι (P i j)) + ∑ i, ∑ j, nu ι (Q i j), add_nonneg s1 s2, fun i j => ?_, fun i j => ?_⟩
-    · have t1 : nu ι (P i j) ≤ ∑ j, nu ι (P i j) :=
-        Finset.single_le_sum (f := fun j => nu ι (P i j)) (fun _ _ => nu_nonneg ι _) (Finset.mem_univ j)
-      have t2 : ∑ j, nu ι (P i j) ≤ ∑ i, ∑ j, nu ι (P i j) :=
-        Finset.single_le_sum (f := fun i => ∑ j, nu ι (P i j))
-          (fun _ _ => Finset.sum_nonneg fun _ _ => nu_nonneg ι _) (Finset.mem_univ i)
-      linarith
-    · have t1 : nu ι (Q i j) ≤ ∑ j, nu ι (Q i j) :=
-        Finset.single_le_sum (f := fun j => nu ι (Q i j)) (fun _ _ => nu_nonneg ι _) (Finset.mem_univ j)
-      have t2 : ∑ j, nu ι (Q i j) ≤ ∑ i, ∑ j, nu ι (Q i j) :=
-        Finset.single_le_sum (f := fun i => ∑ j, nu ι (Q i j))
-          (fun _ _ => Finset.sum_nonneg fun _ _ => nu_nonneg ι _) (Finset.mem_univ i)
-      linarith
+  let c : ℝ := max ((Finset.univ.sup fun p : Fin d × κ => ‖ι.symm (P p.1 p.2)‖₊ : NNReal) : ℝ)
+    ((Finset.univ.sup fun p : κ × Fin d => ‖ι.symm (Q p.1 p.2)‖₊ : NNReal) : ℝ)
+  have hc : 0 ≤ c := le_max_of_le_left (NNReal.coe_nonneg _)
+  have hP : ∀ i j, nu ι (P i j) ≤ c := fun i j =>
+    (NNReal.coe_le_coe.2 (Finset.le_sup (f := fun p : Fin d × κ => ‖ι.symm (P p.1 p.2)‖₊)
+      (Finset.mem_univ (i, j)))).trans (le_max_left _ _)
+  have hQ : ∀ i j, nu ι (Q i j) ≤ c := fun i j =>
+    (NNReal.coe_le_coe.2 (Finset.le_sup (f := fun p : κ × Fin d => ‖ι.symm (Q p.1 p.2)‖₊)
+      (Finset.mem_univ (i, j)))).trans (le_max_right _ _)
   have hM : ∀ f : nablaSq ℂ n lam →ₗ[ℂ] nablaSq ℂ n lam,
       LinearMap.toMatrix e e f = P * LinearMap.toMatrix b b f * Q := fun f =>
     (basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix e b e b f).symm
@@ -299,7 +265,8 @@ theorem UpperTheory.V.Z.Int.repBound :
   obtain ⟨ϖ0, hϖ0⟩ : ∃ p, Formalism.UG.IsUnifV E u p := u.valuedAdicCompletion_surjective E _
   let ϖ : (u.adicCompletion E)ˣ := Units.mk0 ϖ0 (Formalism.UG.P.cartan_unif_ne_zero E u ϖ0 hϖ0)
   obtain ⟨a, ha, ha0, hdet, ⟨k₁, hk₁, k₂, hk₂, e₁⟩, ⟨k₃, hk₃, k₄, hk₄, e₂⟩⟩ := decomp ι ψ hψ ϖ hϖ0 g hg
-  have hp0 : 0 < nu ι (ψ ϖ) := nu_pos ι ((map_ne_zero ψ).2 ϖ.ne_zero)
+  have hp0 : 0 < nu ι (ψ ϖ) :=
+    norm_pos_iff.2 ((map_ne_zero ι.symm).2 ((map_ne_zero ψ).2 ϖ.ne_zero))
   have hp1 : nu ι (ψ ϖ) ≤ 1 := hψ _ (Formalism.UG.P.cartan_unif_lt_one E u _ hϖ0).le
   have hmono : ∀ x y : ℤ, x ≤ y → nu ι (ψ ϖ) ^ y ≤ nu ι (ψ ϖ) ^ x := fun x y h =>
     zpow_le_zpow_right_of_le_one₀ hp0 hp1 h

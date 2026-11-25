@@ -44,6 +44,7 @@ import Mathlib.Tactic.NormNum.Parity
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.NormNum.RealSqrt
 import Mathlib.Tactic.ReduceModChar
+import Development.AutomorphicArithmetic.WhittakerHecke.LocGLEqLocalEmbeddingAndKGLEqIntegralGL
 public import Development.AutomorphicArithmetic.AutomorphicVarieties.AutomorphicForms.SmoothRepresentationsGL.ExistsCombComb
 
 @[expose] public section
@@ -57,19 +58,6 @@ open GroundTheory.Automorphic.GLnLocal GroundTheory.Automorphic.GJStandardLCuspi
 open scoped Classical
 
 namespace UpperTheory.V.Z.Inf
-
-private theorem localEmbedding_eq {K : Type} [Field K] [NumberField K] {n : ℕ}
-    (w : HeightOneSpectrum (𝓞 K)) (g : GL (Fin n) (w.adicCompletion K)) :
-    AdelicGLn.localEmbedding w g = locGL K n w g := by
-  refine Units.ext <| Matrix.ext fun a b => FiniteAdeleRing.ext K fun v => ?_
-  change ((AdelicGLn.finiteRestrictedEquiv K n).symm _ : AdelicGLn.FiniteAdelicGL K n) a b v = _
-  rw [AdelicGLn.finiteRestrictedEquiv_symm_apply, RestrictedProduct.coe_mulSingle_apply]
-  by_cases h : v = w
-  · subst h
-    rw [Pi.mulSingle_eq_same]
-    exact (congrArg (fun x : GL (Fin n) (v.adicCompletion K) => x a b) (pLoc_locGL v g)).symm
-  · rw [Pi.mulSingle_eq_of_ne h]
-    exact (congrArg (fun x : GL (Fin n) (v.adicCompletion K) => x a b) (pLoc_locGL_of_ne h g)).symm
 
 private theorem isSatake_of_eig {K : Type} [Field K] [NumberField K] {n : ℕ} (w : HeightOneSpectrum (𝓞 K))
     {V : Type} [AddCommGroup V] [Module ℂ V] (ρ : Representation ℂ (GL (Fin n) (w.adicCompletion K)) V)
@@ -123,7 +111,7 @@ theorem UpperTheory.V.Z.Inf.satDict :
   have hJ : ∀ g y t, (J (D.finite.π v g y)).1.1 t = (J y).1.1 (t * finGL K n (locGL K n v g)) := by
     intro g y t
     have e : J (D.finite.π v g y) = σ.op (.fin (locGL K n v g)) (J y) := by
-      rw [← localEmbedding_eq]
+      rw [(UpperTheory.locGL_eq_localEmbedding_and_KGL_eq_integralGL K n v).1]
       exact (congrArg (Cm.carrierEq σ) (Iv_int D a x hx v g y)).trans (Cm.carrierEq_τ σ _ _)
     rw [e]
     rfl

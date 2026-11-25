@@ -104,11 +104,6 @@ private theorem ag_lift {G C : Type} [Group G] [TopologicalSpace G] [IsTopologic
   refine ⟨QuotientGroup.lift _ q hle, ?_, fun g => rfl⟩
   exact continuous_coinduced_dom.2 hq
 
-private theorem ag_map {G G' : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Group G']
-    [TopologicalSpace G'] [IsTopologicalGroup G'] (f : G →* G') (hf : Continuous f) :
-    ∃ F : TopologicalAbelianization G →* TopologicalAbelianization G', Continuous F ∧ ∀ g : G, F g = (f g : G') := by
-  apply _root_.ab_map <;> assumption
-
 open GroundTheory.LocalField ValuativeRel GroundTheory.LocalField.Abstract in
 private theorem ag_field (K Ω : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
     [IsNonarchimedeanLocalField K] [Field Ω] [Algebra K Ω] [IsSepClosure K Ω]
@@ -120,8 +115,8 @@ private theorem ag_field (K Ω : Type) [Field K] [ValuativeRel K] [TopologicalSp
         ∃ V : Subgroup (TopologicalAbelianization G), IsOpen (V : Set (TopologicalAbelianization G)) ∧ V.comap θ = H) ∧
       Continuous D ∧ (∀ y : Kˣ, D (θ y) = Multiplicative.ofAdd ((ord (y : K) : ℤ) : ProfiniteInteger)) ∧
       ∀ g : G, D (QuotientGroup.mk' _ g) = unramifiedDegree K Ω (ε g) := by
-  obtain ⟨F, hF, hFe⟩ := ag_map (ε : G →* (Ω ≃ₐ[K] Ω)) hε
-  obtain ⟨F', hF', hF'e⟩ := ag_map (ε.symm : (Ω ≃ₐ[K] Ω) →* G) hε'
+  obtain ⟨F, hF, hFe⟩ := _root_.ab_map (ε : G →* (Ω ≃ₐ[K] Ω)) hε
+  obtain ⟨F', hF', hF'e⟩ := _root_.ab_map (ε.symm : (Ω ≃ₐ[K] Ω) →* G) hε'
   have hFF' : ∀ b, F (F' b) = b := by
     intro b
     obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective b
@@ -706,10 +701,6 @@ private theorem as_ext {M A B : Type} [CommGroup M] [TopologicalSpace M] [CommGr
       ∃ V : Subgroup A, IsOpen (V : Set A) ∧ V.comap θ = H)
     (f : M →* B) (hf : Continuous f) : ∃ F : A →* B, Continuous F ∧ ∀ y, F (θ y) = f y := by
   classical
-  have hnb : ∀ a : A, (Filter.comap θ (𝓝 a)).NeBot := fun a =>
-    Filter.comap_neBot fun t ht => by
-      obtain ⟨_, hx, y, rfl⟩ := mem_closure_iff_nhds.1 (hd a) t ht
-      exact ⟨y, hx⟩
   have hbasis : ∀ W ∈ 𝓝 (1 : B), ∃ U : OpenNormalSubgroup B, (U.toSubgroup : Set B) ⊆ W := by
     intro W hW
     obtain ⟨O, hOW, hO, h1⟩ := mem_nhds_iff.1 hW
@@ -726,89 +717,14 @@ private theorem as_ext {M A B : Type} [CommGroup M] [TopologicalSpace M] [CommGr
         simp [g, QuotientGroup.eq_one_iff]
       rw [hker]
       infer_instance
-  choose V hVo hVc using hV
-  have hmem : ∀ U y, θ y ∈ V U ↔ f y ∈ U.toSubgroup := by
-    intro U y
-    have := SetLike.ext_iff.1 (hVc U) y
-    simpa using this
-  have hUc : ∀ U : OpenNormalSubgroup B, IsClosed (U.toSubgroup : Set B) :=
-    fun U => U.toOpenSubgroup.isClosed
-  have htend : ∀ (F : Filter M) (b : B),
-      (∀ U : OpenNormalSubgroup B, ∀ᶠ y in F, b⁻¹ * f y ∈ U.toSubgroup) → Filter.Tendsto f F (𝓝 b) := by
-    intro F b h W hW
-    have hW' : (fun x => b * x) ⁻¹' W ∈ 𝓝 (1 : B) :=
-      (continuous_const_mul b).continuousAt.preimage_mem_nhds (by simpa using hW)
-    obtain ⟨U, hU⟩ := hbasis _ hW'
-    refine Filter.mem_map.2 ?_
-    filter_upwards [h U] with y hy
-    simpa using hU hy
-  have hNo : ∀ (a : A) U, IsOpen ((fun x => a⁻¹ * x) ⁻¹' (V U : Set A)) :=
-    fun a U => (hVo U).preimage (continuous_const_mul a⁻¹)
-  have hNa : ∀ (a : A) U, a ∈ (fun x => a⁻¹ * x) ⁻¹' (V U : Set A) := by
-    intro a U
-    simp [one_mem]
-  have hlim : ∀ a : A, ∃ b : B, Filter.Tendsto f (Filter.comap θ (𝓝 a)) (𝓝 b) := by
-    intro a
-    haveI := hnb a
-    obtain ⟨b, -, hb⟩ := isCompact_univ.exists_clusterPt (f := Filter.map f (Filter.comap θ (𝓝 a)))
-      (Filter.le_principal_iff.2 Filter.univ_mem)
-    refine ⟨b, htend _ _ fun U => ?_⟩
-    obtain ⟨y0, hy0⟩ := hd.exists_mem_open (hNo a U) ⟨a, hNa a U⟩
-    have hev : ∀ᶠ y in Filter.comap θ (𝓝 a), (f y0)⁻¹ * f y ∈ U.toSubgroup := by
-      filter_upwards [Filter.preimage_mem_comap ((hNo a U).mem_nhds (hNa a U))] with y hy
-      have h1 : θ (y0⁻¹ * y) ∈ V U := by
-        have := (V U).mul_mem ((V U).inv_mem hy0) hy
-        simpa [mul_assoc] using this
-      rw [hmem] at h1
-      simpa using h1
-    have hbC : (f y0)⁻¹ * b ∈ U.toSubgroup := by
-      have hC : IsClosed ((fun x => (f y0)⁻¹ * x) ⁻¹' (U.toSubgroup : Set B)) :=
-        (hUc U).preimage (continuous_const_mul _)
-      exact hC.closure_subset (hb.mem_closure_of_mem (s := (fun x => (f y0)⁻¹ * x) ⁻¹' (U.toSubgroup : Set B)) hev)
-    filter_upwards [hev] with y hy
-    have := U.toSubgroup.mul_mem (U.toSubgroup.inv_mem hbC) hy
-    simpa [mul_assoc] using this
-  choose F0 hF using hlim
-  have hθ : ∀ y, F0 (θ y) = f y := by
-    intro y
-    haveI := hnb (θ y)
-    refine tendsto_nhds_unique (hF (θ y)) (htend _ _ fun U => ?_)
-    filter_upwards [Filter.preimage_mem_comap ((hNo (θ y) U).mem_nhds (hNa (θ y) U))] with z hz
-    have h1 : θ (y⁻¹ * z) ∈ V U := by simpa using hz
-    rw [hmem] at h1
-    simpa using h1
-  have hmul : ∀ a b, F0 (a * b) = F0 a * F0 b := by
-    intro a b
-    haveI := hnb a
-    haveI := hnb b
-    have hP : Filter.Tendsto (fun p : M × M => p.1 * p.2)
-        (Filter.comap θ (𝓝 a) ×ˢ Filter.comap θ (𝓝 b)) (Filter.comap θ (𝓝 (a * b))) := by
-      rw [Filter.tendsto_comap_iff]
-      have : Filter.Tendsto (fun p : M × M => θ p.1 * θ p.2)
-          (Filter.comap θ (𝓝 a) ×ˢ Filter.comap θ (𝓝 b)) (𝓝 (a * b)) :=
-        (Filter.tendsto_comap.comp Filter.tendsto_fst).mul (Filter.tendsto_comap.comp Filter.tendsto_snd)
-      simpa [Function.comp_def] using this
-    have h1 := (hF (a * b)).comp hP
-    have h2 : Filter.Tendsto (fun p : M × M => f p.1 * f p.2)
-        (Filter.comap θ (𝓝 a) ×ˢ Filter.comap θ (𝓝 b)) (𝓝 (F0 a * F0 b)) :=
-      ((hF a).comp Filter.tendsto_fst).mul ((hF b).comp Filter.tendsto_snd)
-    refine tendsto_nhds_unique h1 ?_
-    simpa [Function.comp_def] using h2
-  let F : A →* B :=
-    { toFun := F0
-      map_one' := by simpa using hθ 1
-      map_mul' := hmul }
-  refine ⟨F, ?_, hθ⟩
-  refine continuous_of_continuousAt_one F ?_
-  intro W hW
-  rw [map_one] at hW
-  obtain ⟨U, hU⟩ := hbasis _ hW
-  refine Filter.mem_map.2 (Filter.mem_of_superset ((hVo U).mem_nhds (one_mem _)) fun x hx => hU ?_)
-  have hev : ∀ᶠ y in Filter.comap θ (𝓝 x), f y ∈ U.toSubgroup := by
-    filter_upwards [Filter.preimage_mem_comap ((hVo U).mem_nhds hx)] with y hy
-    exact (hmem U y).1 hy
-  haveI := hnb x
-  exact (hUc U).mem_of_tendsto (hF x) hev
+  letI : UniformSpace B := IsTopologicalGroup.rightUniformSpace B
+  haveI : IsUniformGroup B := isUniformGroup_of_commGroup
+  haveI : CompleteSpace B := complete_of_compact
+  refine _root_.ext_hom θ hd f fun W hW => ?_
+  obtain ⟨U, hU⟩ := hbasis W hW
+  obtain ⟨V, hVo, hVc⟩ := hV U
+  exact Filter.mem_comap.2 ⟨V, hVo.mem_nhds V.one_mem,
+    fun y hy => hU ((SetLike.ext_iff.1 hVc y).1 hy)⟩
 
 open GroundTheory.LocalField.Abstract in
 private theorem as_ker {M A : Type} [CommGroup M] [TopologicalSpace M] [CommGroup A] [TopologicalSpace A]
