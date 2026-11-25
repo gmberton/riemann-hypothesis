@@ -123,13 +123,7 @@ private theorem star_mulVec_dotProduct_gram {n a b : Type} [Fintype n] [Fintype 
     star (X *ᵥ x) ⬝ᵥ (G *ᵥ (Y *ᵥ y)) = star x ⬝ᵥ ((Xᴴ * G * Y) *ᵥ y) := by
   rw [Matrix.star_mulVec, ← Matrix.dotProduct_mulVec, Matrix.mulVec_mulVec, Matrix.mulVec_mulVec]
 
-private theorem re_star_dotProduct_self' {a : Type} [Fintype a] (x : a → ℂ) :
-    (star x ⬝ᵥ x).re = ∑ j, Complex.normSq (x j) := by
-  simp only [dotProduct, Pi.star_apply, Complex.re_sum, Complex.mul_re, Complex.star_def, Complex.conj_re,
-    Complex.conj_im, Complex.normSq_apply]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  ring
-
+open scoped ComplexOrder in
 private theorem card_add_card_add_card_le_of_gram_frames {n : ℕ} {m₁ m₂ k : Type} [Fintype m₁] [Fintype m₂] [Fintype k]
     [DecidableEq m₁] [DecidableEq k]
     (G : Matrix (Fin n) (Fin n) ℂ) (hG : Gᴴ = G) (A : Matrix (Fin n) m₁ ℂ) (C : Matrix (Fin n) m₂ ℂ)
@@ -153,20 +147,10 @@ private theorem card_add_card_add_card_le_of_gram_frames {n : ℕ} {m₁ m₂ k 
       simp only [star_neg, Matrix.mulVec_neg, neg_dotProduct, dotProduct_neg, neg_neg, star_mulVec_dotProduct_gram, hN,
         Matrix.neg_mulVec, Matrix.one_mulVec]
     rw [hu, e2] at e1
-    have r := congrArg Complex.re e1
-    rw [Complex.neg_re, re_star_dotProduct_self', re_star_dotProduct_self'] at r
-    have sx : 0 ≤ ∑ j, Complex.normSq (x j) := Finset.sum_nonneg fun j _ => Complex.normSq_nonneg _
-    have sy : 0 ≤ ∑ j, Complex.normSq (y j) := Finset.sum_nonneg fun j _ => Complex.normSq_nonneg _
-    have hx0 : x = 0 := by
-      have hs : ∑ j, Complex.normSq (x j) = 0 := by linarith
-      funext j
-      exact Complex.normSq_eq_zero.mp
-        ((Finset.sum_eq_zero_iff_of_nonneg fun j _ => Complex.normSq_nonneg _).mp hs j (Finset.mem_univ _))
-    have hy0 : y = 0 := by
-      have hs : ∑ j, Complex.normSq (y j) = 0 := by linarith
-      funext j
-      exact Complex.normSq_eq_zero.mp
-        ((Finset.sum_eq_zero_iff_of_nonneg fun j _ => Complex.normSq_nonneg _).mp hs j (Finset.mem_univ _))
+    have hxx : star x ⬝ᵥ x = 0 := le_antisymm
+      (e1 ▸ neg_nonpos.mpr (dotProduct_star_self_nonneg y)) (dotProduct_star_self_nonneg x)
+    have hx0 : x = 0 := dotProduct_star_self_eq_zero.mp hxx
+    have hy0 : y = 0 := dotProduct_star_self_eq_zero.mp (neg_eq_zero.mp (e1.trans hxx))
     subst hx0 hy0
     have hz : C *ᵥ z = 0 := by simpa using h0
     rw [hCi z hz]
@@ -232,15 +216,8 @@ theorem hasSignature_of_isWittLower {D : D7} {T T' : HSp D} {i : ℕ} (h : IsWit
   have hUC : Quᴴ * gramAt D T τ * Qc = 0 :=
     (gram_tauE_frame_repr_eq_hT T τ (fun a => ι (T'.frame a)) c).trans (by ext a k; simp [hcu])
   have hCC : Qcᴴ * gramAt D T τ * Qc = 0 := (gram_tauE_frame_repr_eq_hT T τ c c).trans (by ext k l; simp [hcc])
-  have hGH : (gramAt D T τ)ᴴ = gramAt D T τ := by
-    ext a b
-    simp only [gramAt, Matrix.conjTranspose_apply, Matrix.map_apply, Formalism.BasicNotions.HSpace.gram]
-    rw [Complex.star_def, ← GlobalTheory.FockCompare.tauE_star]
-    congr 1
-    exact T.herm.eq _ _
-  have hdet : IsUnit (gramAt D T τ).det := by
-    rw [isUnit_iff_ne_zero, show gramAt D T τ = (tauE D τ).mapMatrix T.gram from rfl, ← RingHom.map_det]
-    exact (map_ne_zero _).mpr (GlobalTheory.FrameComplement.gram_det_ne T)
+  have hGH := GlobalTheory.SmoothForms.RealPts.gramAt_herm T τ
+  have hdet := GlobalTheory.SmoothForms.RealPts.gramAt_unit T τ
   obtain ⟨ε0, P0, hP0, hP0G⟩ := GlobalTheory.FrameExists.exists_signFrame (H := gramAt D T τ) hGH hdet
   obtain ⟨P', Q', e0, he0⟩ := exists_numbering_signCompat ε0
   have hGs : Formalism.UG.HasSignature (gramAt D T τ) P' Q' := by

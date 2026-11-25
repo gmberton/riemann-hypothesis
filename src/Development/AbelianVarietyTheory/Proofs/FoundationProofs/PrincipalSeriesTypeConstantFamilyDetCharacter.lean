@@ -2,6 +2,8 @@ module
 
 public import Development.AbelianVarietyTheory.Definitions.Foundations.OrderedConst
 public import Development.AbelianVarietyTheory.Definitions.TwistedInnerProducts.IsSubquotientDetRepParInd
+import
+  Development.AbelianVarietyTheory.Proofs.FoundationProofs.PrincipalSeriesTypeCharacterBlockDiagonal
 import Mathlib.Algebra.Order.Floor.Extended
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Algebra.Order.Interval.Basic
@@ -55,24 +57,6 @@ namespace GlobalTheory.PsType
 
 variable {k : Type} [Field k] [ValuativeRel k] [TopologicalSpace k] [IsNonarchimedeanLocalField k]
 
-private theorem valuation_det_of_mem_KO' {n : Type} [Fintype n] [DecidableEq n] {g : GL n k} (hg : g ∈ KO k n) :
-    valuation k g.val.det = 1 := by
-  obtain ⟨h, rfl⟩ := hg
-  have hu : IsUnit (h.val.det) := (Matrix.isUnit_iff_isUnit_det _).1 h.isUnit
-  have := (Valuation.integer.integers (valuation k)).isUnit_iff_valuation_eq_one.1 hu
-  change valuation k ((algebraMap 𝒪[k] k).mapMatrix h.val).det = 1
-  rw [← RingHom.map_det]
-  exact this
-
-private theorem ev_one' (x : k) : ev (1 : kˣ →* ℂˣ) x = 1 := by
-  unfold ev; split_ifs <;> simp
-
-private theorem minor_last {n : ℕ} (g : GL (Fin (n + 1)) k) : minor g (Fin.last n) = g.val.det := by
-  unfold minor Matrix.toSquareBlockProp Matrix.toBlock
-  have := Matrix.det_submatrix_equiv_self (Equiv.subtypeUnivEquiv (p := fun i : Fin (n + 1) => i ≤ Fin.last n)
-    (fun i => Fin.le_last i)) g.val
-  rw [← this]; rfl
-
 theorem const_family (n : ℕ) (χ : kˣ →* ℂˣ) :
     grp (fun _ : Fin n => χ) = (KO k (Fin n) : Set (GL (Fin n) k)) ∧
       ∀ g ∈ KO k (Fin n), theta (fun _ : Fin n => χ) g = (detChar (Fin n) χ g : ℂ) := by
@@ -94,11 +78,11 @@ theorem const_family (n : ℕ) (χ : kˣ →* ℂˣ) :
         intro i
         have : nxt (fun _ : Fin (n+1) => χ) i.castSucc = χ := by
           unfold nxt; rw [dite_eq_left (by simp)]
-        rw [this, div_self']; exact ev_one' _
+        rw [this, div_self']; exact BlockTheta.ev_one_char _
       have h2 : nxt (fun _ : Fin (n+1) => χ) (Fin.last n) = 1 := by
         unfold nxt; rw [dite_eq_right (by simp)]
-      simp only [h1, Finset.prod_const_one, one_mul, h2, div_one, minor_last]
-      have hv := valuation_det_of_mem_KO' hg
+      simp only [h1, Finset.prod_const_one, one_mul, h2, div_one, BlockTheta.minor_last]
+      have hv := BlockTheta.val_det_of_mem_KO hg
       unfold ev
       rw [dite_eq_left hv, detChar_apply]
       congr 2

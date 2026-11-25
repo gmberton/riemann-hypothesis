@@ -46,6 +46,7 @@ import Development.AbelianVarietyTheory.Definitions.Foundations.IsHilbertSchmidt
 import Development.AbelianVarietyTheory.Definitions.Foundations.MeasurePreservingRmulQuotMeas
 import Development.AbelianVarietyTheory.Definitions.TwistedInnerProducts.RealLowestKTypeCoeffSquareIntegrable
 public import Development.AbelianVarietyTheory.Proofs.DivisorProofs.ExistsMemNotMem
+import Development.AbelianVarietyTheory.Proofs.SatakeParameters.ThetaLiftLevelsGoodPrimesProperties
 
 @[expose] public section
 
@@ -64,28 +65,7 @@ open Formalism.L2.Col Formalism.HermitianLatticesTheory GlobalTheory.SplitOffPla
 theorem isConjPl_of_under_eq_of_ne : ∀ (D : D7) (PP PP' : Pl D.host.E), (_root_.IsDedekindDomain.HeightOneSpectrum.under (𝓞 D.host.F) PP) = (_root_.IsDedekindDomain.HeightOneSpectrum.under (𝓞 D.host.F) PP') →
     PP ≠ PP' → Formalism.IndefR.Lev.IsConjPl PP PP' := by
   intro D PP PP' hu hne
-  have key : PP' = conjSpec PP := by
-    by_contra hc
-    obtain ⟨x, hx, hx1, hx2⟩ := exists_mem_not_mem (Q := PP') (P := PP) (P' := conjSpec PP) (Ne.symm hne) hc
-    have hfix : star ((x * Formalism.L2.Col.cO D.host.E x : 𝓞 D.host.E) : D.host.E) = ((x * Formalism.L2.Col.cO D.host.E x : 𝓞 D.host.E) : D.host.E) := by
-      change star ((x : D.host.E) * star (x : D.host.E)) = (x : D.host.E) * star (x : D.host.E)
-      rw [star_mul, star_star]
-    obtain ⟨a, ha⟩ := (D.sp.cm.fixed _).1 hfix
-    have hint : IsIntegral ℤ a := by
-      rw [← isIntegral_algebraMap_iff (B := D.host.E), ha]
-      exact (x * Formalism.L2.Col.cO D.host.E x).isIntegral_coe
-    have e : algebraMap (𝓞 D.host.F) (𝓞 D.host.E) ⟨a, hint⟩ = x * Formalism.L2.Col.cO D.host.E x := RingOfIntegers.ext ha
-    have h1 : (⟨a, hint⟩ : 𝓞 D.host.F) ∈ ((_root_.IsDedekindDomain.HeightOneSpectrum.under (𝓞 D.host.F) PP')).asIdeal := by
-      change algebraMap (𝓞 D.host.F) (𝓞 D.host.E) ⟨a, hint⟩ ∈ PP'.asIdeal
-      rw [e]
-      exact Ideal.mul_mem_right _ _ hx
-    rw [← hu] at h1
-    change algebraMap (𝓞 D.host.F) (𝓞 D.host.E) ⟨a, hint⟩ ∈ PP.asIdeal at h1
-    rw [e] at h1
-    rcases PP.isPrime.mem_or_mem h1 with h | h
-    · exact hx1 h
-    · exact hx2 h
-  rw [key]
-  exact GlobalTheory.LevelPlaces.isConjPl_conjSpec PP
+  exact GlobalTheory.GoodPrimes.isConjPl_iff.2
+    ((GlobalTheory.GoodPrimes.eq_or_conj_of_under_eq hu.symm).resolve_left hne.symm)
 
 end GlobalTheory.UnderConj

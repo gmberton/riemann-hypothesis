@@ -47,6 +47,7 @@ import Mathlib.RingTheory.RegularLocalRing.Defs
 import Mathlib.RingTheory.SimpleRing.Principal
 import Mathlib.Tactic.Basify
 import Mathlib.Tactic.ENatToNat
+import Mathlib.RingTheory.Localization.Finiteness
 
 -- This file was produced by scripts/clump.py from the modules listed below.
 -- Members: Development.AbelianVarietyTheory.Proofs.TwistedOperators.Imports, Development.AbelianVarietyTheory.Proofs.TwistedOperators.ImportsAlt, Development.AbelianVarietyTheory.Proofs.TwistedOperators.IsLatticeChainLatAndComap
@@ -62,26 +63,10 @@ theorem exists_smul_mem_of_mem_span {R K V : Type} [CommRing R] [IsDomain R] [Fi
     [Algebra R K] [IsFractionRing R K] [AddCommGroup V] [Module R V] [Module K V]
     [IsScalarTower R K V] (M : Submodule R V) {v : V}
     (hv : v ∈ Submodule.span K (M : Set V)) : ∃ a : R, a ≠ 0 ∧ a • v ∈ M := by
-  induction hv using Submodule.span_induction with
-  | mem x hx => exact ⟨1, one_ne_zero, by simpa using hx⟩
-  | zero => exact ⟨1, one_ne_zero, by simp⟩
-  | add x y _ _ hx hy =>
-    obtain ⟨a, ha, hax⟩ := hx
-    obtain ⟨b, hb, hby⟩ := hy
-    refine ⟨a * b, mul_ne_zero ha hb, ?_⟩
-    rw [smul_add]
-    refine M.add_mem ?_ ?_
-    · rw [mul_comm a b, mul_smul]; exact M.smul_mem b hax
-    · rw [mul_smul]; exact M.smul_mem a hby
-  | smul c x _ hx =>
-    obtain ⟨a, ha, hax⟩ := hx
-    obtain ⟨⟨n, d⟩, hnd⟩ := IsLocalization.surj (nonZeroDivisors R) c
-    dsimp only at hnd
-    refine ⟨d * a, mul_ne_zero (nonZeroDivisors.ne_zero d.2) ha, ?_⟩
-    have key : (d : R) • c • x = n • x := by
-      rw [← algebraMap_smul K (d : R) (c • x), smul_smul, mul_comm, hnd, algebraMap_smul]
-    rw [mul_comm (d : R) a, mul_smul, key, smul_comm a n x]
-    exact M.smul_mem n hax
+  obtain ⟨t, ht⟩ :=
+    multiple_mem_span_of_mem_localization_span (nonZeroDivisors R) K (M : Set V) v hv
+  rw [Submodule.span_eq, Submonoid.smul_def] at ht
+  exact ⟨t, mem_nonZeroDivisors_iff_ne_zero.1 t.2, ht⟩
 
 alias main := _root_.GlobalTheory.SmulMemOfMemSpan.exists_smul_mem_of_mem_span
 

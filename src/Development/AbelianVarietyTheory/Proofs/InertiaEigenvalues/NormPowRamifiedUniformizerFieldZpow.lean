@@ -96,34 +96,20 @@ theorem norm_pow_field (l : ℕ) [Fact l.Prime] (a e : ℕ) [NeZero a] [NeZero e
       rw [abs_lt]; constructor <;> omega
     exact Fin.ext (by omega)
 
-  obtain ⟨i0, -, hi0⟩ := Finset.exists_max_image Finset.univ (fun i => ‖t i‖)
-    (Finset.univ_nonempty_iff.2 ⟨⟨0, NeZero.pos e⟩⟩)
-  have ht0 : t i0 ≠ 0 := by
-    intro h
-    apply h0
-    rw [hyt]
-    refine Finset.sum_eq_zero fun i _ => norm_eq_zero.1 (le_antisymm ?_ (norm_nonneg _))
-    simpa [h] using hi0 i (Finset.mem_univ _)
-  have hpos : 0 < ‖t i0‖ := norm_pos_iff.2 ht0
-  have hrest : ‖∑ i ∈ Finset.univ.erase i0, t i‖ < ‖t i0‖ := by
-    have hterm : ∀ i ∈ Finset.univ.erase i0, ‖t i‖ < ‖t i0‖ := by
-      intro i hi
-      by_cases hti : t i = 0
-      · rw [hti, norm_zero]; exact hpos
-      refine lt_of_le_of_ne (hi0 i (Finset.mem_univ _)) fun h => ?_
-      exact (Finset.mem_erase.1 hi).1 (hdist i i0 hti ht0 h)
-    generalize Finset.univ.erase i0 = s at hterm ⊢
-    induction s using Finset.induction_on with
-    | empty => simpa using hpos
-    | @insert i s hi ih =>
-      rw [Finset.sum_insert hi]
-      exact lt_of_le_of_lt (IsUltrametricDist.norm_add_le_max _ _)
-        (max_lt (hterm i (Finset.mem_insert_self _ _))
-          (ih (fun j hj => hterm j (Finset.mem_insert_of_mem hj))))
-  have hy2 : ‖y‖ = ‖t i0‖ := by
-    rw [hyt, ← Finset.add_sum_erase _ _ (Finset.mem_univ i0),
-      IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hrest.ne', max_eq_left hrest.le]
-  obtain ⟨m, hm⟩ := hnt i0 ht0
-  exact ⟨_, by rw [hy2, hm]⟩
+  classical
+  set s := Finset.univ.filter (fun i => t i ≠ 0) with hs
+  obtain ⟨i, hi⟩ : ∃ i, t i ≠ 0 := by
+    by_contra! h
+    exact h0 (hyt.trans (Finset.sum_eq_zero fun j _ => h j))
+  have hsne : s.Nonempty := ⟨i, Finset.mem_filter.2 ⟨Finset.mem_univ _, hi⟩⟩
+  have hsum : y = ∑ j ∈ s, t j := by
+    rw [hyt, hs, Finset.sum_filter]
+    exact Finset.sum_congr rfl fun j _ => by split_ifs with hj; rfl; exact not_not.1 hj
+  have hpw : Set.Pairwise (s : Set (Fin e)) (fun a b => ‖t a‖ ≠ ‖t b‖) := fun a ha b hb hab h =>
+    hab (hdist a b (Finset.mem_filter.1 ha).2 (Finset.mem_filter.1 hb).2 h)
+  obtain ⟨i0, hi0, hi0s⟩ := s.exists_mem_eq_sup' hsne (fun a => ‖t a‖)
+  obtain ⟨m, hm⟩ := hnt i0 (Finset.mem_filter.1 hi0).2
+  exact ⟨_, by
+    rw [hsum, IsUltrametricDist.norm_sum_eq_sup'_of_pairwise_ne hsne hpw, hi0s, hm]⟩
 
 end GlobalTheory.ValGroupKprime

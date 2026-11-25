@@ -48,6 +48,7 @@ import Mathlib.Tactic.Polynomial.Basic
 import Mathlib.Tactic.ReduceModChar
 import Development.AbelianVarietyTheory.Proofs.TwistedOperators.PairPtsClasses
 import Development.AbelianVarietyTheory.Proofs.TwistedOperators.PairPtsEqSum
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.EigenOfLocalComponentsFiniteAdelicPair
 
 @[expose] public section
 
@@ -230,44 +231,22 @@ theorem om_fixed {ψ : AddChar (AF D.host.F) ℂ} {S T : HSp D} {χS χT : (AE D
     (H : ∀ v, (CharUnramAt D χS v ∧ CharUnramAt D χT v) ∨
       (GlobalTheory.VacStab.locPart S v g = 1 ∧ GlobalTheory.VacStab.locPart T v h = 1)) :
     om (g, h) f = f := by
-  have hm : ∀ (p q : GA D S × GA D T), om (p * q) f = om p (om q f) := fun p q => by
-    rw [map_mul, Module.End.mul_apply]
-  have ho : om 1 f = f := by rw [map_one, Module.End.one_apply]
-  have hcont : ∀ w, Continuous fun p : GA D S × GA D T => om p f w := hW.om_cont f hf
-  let K : Subgroup (GA D S × GA D T) :=
-    { carrier := {p | om p f = f}
-      one_mem' := ho
-      mul_mem' := fun {a b} (ha : om a f = f) (hb : om b f = f) => by
-        change om (a * b) f = f
-        rw [hm, hb, ha]
-      inv_mem' := fun {a} (ha : om a f = f) => by
-        change om a⁻¹ f = f
-        conv_lhs => rw [← ha]
-        rw [← hm, inv_mul_cancel, ho] }
-  have hK : ∀ p, p ∈ K ↔ om p f = f := fun p => Iff.rfl
-  have hKc : IsClosed {p : GA D S × GA D T | om p f = f} :=
-    isClosed_eq (continuous_pi hcont) continuous_const
-  let KS : Subgroup (GA D S) := K.comap (MonoidHom.inl _ _)
-  let KT : Subgroup (GA D T) := K.comap (MonoidHom.inr _ _)
-  have hKS : IsClosed (KS : Set (GA D S)) := hKc.preimage (Continuous.prodMk_left 1)
-  have hKT : IsClosed (KT : Set (GA D T)) := hKc.preimage (Continuous.prodMk_right 1)
-  have h1 : g ∈ KS := GlobalTheory.LevelClosure.mem_of_isClosed D.sp.cm.sig S.gram hKS hg fun v => by
-    change om (GlobalTheory.VacStab.locPart S v g, 1) f = f
-    rcases H v with ⟨u1, u2⟩ | ⟨e1, -⟩
-    · exact GlobalTheory.VacStabFixed.vacFixedAt D v ψ S T χS χT om hW u1 u2 ΛS ΛT hΛS hΛT f hf (isLatVac_at_of_all hvac v) _ 1
-        (inStabAt_locPart hgk v) (inStabAt_one T ΛT v)
-    · rw [e1, Prod.mk_one_one, ho]
-  have h2 : h ∈ KT := GlobalTheory.LevelClosure.mem_of_isClosed D.sp.cm.sig T.gram hKT hh fun v => by
-    change om (1, GlobalTheory.VacStab.locPart T v h) f = f
-    rcases H v with ⟨u1, u2⟩ | ⟨-, e2⟩
-    · exact GlobalTheory.VacStabFixed.vacFixedAt D v ψ S T χS χT om hW u1 u2 ΛS ΛT hΛS hΛT f hf (isLatVac_at_of_all hvac v) 1 _
-        (inStabAt_one S ΛS v) (inStabAt_locPart hhk v)
-    · rw [e2, Prod.mk_one_one, ho]
-  have e : (g, h) = (g, 1) * (1, h) := by rw [Prod.mk_mul_mk, mul_one, one_mul]
-  rw [e, hm]
-  have h2' : om (1, h) f = f := h2
-  have h1' : om (g, 1) f = f := h1
-  rw [h2', h1']
+  have key := GlobalTheory.PlaceProduct.eigen_of_local_components D S T om f (hW.om_cont f hf)
+    g hg h hh ∅ (fun _ => 1) (fun _ _ => rfl) fun v ε hε g' h' hg' hh' => ?_
+  · rwa [Finset.prod_empty, one_smul] at key
+  have heq : ∀ {V : HSp D} {k k' : GA D V},
+      Formalism.L2.Theta.mt V k' = algebraMap (AF D.host.F) (AE D) ε • Formalism.L2.Theta.mt V k +
+        (1 - algebraMap (AF D.host.F) (AE D) ε) • (1 : Matrix (Fin V.rank) (Fin V.rank) (AE D)) →
+      k' = GlobalTheory.VacStab.locPart V v k := fun {V k k'} hk' =>
+    Subtype.ext (Units.ext (by
+      have hm := GlobalTheory.VacStab.mt_locPart V hε k
+      rw [sub_smul, one_smul] at hk'
+      exact hk'.trans hm.symm))
+  rw [one_smul, heq hg', heq hh']
+  rcases H v with ⟨u1, u2⟩ | ⟨e1, e2⟩
+  · exact GlobalTheory.VacStabFixed.vacFixedAt D v ψ S T χS χT om hW u1 u2 ΛS ΛT hΛS hΛT f hf
+      (isLatVac_at_of_all hvac v) _ _ (inStabAt_locPart hgk v) (inStabAt_locPart hhk v)
+  · rw [e1, e2, Prod.mk_one_one, map_one, Module.End.one_apply]
 
 end GlobalTheory.LatStabScalar
 

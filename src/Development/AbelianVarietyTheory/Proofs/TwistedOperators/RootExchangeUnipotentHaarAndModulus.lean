@@ -55,6 +55,7 @@ import Mathlib.Tactic.ReduceModChar
 import Mathlib.Topology.Algebra.Group.Matrix
 import Mathlib.Topology.Sheaves.Init
 import Std.Tactic.BVDecide.Normalize.Prop
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.UnipotentRadicalBasic
 
 @[expose] public section
 
@@ -147,17 +148,8 @@ theorem det_rm (P : ι → ι → Prop) [DecidableRel P] [F : Fintype {rs : ι �
   simp [toSquareBlock_def, toSquareBlockProp_def, rm, E]
 
 theorem det_unitri (b : ι → ℕ) (M : Matrix ι ι k)
-    (hM : ∀ r s, b s ≤ b r → M r s = (1 : Matrix ι ι k) r s) : M.det = 1 := by
-  have ht : M.BlockTriangular b := by
-    intro r s h
-    rw [hM r s h.le, Matrix.one_apply_ne]
-    rintro rfl; exact lt_irrefl _ h
-  rw [ht.det]
-  refine Finset.prod_eq_one fun a _ => ?_
-  have : M.toSquareBlock b a = 1 := by
-    ext ⟨r, hr⟩ ⟨s, hs⟩
-    simp [toSquareBlock_def, hM r s (by omega), Matrix.one_apply]
-  rw [this, det_one]
+    (hM : ∀ r s, b s ≤ b r → M r s = (1 : Matrix ι ι k) r s) : M.det = 1 :=
+  GlobalTheory.RootEx.Radical.Uni.det hM
 
 theorem det_block_unitri (b : ι → ℕ) (M : Matrix ι ι k)
     (hM : ∀ r s, b s ≤ b r → M r s = (1 : Matrix ι ι k) r s) (Q : ι → Prop) [DecidablePred Q] :
@@ -320,19 +312,8 @@ def InR (p : ℕ) (g : GL (n ⊕ Fin c) k) : Prop :=
   ∀ r s, lev p s ≤ lev p r → (r.isRight ∨ s.isRight) → g.val r s = (1 : Matrix (n ⊕ Fin c) (n ⊕ Fin c) k) r s
 
 theorem exists_of_mem_R {p : ℕ} {g : GL (n ⊕ Fin c) k} (hg : g ∈ R k n c p) :
-    ∃ x : GL n k, ∃ u ∈ N k n c p, g = embX c x * u := by
-  let S : Subgroup (GL (n ⊕ Fin c) k) :=
-    { carrier := {g | ∃ x : GL n k, ∃ u ∈ N k n c p, g = embX c x * u}
-      one_mem' := ⟨1, 1, one_mem _, by simp⟩
-      mul_mem' := by
-        rintro _ _ ⟨x, u, hu, rfl⟩ ⟨y, v, hv, rfl⟩
-        exact ⟨x * y, _, mul_mem (conj_mem hu y) hv, by simp [mul_assoc]⟩
-      inv_mem' := by
-        rintro _ ⟨x, u, hu, rfl⟩
-        exact ⟨x⁻¹, _, conj_mem (inv_mem hu) x⁻¹, by simp [mul_assoc]⟩ }
-  have : R k n c p ≤ S := sup_le (by rintro _ ⟨x, rfl⟩; exact ⟨x, 1, one_mem _, by simp⟩)
-    fun u hu => ⟨1, u, hu, by simp⟩
-  exact this hg
+    ∃ x : GL n k, ∃ u ∈ N k n c p, g = embX c x * u :=
+  GlobalTheory.RootEx.Radical.exists_of_mem_R hg
 
 theorem inR_of_mem {p : ℕ} {g : GL (n ⊕ Fin c) k} (hg : g ∈ R k n c p) : InR p g := by
   obtain ⟨x, u, hu, rfl⟩ := exists_of_mem_R hg

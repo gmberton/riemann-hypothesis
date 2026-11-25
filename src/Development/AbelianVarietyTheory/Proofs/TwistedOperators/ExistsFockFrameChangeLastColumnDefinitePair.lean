@@ -41,6 +41,7 @@ import Mathlib.Tactic.NormNum.RealSqrt
 import Mathlib.Tactic.TypeStar
 public import Development.AbelianVarietyTheory.BlockTheory.TwistedDiscreteSeries.ClassFunctionSumIntegral
 import Development.AbelianVarietyTheory.Proofs.TwistedOperators.InfOfMulFinOf
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.MatrixFamilyBilateralSubstitutionCompEqMul
 
 @[expose] public section
 
@@ -54,32 +55,11 @@ open scoped ComplexOrder
 
 namespace GlobalTheory.FockFrameChange
 
-private theorem sum4_lemma {α β γ δ R : Type*} [Fintype α] [Fintype β] [Fintype γ] [Fintype δ] [AddCommMonoid R]
-    (f : α → β → γ → δ → R) :
-    ∑ k, ∑ l, ∑ k', ∑ l', f k l k' l' = ∑ k', ∑ l', ∑ k, ∑ l, f k l k' l' := by
-  calc ∑ k, ∑ l, ∑ k', ∑ l', f k l k' l' = ∑ k, ∑ k', ∑ l, ∑ l', f k l k' l' :=
-        Finset.sum_congr rfl fun k _ => Finset.sum_comm
-    _ = ∑ k', ∑ k, ∑ l, ∑ l', f k l k' l' := Finset.sum_comm
-    _ = ∑ k', ∑ k, ∑ l', ∑ l, f k l k' l' :=
-        Finset.sum_congr rfl fun k' _ => Finset.sum_congr rfl fun k _ => Finset.sum_comm
-    _ = ∑ k', ∑ l', ∑ k, ∑ l, f k l k' l' := Finset.sum_congr rfl fun k' _ => Finset.sum_comm
-
 theorem substF_mul {ι : Type} {N n : ℕ} (h h' : ι → Matrix (Fin N) (Fin N) ℂ) (g g' : ι → Matrix (Fin n) (Fin n) ℂ)
     (P : MvPolynomial (ι × Fin N × Fin n) ℂ) :
     GlobalTheory.CompactHowe.substF h g (GlobalTheory.CompactHowe.substF h' g' P) =
-      GlobalTheory.CompactHowe.substF (fun τ => h τ * h' τ) (fun τ => g τ * g' τ) P := by
-  unfold GlobalTheory.CompactHowe.substF
-  rw [← AlgHom.comp_apply, MvPolynomial.comp_aeval]
-  refine congrArg (fun F => (MvPolynomial.aeval F) P) (funext fun p => ?_)
-  obtain ⟨τ, a, b⟩ := p
-
-  simp only [map_sum, map_mul, MvPolynomial.aeval_C, MvPolynomial.aeval_X, MvPolynomial.algebraMap_eq, Matrix.mul_apply]
-  simp only [Finset.sum_mul_sum]
-  simp only [Finset.sum_mul, Finset.mul_sum]
-  refine (sum4_lemma _).trans ?_
-  refine Finset.sum_congr rfl fun k' _ => Finset.sum_congr rfl fun l' _ =>
-    Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => ?_
-  ring
+      GlobalTheory.CompactHowe.substF (fun τ => h τ * h' τ) (fun τ => g τ * g' τ) P :=
+  GlobalTheory.CompactHowe.substF_mul h h' g g' P
 
 theorem change_mul {n : ℕ} {A F : Matrix (Fin n) (Fin n) ℂ} (hA : A * A⁻¹ = 1) (hF : F * F⁻¹ = 1)
     (M : Matrix (Fin n) (Fin n) ℂ) : F⁻¹ * A * (A⁻¹ * M * A) = F⁻¹ * M * F * (F⁻¹ * A) := by

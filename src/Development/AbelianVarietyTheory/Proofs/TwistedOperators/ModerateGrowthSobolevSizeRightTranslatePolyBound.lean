@@ -160,23 +160,6 @@ theorem exists_adAt_le (hθ : IsInfFam θ) (V : HSp D) : ∃ C : ℝ≥0, ∀ (h
       ≤ ENNReal.ofReal (C ^ 2 * height V h ^ 2) := ENNReal.ofReal_le_ofReal hreal
     _ = _ := by rw [ENNReal.ofReal_mul (sq_nonneg C), ENNReal.ofReal_pow hht]; rfl
 
-private theorem rderC_rTr' (hθ : IsInfFam θ) (h : GA D V) {φ : GA D V → ℂ} (hs : φ ∈ SmFun θ V)
-    (τ : D.what₂.Tau) (Z : Matrix (Fin V.rank) (Fin V.rank) ℂ) :
-    RderC θ V τ Z (rTr V h φ) = rTr V h (RderC θ V τ (adAt θ h τ Z) φ) := by
-  obtain ⟨hX, hY⟩ := GlobalTheory.SmoothAutCheck.parts_mem V τ Z
-  have hZ := (GlobalTheory.SmoothAutCheck.parts_sum V τ Z).symm
-  set X := (1 / 2 : ℂ) • (Z + conjAt V τ Z) with hXdef
-  set Y := (1 / (2 * Complex.I)) • (Z - conjAt V τ Z) with hYdef
-  have hsum : adAt θ h τ Z = adAt θ h τ X + Complex.I • adAt θ h τ Y := by
-    conv_lhs => rw [hZ]
-    simp only [adAt, Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul, Matrix.smul_mul]
-  rw [hsum, RderC_add hθ hs, RderC_smul hθ hs,
-    GlobalTheory.SmoothAutCheck.RderC_eq θ V τ (adAt_mem_lieAt hθ h hX),
-    GlobalTheory.SmoothAutCheck.RderC_eq θ V τ (adAt_mem_lieAt hθ h hY)]
-  change Rder θ V τ X (rTr V h φ) + Complex.I • Rder θ V τ Y (rTr V h φ) = _
-  rw [Rder_rTr_adelic hθ h hX, Rder_rTr_adelic hθ h hY]
-  rfl
-
 theorem exists_growthSob_rTr_le (hθ : IsInfFam θ) (V : HSp D) (N d : ℕ) : ∃ C : ℝ≥0, ∀ h ∈ GinfC V, ∀ φ ∈ SmFun θ V,
     growthSob θ V d N (rTr V h φ) ≤ C * ENNReal.ofReal (height V h) ^ (N + 2 * d) * growthSob θ V d N φ := by
   obtain ⟨C₁, hC₁⟩ := exists_adAt_le hθ V
@@ -200,7 +183,7 @@ theorem exists_growthSob_rTr_le (hθ : IsInfFam θ) (V : HSp D) (N d : ℕ) : �
       intro a
       have e : glDer θ V a (rTr V h φ) =
           rTr V h (RderC θ V a.1 (adAt θ h a.1 (Matrix.single a.2.1 a.2.2 1)) φ) :=
-        rderC_rTr' hθ h hs a.1 _
+        RderC_rTr hθ ⟨hh, GlobalTheory.FockCompare.RealAction.infMat_mem_UH hθ V h⟩ a.1 _ φ
       rw [e]
       refine (hC h hh _ ((linOnSm_RderC (θ := θ) a.1 _).mem φ hs)).trans ?_
       gcongr

@@ -44,6 +44,7 @@ import Mathlib.Tactic.NormNum.Parity
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.NormNum.RealSqrt
 import Mathlib.Topology.Sheaves.Init
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.TprodNeZeroOfNe
 
 @[expose] public section
 
@@ -63,11 +64,8 @@ variable {H₁ H₂ FF : Type}
   [NormedAddCommGroup FF] [InnerProductSpace ℂ FF]
 
 theorem norm_of_isIsoBilin {Tm : H₁ →ₗ[ℂ] H₂ →ₗ[ℂ] FF} (hI : IsIsoBilin Tm) (x : H₁) (y : H₂) :
-    ‖Tm x y‖ = ‖x‖ * ‖y‖ := by
-  have h := hI x x y y
-  rw [inner_self_eq_norm_sq_to_K, inner_self_eq_norm_sq_to_K, inner_self_eq_norm_sq_to_K, ← mul_pow] at h
-  have h2 : ‖Tm x y‖ ^ 2 = (‖x‖ * ‖y‖) ^ 2 := by exact_mod_cast h
-  exact (pow_left_inj₀ (norm_nonneg _) (by positivity) two_ne_zero).1 h2
+    ‖Tm x y‖ = ‖x‖ * ‖y‖ :=
+  GlobalTheory.Contr.norm_isoBilin hI x y
 
 theorem exists_riesz [CompleteSpace H₁] {Tm : H₁ →ₗ[ℂ] H₂ →ₗ[ℂ] FF} (hI : IsIsoBilin Tm) (φ : FF) (y : H₂) :
     ∃ w : H₁, ∀ x, ⟪x, w⟫_ℂ = ⟪Tm x y, φ⟫_ℂ := by
@@ -94,9 +92,7 @@ theorem existsUnique_isContr [CompleteSpace H₁] {Tm : H₁ →ₗ[ℂ] H₂ �
     exact ext_inner_left ℂ fun x => by simp [hw, inner_add_right]
   · intro c a y
     exact ext_inner_left ℂ fun x => by simp [hw, inner_smul_right, mul_comm]
-  · intro It hIt
-    ext φ y
-    exact ext_inner_left ℂ fun x => (hIt φ y x).trans (hw φ y x).symm
+  · exact fun _ hIt => GlobalTheory.Contr.isContr_unique hIt (fun φ y x => hw φ y x)
 
 end Hilbert
 
@@ -159,29 +155,13 @@ theorem tens_prod (I : ∀ i, MvPolynomial (σ i) ℂ →ₗ[ℂ] A i →ₗ[ℂ
   have := congrArg (fun f => f P) key
   simpa [hpr] using this
 
-theorem tprod_ne_zero (v : ∀ i, B i) (hv : ∀ i, v i ≠ 0) : PiTensorProduct.tprod ℂ v ≠ 0 := by
-  classical
-  choose l hl using fun i => Module.Projective.exists_dual_eq_one ℂ (hv i)
-  intro h0
-  have := congrArg (PiTensorProduct.lift ((MultilinearMap.mkPiAlgebra ℂ ι ℂ).compLinearMap l)) h0
-  simp [hl] at this
+theorem tprod_ne_zero (v : ∀ i, B i) (hv : ∀ i, v i ≠ 0) : PiTensorProduct.tprod ℂ v ≠ 0 :=
+  GlobalTheory.Contr.tprod_ne_zero_of_ne v hv
 
 end Tensor
 
-theorem contrTensor : ContrTensor := by
-  intro ι _ σ Var e A B _ _ _ _ I
-  have h : IsTensorIt e I (tens e I) := fun P v => by
-    rw [tens_prod, PiTensorProduct.map_tprod]
-  refine ⟨tens e I, h, fun hI h0 => ?_⟩
-  have hex : ∀ i, ∃ P v, I i P v ≠ 0 := by
-    intro i
-    by_contra hc
-    push Not at hc
-    exact hI i (LinearMap.ext fun P => LinearMap.ext fun v => hc P v)
-  choose P v hPv using hex
-  have h1 := h P v
-  rw [h0] at h1
-  exact tprod_ne_zero _ hPv h1.symm
+theorem contrTensor : ContrTensor :=
+  GlobalTheory.Contr.contrTensor
 
 theorem contraction : GlobalTheory.IndefiniteRowSideFullHecke.ContractionTensorModels.Contraction := ⟨contrHilbert, contrTensor⟩
 

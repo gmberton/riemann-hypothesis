@@ -46,6 +46,7 @@ import Mathlib.Topology.Compactness.Paracompact
 import Mathlib.Topology.Sheaves.Init
 import Development.AbelianVarietyTheory.BlockTheory.TwistedDiscreteSeries.FourierJacobiAverage
 import Development.AbelianVarietyTheory.Definitions.Foundations.SimpleSum
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.SchwartzBruhatMatrixExistsOpenAddSubgroupInvaria
 
 @[expose] public section
 
@@ -59,31 +60,9 @@ variable {G : Type} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup
 
 theorem eventually_translate {F : G → ℂ} (hF : F ∈ SB G) :
     ∀ᶠ x in nhds (0 : G), ∀ g, F (g - x) = F g := by
-  have hlc : IsLocallyConstant F := hF.1
-  have hK : IsCompact (tsupport F) := hF.2
-  have hz : ∀ z, z ∉ tsupport F → F z = 0 := fun z hz => by
-    by_contra h
-    exact hz (subset_tsupport F h)
-  have step : ∀ᶠ x in nhds (0 : G), ∀ y ∈ tsupport F, F (y - x) = F y := by
-    refine hK.eventually_forall_of_forall_eventually fun y _ => ?_
-    have hy := hlc.eventually_eq y
-    have h1 : Filter.Tendsto (fun p : G × G => p.2 - p.1) (nhds ((0 : G), y)) (nhds y) := by
-      simpa using (continuous_snd.tendsto ((0 : G), y)).sub (continuous_fst.tendsto ((0 : G), y))
-    have h2 : Filter.Tendsto (fun p : G × G => p.2) (nhds ((0 : G), y)) (nhds y) :=
-      continuous_snd.tendsto _
-    filter_upwards [h1.eventually hy, h2.eventually hy] with p hp1 hp2
-    exact hp1.trans hp2.symm
-  have step' : ∀ᶠ x in nhds (0 : G), ∀ y ∈ tsupport F, F (y - -x) = F y :=
-    (continuous_neg.tendsto' (0 : G) 0 neg_zero).eventually step
-  filter_upwards [step, step'] with x hx hx' g
-  by_cases hg : g ∈ tsupport F
-  · exact hx g hg
-  · rw [hz g hg]
-    by_cases hg' : g - x ∈ tsupport F
-    · have h := hx' (g - x) hg'
-      rw [sub_neg_eq_add, sub_add_cancel, hz g hg] at h
-      exact h.symm
-    · exact hz _ hg'
+  obtain ⟨Λ, hΛ, hFΛ⟩ := exists_isOpen_addSubgroup_add_eq hF.1 hF.2
+  exact Filter.mem_of_superset (hΛ.mem_nhds Λ.zero_mem)
+    fun x hx g => by rw [sub_eq_add_neg]; exact hFΛ g (-x) (Λ.neg_mem hx)
 
 def translate (Ψ : SB G) (y : G) : SB G :=
   ⟨fun x => Ψ.1 (x - y), Ψ.2.1.comp_continuous (continuous_sub_right y),

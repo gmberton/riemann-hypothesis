@@ -101,21 +101,6 @@ theorem move {A : Type} [CommRing A] (f : A →+* R) (βS G Y : GL (Fin a) R) (�
   simp only [Matrix.mul_assoc]
   rw [Units.inv_mul, Matrix.mul_one, ← Matrix.mul_assoc (βT⁻¹).val βT.val, Units.inv_mul, Matrix.one_mul]
 
-private theorem bc_mul_restrict_mul_bc_eq (O : Subring R) (ρ : O →+* k) (z : GL (Fin b) O) (y : GL (Fin a) O)
-    (N : Matrix (Fin b) (Fin a) R) (h : ∀ i j, N i j ∈ O) :
-    (∀ i j, ((Formalism.UG.bc O.subtype z).val * N * (Formalism.UG.bc O.subtype y).val) i j ∈ O) ∧
-    (Matrix.of fun i j => @dite _ (((Formalism.UG.bc O.subtype z).val * N * (Formalism.UG.bc O.subtype y).val) i j ∈ O)
-        (Classical.propDecidable _) (fun h => ρ ⟨_, h⟩) (fun _ => 0)) =
-      (Formalism.UG.bc ρ z).val *
-        (Matrix.of fun i j => @dite _ (N i j ∈ O) (Classical.propDecidable _) (fun h => ρ ⟨N i j, h⟩) (fun _ => 0)) *
-        (Formalism.UG.bc ρ y).val := by
-  have ez : (Formalism.UG.bc O.subtype z).val = z.val.map O.subtype := rfl
-  have ey : (Formalism.UG.bc O.subtype y).val = y.val.map O.subtype := rfl
-  have ez' : (Formalism.UG.bc ρ z).val = z.val.map ρ := rfl
-  have ey' : (Formalism.UG.bc ρ y).val = y.val.map ρ := rfl
-  rw [ez, ey, ez', ey']
-  exact GlobalTheory.FrameRed.int_mul O ρ z.val y.val N h
-
 end General
 
 variable {D : D7}
@@ -126,7 +111,8 @@ theorem isIntM_mul {b a : ℕ} (z : GL (Fin b) (Formalism.L2.Herm.intAf D.host.F
     IsIntM (D := D) ((intGL D.host.F D.host.E b z).val * N * (intGL D.host.F D.host.E a y).val) ∧
     ∀ PP, redM (D := D) PP ((intGL D.host.F D.host.E b z).val * N * (intGL D.host.F D.host.E a y).val) =
       (Formalism.UG.bc (resS D.host.F PP) z).val * redM (D := D) PP N * (Formalism.UG.bc (resS D.host.F PP) y).val := by
-  exact ⟨(bc_mul_restrict_mul_bc_eq _ (RingHom.id _) z y N h).1, fun PP => (bc_mul_restrict_mul_bc_eq _ (resS D.host.F PP) z y N h).2⟩
+  exact ⟨(GlobalTheory.FrameRed.int_mul _ (RingHom.id _) z.val y.val N h).1,
+    fun PP => (GlobalTheory.FrameRed.int_mul _ (resS D.host.F PP) z.val y.val N h).2⟩
 
 theorem mt_map (V : HSp D) (g : GA D V) :
     (Formalism.L2.Theta.mt V g).map (toEAf D) = (finE V g).val := rfl

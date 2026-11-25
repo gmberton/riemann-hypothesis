@@ -124,16 +124,8 @@ theorem mem_latAt_iff {d : ℕ} (W : Spc F E d) (v : Pl (F := F)) (z : Fin d →
         funext i; simp
     convert key _ hm using 1
     funext i
-    have hproj : ∀ x : _root_.GlobalTheory.IndefiniteRowSideFullHecke.WeilTensorModels.AE (F := F) (E := E),
-        GlobalTheory.LatVac.liftV v 1 • x = liftT (E := E) v (evT (E := E) v x) := by
-      intro x
-      induction x using TensorProduct.inductionOn with
-      | tmul a e =>
-        rw [TensorProduct.smul_tmul', smul_eq_mul, liftV_one_mul]
-        rfl
-      | add x y hx hy => rw [smul_add, map_add, map_add, hx, hy]
     have hi := congrFun (hz _ (evFin_one_sub v)) i
-    rwa [Pi.smul_apply, Pi.zero_apply, sub_smul, one_smul, sub_eq_zero, hproj] at hi
+    rwa [Pi.smul_apply, Pi.zero_apply, sub_smul, one_smul, sub_eq_zero, liftV_one_smul] at hi
 
 theorem mem_of_trace_int {ψ : AddChar (AF F) ℂ} (hψ : IsStd ψ) {v : Pl (F := F)} (hu : PsiUnr ψ v) (t : F)
     (ht : ∀ a : 𝓞 F, ∃ k : ℤ, Algebra.trace ℚ F ((a : F) * t) = k) :
@@ -293,16 +285,8 @@ theorem exists_split_dictionary : ∀ {F E : Type} [Field F] [NumberField F] [Fi
   refine ⟨piW τ, piW (τ.comp σ), b₁, b₂, ⟨piW_cA τ σ, fun z => ?_, piW_algebraMap τ, piW_algebraMap _,
     fun z hz e₁ e₂ => ?_, fun x₁ x₂ => ?_, fun z => ?_⟩, ?_⟩
   · rw [piW_cA, comp_conj_conj h]
-  · have hproj : ∀ x : AE F E,
-        GlobalTheory.LatVac.liftV v 1 • x = liftT (E := E) v (evT (E := E) v x) := by
-      intro x
-      induction x using TensorProduct.inductionOn with
-      | tmul a e =>
-        rw [TensorProduct.smul_tmul', smul_eq_mul, liftV_one_mul]
-        rfl
-      | add x y hx hy => rw [smul_add, map_add, map_add, hx, hy]
-    have hz' := hz _ (evFin_one_sub v)
-    rw [sub_smul, one_smul, sub_eq_zero, hproj] at hz'
+  · have hz' := hz _ (evFin_one_sub v)
+    rw [sub_smul, one_smul, sub_eq_zero, liftV_one_smul] at hz'
     rw [piW_apply] at e₁ e₂
     rw [hz', split_ext h τ (y := evT (E := E) v z) (z := 0) (by rw [e₁, map_zero]) (by rw [e₂, map_zero]), map_zero]
   · have at_lift (y : Fv F v ⊗[F] E) : At (evFin F v) (liftT (E := E) v y) := by

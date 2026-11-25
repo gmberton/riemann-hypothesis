@@ -41,6 +41,7 @@ import Mathlib.Tactic.ReduceModChar
 import Mathlib.Tactic.TypeStar
 import Mathlib.Topology.Sheaves.Init
 import Development.AbelianVarietyTheory.Definitions.TwistedInnerProducts.RealLowestKTypeCoeffSquareIntegrable
+import Development.AbelianVarietyTheory.Proofs.DivisorProofs.ExtensionOfLowSmoothLines
 
 @[expose] public section
 
@@ -58,29 +59,8 @@ variable {D : D7}
 
 theorem minor_ne_zero {m n : ℕ} (τ : D.what₂.Tau) (a b k : ℕ) (ha : a + k ≤ m) (hb : b + k ≤ n) :
     (Matrix.of fun α β : Fin k =>
-      (varF τ (a + (β : ℕ)) (b + (α : ℕ)) : MvPolynomial (FVar D m n) ℂ)).det ≠ 0 := by
-  intro h
-  have hev := congrArg (MvPolynomial.eval fun y : FVar D m n =>
-    if (y.2.1 : ℕ) + b = (y.2.2 : ℕ) + a then (1 : ℂ) else 0) h
-  rw [RingHom.map_det, map_zero] at hev
-  have hI : (MvPolynomial.eval fun y : FVar D m n =>
-      if (y.2.1 : ℕ) + b = (y.2.2 : ℕ) + a then (1 : ℂ) else 0).mapMatrix
-      (Matrix.of fun α β : Fin k => (varF τ (a + (β : ℕ)) (b + (α : ℕ)) : MvPolynomial (FVar D m n) ℂ)) = 1 := by
-    ext α β
-    have hα := α.isLt
-    have hβ := β.isLt
-    have hc : a + (β : ℕ) < m ∧ b + (α : ℕ) < n := ⟨by omega, by omega⟩
-    simp only [RingHom.mapMatrix_apply, Matrix.map_apply, Matrix.of_apply, Matrix.one_apply]
-    unfold varF
-    rw [dite_eq_left hc, MvPolynomial.eval_X]
-    dsimp only
-    split_ifs with h1 h2 h2
-    · rfl
-    · exact (h2 (Fin.ext (by omega))).elim
-    · exact (h1 (by subst h2; omega)).elim
-    · rfl
-  rw [hI, Matrix.det_one] at hev
-  exact one_ne_zero hev
+      (varF τ (a + (β : ℕ)) (b + (α : ℕ)) : MvPolynomial (FVar D m n) ℂ)).det ≠ 0 :=
+  GlobalTheory.AdTh.IoExtPf.minor_ne τ a b k ha hb
 
 theorem minorPlus_ne_zero {m n : ℕ} (τ : D.what₂.Tau) (k : ℕ) (hm : k ≤ m) (hn : k ≤ n) :
     (minorPlus τ k : MvPolynomial (FVar D m n) ℂ) ≠ 0 := by
@@ -111,9 +91,8 @@ theorem deltaAt_ne_zero {m n : ℕ} (τ : D.what₂.Tau) (p : ℕ) (ap : ℕ →
 
 theorem delta_ne_zero {m n : ℕ} (p q : D.what₂.Tau → ℕ) (ap am : D.what₂.Tau → ℕ → ℕ)
     (hpq : ∀ τ, p τ + q τ ≤ m) (hmn : m ≤ n) :
-    (delta p q ap am : MvPolynomial (FVar D m n) ℂ) ≠ 0 := by
-  unfold delta
-  exact Finset.prod_ne_zero_iff.mpr fun τ _ => deltaAt_ne_zero τ _ _ _ _ (hpq τ) hmn
+    (delta p q ap am : MvPolynomial (FVar D m n) ℂ) ≠ 0 :=
+  GlobalTheory.AdTh.IoExtPf.delta_ne p q ap am hpq hmn
 
 theorem fock_self_pos {σ : Type*} (P : MvPolynomial σ ℂ) (hP : P ≠ 0) :
     ∃ a : ℝ, 0 < a ∧ Formalism.E.fock P P = (a : ℂ) := by

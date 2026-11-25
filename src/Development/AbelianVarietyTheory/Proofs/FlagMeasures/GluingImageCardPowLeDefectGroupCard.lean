@@ -98,22 +98,6 @@ theorem _root_.GlobalTheory.HL.SmallImage.resQ_pos {F : Type} [Field F] [Valuati
   have : Finite (IsLocalRing.ResidueField 𝒪[F]) := inferInstance
   exact Nat.card_pos_iff.mpr ⟨inferInstance, this⟩
 
-open ValuativeRel MeasureTheory in
-open scoped Pointwise ENNReal Classical in
-private lemma hf_sub_right_flag_measures {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F] {E : Type} [CommRing E] [Algebra F E] [TopologicalSpace E] (L : _root_.Formalism.MainNotions.S.Loc.LocE F E) {n : ℕ} (H : Matrix (Fin n) (Fin n) E) (x y y' : Fin n → E) :
-    _root_.GlobalTheory.HL.hf L H x (y - y') = _root_.GlobalTheory.HL.hf L H x y - _root_.GlobalTheory.HL.hf L H x y' := by
-  unfold _root_.GlobalTheory.HL.hf
-  simp only [Pi.sub_apply, map_sub, mul_sub, Finset.sum_sub_distrib]
-
-open ValuativeRel MeasureTheory in
-open scoped Pointwise ENNReal Classical in
-private lemma hf_algebraMap_smul_right {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F] {E : Type} [CommRing E] [Algebra F E] [TopologicalSpace E] (L : _root_.Formalism.MainNotions.S.Loc.LocE F E) {n : ℕ} (H : Matrix (Fin n) (Fin n) E) (x y : Fin n → E) (c : F) :
-    _root_.GlobalTheory.HL.hf L H x (algebraMap F E c • y) = algebraMap F E c * _root_.GlobalTheory.HL.hf L H x y := by
-  unfold _root_.GlobalTheory.HL.hf
-  simp only [Pi.smul_apply, smul_eq_mul, map_mul, AlgEquiv.commutes, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  ring
-
 
 open ValuativeRel MeasureTheory in
 open scoped Pointwise ENNReal Classical in
@@ -230,18 +214,20 @@ theorem _root_.GlobalTheory.HL.SmallImage.small_image : ∀ {F : Type} [Field F]
         have e2 : x₂' = la₂' - (x₂ + la₂) := by rw [hz₂]; abel
         have hmain : _root_.GlobalTheory.HL.hf L S.Hm x₁ x₂'
             = -_root_.GlobalTheory.HL.hf L S.Hm la₁ la₂' := by
-          rw [e1, e2, _root_.GlobalTheory.HL.Eichler.hf_sub_l, hf_sub_right_flag_measures, hf_sub_right_flag_measures, isoX' _ hz₁X' _ hla₂',
-            isoX' _ hz₁X' _ hz₂X', isoX _ hla₁ _ hz₂X]
+          rw [e1, e2, _root_.GlobalTheory.HL.Eichler.hf_sub_l,
+            _root_.GlobalTheory.HL.Eichler.hf_sub_r, _root_.GlobalTheory.HL.Eichler.hf_sub_r,
+            isoX' _ hz₁X' _ hla₂', isoX' _ hz₁X' _ hz₂X', isoX _ hla₁ _ hz₂X]
           ring
         have hkey : _root_.GlobalTheory.HL.hf L S.Hm (w₁ + la₁) (la₂' - la₂)
             = _root_.GlobalTheory.HL.hf L S.Hm la₁ la₂' := by
-          rw [_root_.GlobalTheory.HL.Eichler.hf_add_l, hf_sub_right_flag_measures, hf_sub_right_flag_measures, hperp w₁ hw₁ la₂' (hX' hla₂'),
-            hperp w₁ hw₁ la₂ (hX hla₂), isoX la₁ hla₁ la₂ hla₂]
+          rw [_root_.GlobalTheory.HL.Eichler.hf_add_l,
+            _root_.GlobalTheory.HL.Eichler.hf_sub_r, _root_.GlobalTheory.HL.Eichler.hf_sub_r,
+            hperp w₁ hw₁ la₂' (hX' hla₂'), hperp w₁ hw₁ la₂ (hX hla₂), isoX la₁ hla₁ la₂ hla₂]
           ring
         have hsm : _root_.GlobalTheory.HL.hf L S.Hm (w₁ + la₁) (la₂' - la₂)
             = algebraMap F E S.th * _root_.GlobalTheory.HL.hf L S.Hm (w₁ + la₁)
               (algebraMap F E S.th⁻¹ • (x₂ + x₂')) := by
-          rw [← hf_algebraMap_smul_right, hcancel, he₂]
+          rw [← L.cj.commutes S.th, ← _root_.GlobalTheory.HL.Eichler.hf_smul_r, hcancel, he₂]
         have hdual := hbasic.1
         unfold _root_.GlobalTheory.HL.IsSD at hdual
         refine ⟨-_root_.GlobalTheory.HL.hf L S.Hm (w₁ + la₁)

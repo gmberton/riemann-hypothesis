@@ -86,10 +86,9 @@ lemma padicInt_mem_range [IsModuleTopology ℚ_[l] LL] [IsTopologicalRing LL]
     (ho : IsOpen (Set.range (algebraMap O LL))) (z : ℤ_[l]) :
     algebraMap ℚ_[l] LL (algebraMap ℤ_[l] ℚ_[l] z) ∈ Set.range (algebraMap O LL) := by
   have h1 : Continuous (algebraMap ℚ_[l] LL) := by
-    have h2 : Continuous fun x : ℚ_[l] => x • (1 : LL) := continuous_id.smul continuous_const
-    convert h2 using 1
-    funext x
-    exact Algebra.algebraMap_eq_smul_one x
+    rw [show (algebraMap ℚ_[l] LL : ℚ_[l] → LL) = fun x => x • (1 : LL) from
+      funext Algebra.algebraMap_eq_smul_one]
+    exact continuous_id.smul continuous_const
   have hf : Continuous fun z : ℤ_[l] => algebraMap ℚ_[l] LL (algebraMap ℤ_[l] ℚ_[l] z) :=
     h1.comp (continuous_subtype_val : Continuous fun z : ℤ_[l] => (z : ℚ_[l]))
   have hS : IsClosed {z : ℤ_[l] | algebraMap ℚ_[l] LL (algebraMap ℤ_[l] ℚ_[l] z) ∈ Set.range (algebraMap O LL)} :=
@@ -400,25 +399,12 @@ theorem continuous_algebraMap_padic : Continuous (algebraMap ℚ_[l] LL) := by
 
 theorem padicInt_mem (A : Subring LL) (hA : IsOpen (A : Set LL)) (u : ℤ_[l]) :
     algebraMap ℚ_[l] LL (u : ℚ_[l]) ∈ A := by
-  have hU : IsOpen ((algebraMap ℚ_[l] LL) ⁻¹' (A : Set LL)) :=
-    hA.preimage continuous_algebraMap_padic
-  have h0 : (0 : ℚ_[l]) ∈ (algebraMap ℚ_[l] LL) ⁻¹' (A : Set LL) := by
-    simp [A.zero_mem]
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hU 0 h0
-  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hε (Padic.norm_p_lt_one (p := l))
-  obtain ⟨w, hw⟩ := Ideal.mem_span_singleton'.1 (PadicInt.appr_spec n u)
-  have hu : (u : ℚ_[l]) = ((u.appr n : ℕ) : ℚ_[l]) + (w : ℚ_[l]) * (l : ℚ_[l]) ^ n := by
-    have := congrArg (fun z : ℤ_[l] => (z : ℚ_[l])) hw
-    push_cast at this
-    linear_combination -this
-  have h1 : algebraMap ℚ_[l] LL ((w : ℚ_[l]) * (l : ℚ_[l]) ^ n) ∈ A := by
-    apply hball
-    rw [Metric.mem_ball, dist_zero_right, norm_mul, norm_pow]
-    calc ‖(w : ℚ_[l])‖ * ‖(l : ℚ_[l])‖ ^ n ≤ 1 * ‖(l : ℚ_[l])‖ ^ n :=
-          mul_le_mul_of_nonneg_right (PadicInt.norm_le_one w) (by positivity)
-      _ < ε := by rwa [one_mul]
-  rw [hu, map_add (f := _), map_natCast]
-  exact A.add_mem (natCast_mem A _) h1
+  have := IsModuleTopology.isTopologicalAddGroup ℚ_[l] LL
+  have hC : IsClosed (A : Set LL) := A.toAddSubgroup.isClosed_of_isOpen (by simpa using hA)
+  have hS : IsClosed {z : ℤ_[l] | algebraMap ℚ_[l] LL (z : ℚ_[l]) ∈ A} :=
+    hC.preimage (continuous_algebraMap_padic.comp continuous_subtypeVal)
+  exact hS.closure_subset_iff.2 (by rintro _ ⟨k, rfl⟩; simp [natCast_mem])
+    (PadicInt.denseRange_natCast u)
 
 end Open
 

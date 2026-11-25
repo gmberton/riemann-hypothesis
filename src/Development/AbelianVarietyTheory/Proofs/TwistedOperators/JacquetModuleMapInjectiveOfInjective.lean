@@ -109,29 +109,17 @@ private theorem eventually_valuation_le_uniformizer_pow_of_mem_unipRad (e : (Σ 
     ∀ᶠ M : ℕ in Filter.atTop, valuation k ((g : Matrix n n k) i j) ≤ uniformizer k ^ wt e M i j := by
   obtain ⟨hP, hD⟩ := mem_unipRad.1 hg
   rw [mem_parab] at hP
-  have hmono : ∀ a b : ℤ, a ≤ b → uniformizer k ^ b ≤ uniformizer k ^ a := by
-    intro a b hab
-    exact zpow_le_zpow_right_of_le_one₀ uniformizer_pos uniformizer_lt_one.le hab
   rcases lt_trichotomy (blk e i) (blk e j) with h | h | h
   ·
-    obtain ⟨N, hN⟩ := MulArchimedean.arch (valuation k ((g : Matrix n n k) i j))
-      ((one_lt_inv₀ uniformizer_pos).2 uniformizer_lt_one)
-    have hss : Finset.univ.filter (· < blk e i) ⊂ Finset.univ.filter (· < blk e j) := by
-      refine (Finset.ssubset_iff_of_subset (fun x hx => ?_)).2 ⟨blk e i, ?_, ?_⟩
-      · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hx ⊢
-        exact hx.trans h
-      · simp [h]
-      · simp
-    have hlt := Finset.card_lt_card hss
-    filter_upwards [Filter.eventually_ge_atTop N] with M hM
-    have hM' : (N : ℤ) ≤ M := by exact_mod_cast hM
+    have hss : Finset.univ.filter (· < blk e i) ⊂ Finset.univ.filter (· < blk e j) :=
+      (Finset.ssubset_iff_of_subset fun x hx => by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hx ⊢
+        exact hx.trans h).2 ⟨blk e i, by simp [h], by simp⟩
     have hd : ((Finset.univ.filter (· < blk e i)).card : ℤ) -
-        (Finset.univ.filter (· < blk e j)).card ≤ -1 := by omega
-    have hw : wt e M i j ≤ -(N : ℤ) := by
-      simp only [wt]
-      nlinarith
-    refine hN.trans (le_trans (le_of_eq ?_) (hmono _ _ hw))
-    rw [zpow_neg, zpow_natCast, inv_pow]
+        (Finset.univ.filter (· < blk e j)).card ≤ -1 := by
+      have := Finset.card_lt_card hss; omega
+    filter_upwards [eventually_deep ((g : Matrix n n k) i j)] with M hM
+    exact hM.mono (by simp only [wt]; nlinarith [Int.natCast_nonneg M])
   ·
     refine Filter.Eventually.of_forall fun M => ?_
     have hw : wt e M i j = 0 := by simp [wt, h]
@@ -156,15 +144,8 @@ theorem eventually_mem_grp (e : (Σ a, m a) ≃ n) {u : GL n k} (hu : u ∈ unip
   exact (Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j => eventually_valuation_le_uniformizer_pow_of_mem_unipRad e hu i j).and
     (Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j => eventually_valuation_le_uniformizer_pow_of_mem_unipRad e hu' i j)
 
-private theorem t2Space_localField : T2Space k := by
-  apply IsTopologicalAddGroup.t2Space_of_zero_sep
-  intro x hx
-  refine ⟨{y | valuation k y < valuation k x}, ?_, fun h => lt_irrefl (valuation k x) (by simpa using h)⟩
-  rw [IsValuativeTopology.mem_nhds_zero_iff]
-  exact ⟨Units.mk0 _ ((valuation k).ne_zero_iff.2 hx), fun y hy => by simpa using hy⟩
-
 theorem isClosed_unipRad (e : (Σ a, m a) ≃ n) : IsClosed (unipRad k e : Set (GL n k)) := by
-  have : T2Space k := t2Space_localField
+  have : T2Space k := (Model.secondCountable_and_t2_local_field (k := k)).2
   have hv : Continuous fun g : GL n k => (g : Matrix n n k) := Units.continuous_val
   have hc : ∀ i j, Continuous fun g : GL n k => (g : Matrix n n k) i j := fun i j => hv.matrix_elem i j
   have hset : (unipRad k e : Set (GL n k)) =

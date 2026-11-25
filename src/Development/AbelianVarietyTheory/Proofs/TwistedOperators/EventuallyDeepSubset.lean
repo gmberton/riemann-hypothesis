@@ -103,27 +103,6 @@ theorem exists_deep_subset {n : Type} [Fintype n] {s : Set (Matrix n n k)} (hs :
   obtain ⟨M, hM⟩ := hev.exists
   exact ⟨M, fun y hy => hts (Set.mem_pi.2 fun i _ => hJu i (Set.mem_pi.2 fun j _ => hM i j _ (hy i j)))⟩
 
-private theorem deep_add {a : ℤ} {x y : k} (hx : Deep a x) (hy : Deep a y) : Deep a (x + y) := by
-  unfold Deep at hx hy ⊢
-  exact ((valuation k).map_add x y).trans (max_le hx hy)
-
-private theorem deep_of_le' {a b : ℤ} (hab : a ≤ b) {x : k} (h : Deep b x) : Deep a x := by
-  unfold Deep at h ⊢
-  exact h.trans (zpow_le_zpow_right_of_le_one₀ uniformizer_pos uniformizer_lt_one.le hab)
-
-private theorem exists_deep_neg_natCast (x : k) : ∃ N : ℕ, Deep (-(N : ℤ)) x := by
-  unfold Deep
-  by_cases hx : valuation k x = 0
-  · exact ⟨0, by simp [hx]⟩
-
-  obtain ⟨N, hN⟩ := exists_pow_lt₀ (uniformizer_lt_one (R := k)) (Units.mk0 _ (inv_ne_zero hx))
-  refine ⟨N, ?_⟩
-  rw [Units.val_mk0] at hN
-  have hpos : (0 : ValueGroupWithZero k) < uniformizer k ^ N := pow_pos uniformizer_pos N
-  have hx0 : (0 : ValueGroupWithZero k) < valuation k x := zero_lt_iff.2 hx
-  rw [_root_.zpow_neg, zpow_natCast]
-  exact ((lt_inv_comm₀ hpos hx0).1 hN).le
-
 private theorem isOpen_setOf_forall_deep {n : Type} [Fintype n] (a : ℤ) :
     IsOpen {y : Matrix n n k | ∀ i j, Deep a (y i j)} := by
   simp only [Set.ofPred_forall]
@@ -144,7 +123,7 @@ theorem exists_bound_period : ∀ (k : Type) [Field k] [ValuativeRel k] [Topolog
 
   let U : ℕ → Set (Matrix n n k) := fun N => {x | ∀ i j, Deep (-(N : ℤ)) (x i j)}
   have hUm : Monotone U := fun N N' h x hx i j =>
-    deep_of_le' (neg_le_neg (by exact_mod_cast h)) (hx i j)
+    (hx i j).mono (neg_le_neg (by exact_mod_cast h))
   have hUcov : tsupport Φ ⊆ ⋃ N, U N := by
     intro x _
     have hev : ∀ᶠ N : ℕ in atTop, ∀ i j, Deep (-(N : ℤ)) (x i j) := by
@@ -152,9 +131,7 @@ theorem exists_bound_period : ∀ (k : Type) [Field k] [ValuativeRel k] [Topolog
       intro i
       rw [Filter.eventually_all]
       intro j
-      obtain ⟨N₀, hN₀⟩ := exists_deep_neg_natCast (x i j)
-      filter_upwards [eventually_ge_atTop N₀] with N hN
-      exact deep_of_le' (neg_le_neg (by exact_mod_cast hN)) hN₀
+      exact _root_.GlobalTheory.IwahoriInj.eventually_deep (x i j)
     obtain ⟨N, hN⟩ := hev.exists
     exact Set.mem_iUnion.2 ⟨N, hN⟩
   obtain ⟨N, hN⟩ := hC.elim_directed_cover U (fun N => isOpen_setOf_forall_deep _) hUcov hUm.directed_le
@@ -162,7 +139,7 @@ theorem exists_bound_period : ∀ (k : Type) [Field k] [ValuativeRel k] [Topolog
   let W : ℕ → Set (Matrix n n k) :=
     fun M => {x | ∀ y : Matrix n n k, (∀ i j, Deep (M : ℤ) (y i j)) → Φ (x + y) = Φ x}
   have hWm : Monotone W := fun M M' h x hx y hy =>
-    hx y fun i j => deep_of_le' (by exact_mod_cast h) (hy i j)
+    hx y fun i j => (hy i j).mono (by exact_mod_cast h)
   have hWo : ∀ M, IsOpen (W M) := by
     intro M
     rw [isOpen_iff_mem_nhds]
@@ -175,7 +152,7 @@ theorem exists_bound_period : ∀ (k : Type) [Field k] [ValuativeRel k] [Topolog
     refine Filter.mem_of_superset hD' fun z hz y hy => ?_
     have hz' : ∀ i j, Deep (M : ℤ) ((z - x) i j) := hz
     have h1 : Φ (x + ((z - x) + y)) = Φ x :=
-      hx _ fun i j => by simpa using deep_add (hz' i j) (hy i j)
+      hx _ fun i j => (valuation k).map_add_le (hz' i j) (hy i j)
     have h2 : Φ (x + (z - x)) = Φ x := hx _ hz'
     rw [add_sub_cancel] at h2
     have he : x + ((z - x) + y) = z + y := by abel

@@ -1,6 +1,7 @@
 module
 
 public import Development.AbelianVarietyTheory.BlockTheory.DivisorBase.WeilTensorModels
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.ExistsFinOfRest
 public import Development.AbelianVarietyTheory.Proofs.DivisorProofs.ExistsAdmittedFormEqAdelicThetaDistribution
 public import Development.AbelianVarietyTheory.Proofs.DivisorProofs.HasCompactSupportFinprodSchwartzBruhatFiniteAdel
 public import Development.AbelianVarietyTheory.Proofs.DivisorProofs.IsLocallyConstantFinprodSchwartzBruhatFiniteAdel
@@ -75,37 +76,15 @@ theorem exists_schr_pureA_eq {F : Type} [Field F] [NumberField F] {κ : Type} [F
       (g' : (κ → FiniteAdeleRing (𝓞 F) F) → ℂ), g' ∈ GlobalTheory.WeilM.SB (κ → FiniteAdeleRing (𝓞 F) F) ∧
       ∀ f : SchwartzMap (κ → mixedEmbedding.mixedSpace F) ℂ,
         GlobalTheory.WeilM.schr ψ w (GlobalTheory.WeilM.pureA F f g) = GlobalTheory.WeilM.pureA F (T f) g' := by
-  let e := InfiniteAdeleRing.ringEquiv_mixedSpace F
-  let q : AdeleRing (𝓞 F) F →+* mixedEmbedding.mixedSpace F := e.toRingHom.comp p1
-  let h : AdeleRing (𝓞 F) F := ⅟(2 : AdeleRing (𝓞 F) F) * (w.1 ⬝ᵥ w.2)
-  let c : κ → mixedEmbedding.mixedSpace F := fun i => q (w.2 i)
-  let t : κ → mixedEmbedding.mixedSpace F := fun i => q (w.1 i)
-  let k : ℝ := Algebra.trace ℝ (mixedEmbedding.mixedSpace F) (q h)
-  let d : κ → FiniteAdeleRing (𝓞 F) F := fun i => p2 (w.2 i)
-  let s : κ → FiniteAdeleRing (𝓞 F) F := fun i => p2 (w.1 i)
-  refine ⟨(SchwartzMap.smulLeftCLM ℂ (fun y => eChar ((-trL c) y + -k))).comp (SchwartzMap.compSubConstCLM ℂ (-t)),
-    finS ψ g d s (p2 h), finS_mem ψ hψ.1 hg d s (p2 h), fun f => funext fun x => ?_⟩
-  let y : κ → mixedEmbedding.mixedSpace F := fun i => q (x i)
-  let z : κ → FiniteAdeleRing (𝓞 F) F := fun i => p2 (x i)
-  have h1 : (fun i => q ((x + w.1) i)) = y + t := funext fun i => map_add q (x i) (w.1 i)
-  have h2 : (fun i => p2 ((x + w.1) i)) = z + s := funext fun i => map_add p2 (x i) (w.1 i)
-  have h3 : ψ (x ⬝ᵥ w.2 + h) = eChar ((-trL c) y + -k) * finChar ψ (z ⬝ᵥ d + p2 h) := by
-    rw [map_eq_mul ψ, hψ.2.2 _ (at_mk _)]
-    congr 1
-    · have e1 : GlobalTheory.IndefiniteRowSideFullHecke.WeilTensorModels.evI F (GlobalTheory.HeisSchA.mk (p1 (x ⬝ᵥ w.2 + h)) 0) = y ⬝ᵥ c + q h := by
-        change q (x ⬝ᵥ w.2 + h) = _
-        rw [map_add (f := _), RingHom.map_dotProduct]
-        rfl
-      rw [e1, map_add (f := _), eChar_apply, ContinuousLinearMap.neg_apply, trL_apply]
-      congr 1
-      push_cast
-      ring
-    · rw [map_add (f := _), RingHom.map_dotProduct]
-      rfl
-  change ψ (x ⬝ᵥ w.2 + h) * (f (fun i => q ((x + w.1) i)) * g (fun i => p2 ((x + w.1) i))) =
-    archS f c t k y * (finChar ψ (z ⬝ᵥ d + p2 h) * g (z + s))
-  rw [h1, h2, h3, archS_apply]
-  ring
+  let q : AdeleRing (𝓞 F) F →+* mixedEmbedding.mixedSpace F :=
+    (InfiniteAdeleRing.ringEquiv_mixedSpace F).toRingHom.comp p1
+  let h := ⅟(2 : AdeleRing (𝓞 F) F) * (w.1 ⬝ᵥ w.2)
+  refine ⟨(SchwartzMap.smulLeftCLM ℂ (fun y => eChar ((-trL (fun i => q (w.2 i))) y +
+      -(Algebra.trace ℝ (mixedEmbedding.mixedSpace F) (q h))))).comp
+      (SchwartzMap.compSubConstCLM ℂ (-fun i => q (w.1 i))),
+    finS ψ g (fun i => p2 (w.2 i)) (fun i => p2 (w.1 i)) (p2 h),
+    finS_mem ψ hψ.1 hg _ _ _,
+    fun f => GlobalTheory.ThetaSchrCont.schr_pureA_eq ψ hψ w f g⟩
 
 theorem exists_clm_thetaSum_pureA {F : Type} [Field F] [NumberField F] {κ : Type} [Fintype κ]
     {g : (κ → FiniteAdeleRing (𝓞 F) F) → ℂ} (hg : g ∈ GlobalTheory.WeilM.SB (κ → FiniteAdeleRing (𝓞 F) F)) :

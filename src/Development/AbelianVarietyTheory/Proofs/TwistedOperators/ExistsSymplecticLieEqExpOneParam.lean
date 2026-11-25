@@ -61,6 +61,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Calculus.Deriv.Shift
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.SpecialFunctions.Exponential
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.ExistsIsUnitIntegral
 
 @[expose] public section
 
@@ -75,41 +76,18 @@ variable {l : Type} [Fintype l] [DecidableEq l]
 theorem eq_exp_of_continuous_oneParameter (g : ℝ → Matrix (l ⊕ l) (l ⊕ l) ℝ) (hc : Continuous g)
     (h0 : g 0 = 1) (hadd : ∀ s t, g (s + t) = g s * g t) :
     HasDerivAt g (deriv g 0) 0 ∧ ∀ t : ℝ, g t = NormedSpace.exp (t • deriv g 0) := by
-  letI : NormedRing (Matrix (l ⊕ l) (l ⊕ l) ℝ) := Matrix.linftyOpNormedRing
-  letI : NormedAlgebra ℝ (Matrix (l ⊕ l) (l ⊕ l) ℝ) := Matrix.linftyOpNormedAlgebra
-  haveI : CompleteSpace (Matrix (l ⊕ l) (l ⊕ l) ℝ) := FiniteDimensional.complete ℝ _
-  have hsm := GlobalTheory.contDiff_of_continuous_oneParameter (Matrix (l ⊕ l) (l ⊕ l) ℝ) g hc h0 hadd
-  have hdiff : Differentiable ℝ g := hsm.differentiable (by simp)
-  set Z := deriv g 0 with hZ
-  have hd0 : HasDerivAt g Z 0 := (hdiff 0).hasDerivAt
-  have hdt : ∀ t, HasDerivAt g (g t * Z) t := by
-    intro t
-    have h1 : HasDerivAt (fun s => g (s - t)) Z t := by
-      have h := hd0
-      rw [← sub_self t] at h
-      exact h.comp_sub_const t t
-    have h2 := h1.const_mul (g t)
-    have h3 : (fun s => g t * g (s - t)) = g := by
-      funext s; rw [← hadd, add_sub_cancel]
-    rwa [h3] at h2
-  refine ⟨hd0, fun t => ?_⟩
-  set h : ℝ → Matrix (l ⊕ l) (l ⊕ l) ℝ := fun s => g s * NormedSpace.exp (s • (-Z)) with hh
-  have hderh : ∀ s, HasDerivAt h 0 s := by
-    intro s
-    have he := hasDerivAt_exp_smul_const' (𝕂 := ℝ) (-Z) s
-    have := (hdt s).fun_mul he
-    have key : g s * Z * NormedSpace.exp (s • -Z) + g s * (-Z * NormedSpace.exp (s • -Z)) = 0 := by
-      rw [neg_mul, mul_neg, mul_assoc, add_neg_cancel]
-    exact this.congr_deriv key
-  have hconst : h t = h 0 := is_const_of_deriv_eq_zero (fun s => (hderh s).differentiableAt)
-    (fun s => (hderh s).deriv) t 0
-  have hh0 : h 0 = 1 := by simp [hh, h0]
-  have hinv : NormedSpace.exp (t • (-Z)) * NormedSpace.exp (t • Z) = 1 := by
-    rw [smul_neg, ← Matrix.exp_add_of_commute _ _ (Commute.refl (t • Z)).neg_left, neg_add_cancel,
-      NormedSpace.exp_zero]
-  calc g t = g t * (NormedSpace.exp (t • (-Z)) * NormedSpace.exp (t • Z)) := by rw [hinv, mul_one]
-    _ = h t * NormedSpace.exp (t • Z) := by rw [hh, mul_assoc]
-    _ = NormedSpace.exp (t • Z) := by rw [hconst, hh0, one_mul]
+  have ⟨X, hX, hd, hder⟩ : ∃ X : Matrix (l ⊕ l) (l ⊕ l) ℝ,
+      (∀ t : ℝ, NormedSpace.exp (t • X) = g t) ∧ HasDerivAt g X 0 ∧ deriv g 0 = X := by
+    letI : NormedRing (Matrix (l ⊕ l) (l ⊕ l) ℝ) := Matrix.linftyOpNormedRing
+    letI : NormedAlgebra ℝ (Matrix (l ⊕ l) (l ⊕ l) ℝ) := Matrix.linftyOpNormedAlgebra
+    haveI : CompleteSpace (Matrix (l ⊕ l) (l ⊕ l) ℝ) := FiniteDimensional.complete ℝ _
+    obtain ⟨X, hX⟩ := GlobalTheory.ExponentialIntegralUnits.exists_exp_eq g hc h0 hadd
+    have h1 := (hasDerivAt_exp_smul_const (𝕂 := ℝ) X 0).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun t => (hX t).symm)
+    rw [zero_smul, NormedSpace.exp_zero, one_mul] at h1
+    exact ⟨X, hX, h1, h1.deriv⟩
+  rw [hder]
+  exact ⟨hd, fun t => (hX t).symm⟩
 
 theorem exists_mem_sp_eq_exp : ∀ (l : Type) [Fintype l] [DecidableEq l] (g : ℝ → Matrix (l ⊕ l) (l ⊕ l) ℝ),
     Continuous g → g 0 = 1 →

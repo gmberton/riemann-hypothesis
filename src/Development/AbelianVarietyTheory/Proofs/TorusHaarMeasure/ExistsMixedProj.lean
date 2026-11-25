@@ -48,6 +48,7 @@ public import ReciprocityTheory.L2DbarEstimates.NormFibrations.MvBlowup
 public import ReciprocityTheory.L2DbarEstimates.PlurisubharmonicCharts.APrimeLoc
 import ReciprocityTheory.ReductiveGroups.ArithmeticGeometry.ArakelovVolumes.UpperBounds.InterpStatementPfH
 import ReciprocityTheory.ReductiveGroups.ArithmeticGeometry.FundamentalDomains.DetSubUpper
+import Development.AbelianVarietyTheory.Proofs.TorusHaarMeasure.DminCptEq
 
 @[expose] public section
 
@@ -77,28 +78,12 @@ open NumberField MeasureTheory Topology in
 open scoped ContDiff ENNReal Matrix in
 variable {E : Type} [Field E] [NumberField E] [IsCMField E] {r : ℕ} in
 variable {X : _root_.ReciprocityTheory.ChartRestriction.G.FD.Data E r} {x0 x1 : _root_.ReciprocityTheory.ChartRestriction.G.FD.Frame X.Ψ r} in
-private theorem dmin_cpt_eq_of_isOrth (h0 : _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.IsOrth X x0) (h1 : _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.IsOrth X x1)
-    (z : _root_.ReciprocityTheory.L2DbarEstimates.V (_root_.ReciprocityTheory.ChartRestriction.G.AR.Inst.nd X)) (τ : X.Ψ) (i : Fin (r + 1)) :
-    _root_.ReciprocityTheory.ChartRestriction.G.FD.dmin X.Gm (_root_.ReciprocityTheory.ChartRestriction.G.AR.Inst.cpt X x1 z) τ i = _root_.ReciprocityTheory.ChartRestriction.G.FD.dmin X.Gm (_root_.ReciprocityTheory.ChartRestriction.G.AR.Inst.cpt X x0 z) τ i := by
-  have g0 : ∀ τ : X.Ψ, _root_.ReciprocityTheory.ChartRestriction.G.FD.gram (↑τ) X.Gm (_root_.ReciprocityTheory.ChartRestriction.G.FD.mat x0 τ) =
-      Matrix.diagonal fun a : Fin r ↦ ((_root_.ReciprocityTheory.ChartRestriction.G.FD.sgn X.p0 ↑a : ℝ) : ℂ) := h0
-  have g1 : ∀ τ : X.Ψ, _root_.ReciprocityTheory.ChartRestriction.G.FD.gram (↑τ) X.Gm (_root_.ReciprocityTheory.ChartRestriction.G.FD.mat x1 τ) =
-      Matrix.diagonal fun a : Fin r ↦ ((_root_.ReciprocityTheory.ChartRestriction.G.FD.sgn X.p0 ↑a : ℝ) : ℂ) := h1
-  have hmat : ∀ x : _root_.ReciprocityTheory.ChartRestriction.G.FD.Frame X.Ψ r,
-      _root_.ReciprocityTheory.ChartRestriction.G.FD.mat (_root_.ReciprocityTheory.ChartRestriction.G.AR.Inst.cpt X x z) τ = _root_.ReciprocityTheory.ChartRestriction.G.FD.mat x τ * _root_.ReciprocityTheory.ChartRestriction.G.FD.mat (_root_.ReciprocityTheory.ChartRestriction.G.AR.Inst.nmat X z) τ := fun _ ↦ rfl
-  unfold _root_.ReciprocityTheory.ChartRestriction.G.FD.dmin
-  rw [hmat, hmat, _root_.ReciprocityTheory.ChartRestriction.G.FD.FrameDegreeData.gram_mul, _root_.ReciprocityTheory.ChartRestriction.G.FD.FrameDegreeData.gram_mul, g0, g1]
-
-open NumberField MeasureTheory Topology in
-open scoped ContDiff ENNReal Matrix in
-variable {E : Type} [Field E] [NumberField E] [IsCMField E] {r : ℕ} in
-variable {X : _root_.ReciprocityTheory.ChartRestriction.G.FD.Data E r} {x0 x1 : _root_.ReciprocityTheory.ChartRestriction.G.FD.Frame X.Ψ r} in
 theorem _root_.GlobalTheory.Up.PoleValue.OmF_eq (h0 : _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.IsOrth X x0) (h1 : _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.IsOrth X x1) :
     _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.OmF X x1 = _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.OmF X x0 := by
   ext z
   unfold _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.OmF _root_.ReciprocityTheory.ChartRestriction.G.FD.Data.dom _root_.ReciprocityTheory.ChartRestriction.G.FD.GG
   simp only [Set.mem_setOf_eq, det_mat_cpt_ne_zero_iff_det_nmat h0, det_mat_cpt_ne_zero_iff_det_nmat h1,
-    dmin_cpt_eq_of_isOrth h0 h1]
+    _root_.GlobalTheory.OrthNear.dmin_cpt_eq X h1 h0]
 
 open NumberField MeasureTheory Topology in
 open scoped ContDiff ENNReal Matrix in
@@ -108,7 +93,7 @@ theorem _root_.GlobalTheory.Up.PoleValue.rhF_eq (h0 : _root_.ReciprocityTheory.C
     _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.rhF X x1 = _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.rhF X x0 := by
   funext z
   unfold _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.rhF
-  simp only [dmin_cpt_eq_of_isOrth h0 h1]
+  simp only [_root_.GlobalTheory.OrthNear.dmin_cpt_eq X h1 h0]
 
 open NumberField MeasureTheory Topology in
 open scoped ContDiff ENNReal Matrix in
@@ -119,7 +104,7 @@ theorem _root_.GlobalTheory.Up.PoleValue.muF_eq (h0 : _root_.ReciprocityTheory.C
   unfold _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.muF
   rw [_root_.GlobalTheory.Up.PoleValue.OmF_eq h0 h1]
   unfold _root_.ReciprocityTheory.ChartRestriction.G.AR.Up.densF
-  simp only [dmin_cpt_eq_of_isOrth h0 h1]
+  simp only [_root_.GlobalTheory.OrthNear.dmin_cpt_eq X h1 h0]
 
 end GlobalTheory.Up.PoleValue
 

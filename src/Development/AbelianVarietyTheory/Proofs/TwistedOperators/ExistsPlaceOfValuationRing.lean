@@ -54,20 +54,6 @@ theorem _root_.GlobalTheory.EmbeddingPlace.finitePlace_le_one_iff {K : Type} [Fi
   exact WithZeroMulInt.toNNReal_le_one_iff (NumberField.HeightOneSpectrum.one_lt_absNorm_nnreal v)
 
 open NumberField IsDedekindDomain in
-private theorem valuation_le_one_iff_exists_eq_mul_inv_of_notMem {R L : Type} [CommRing R] [IsDedekindDomain R]
-    [Field L] [Algebra R L] [IsFractionRing R L] (v : HeightOneSpectrum R) (x : L) :
-    v.valuation L x ≤ 1 ↔
-      ∃ a, ∃ s ∉ v.asIdeal, x = algebraMap R L a * (algebraMap R L s)⁻¹ := by
-  rw [← Valuation.mem_valuationSubring_iff,
-    ← HeightOneSpectrum.valuationSubringAtPrime_eq_valuationSubring,
-    ← ValuationSubring.mem_toSubring, HeightOneSpectrum.valuationSubringAtPrime_toSubring,
-    Subalgebra.mem_toSubring]
-  simp only [Localization.subalgebra.ofField]
-  change (∃ a s, ∃ (_ : s ∈ v.asIdeal.primeCompl),
-      x = algebraMap R L a * (algebraMap R L s)⁻¹) ↔ _
-  exact ⟨fun ⟨a, s, hs, h⟩ => ⟨a, s, hs, h⟩, fun ⟨a, s, hs, h⟩ => ⟨a, s, hs, h⟩⟩
-
-open NumberField IsDedekindDomain in
 private theorem exists_heightOneSpectrum_range_iff_finitePlace_le_one {O : Type} [CommRing O] [IsDomain O]
     [IsDiscreteValuationRing O] {K : Type} [Field K] [NumberField K] (p : ℕ) (hp : p ≠ 0)
     (hpO : (p : O) ∈ IsLocalRing.maximalIdeal O) (ι : K →+* FractionRing O) :
@@ -108,14 +94,8 @@ private theorem exists_heightOneSpectrum_range_iff_finitePlace_le_one {O : Type}
     have hy : la.valuation K x⁻¹ < 1 := by
       rw [map_inv₀]
       exact inv_lt_one_of_one_lt₀ hx
-    obtain ⟨a, s, hs, hxa⟩ := (valuation_le_one_iff_exists_eq_mul_inv_of_notMem la x⁻¹).mp hy.le
-    have hs0 : algebraMap (𝓞 K) K s ≠ 0 := by
-      have : s ≠ 0 := by
-        rintro rfl
-        exact hs (zero_mem _)
-      exact (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr this
-    have hsa : algebraMap (𝓞 K) K a = x⁻¹ * algebraMap (𝓞 K) K s := by
-      rw [hxa, inv_mul_cancel_right₀ hs0]
+    obtain ⟨a, ⟨s, hs⟩, hsa⟩ :=
+      HeightOneSpectrum.exists_primeCompl_mul_eq_of_integer la x⁻¹ hy.le
     have hvs : la.valuation K (algebraMap (𝓞 K) K s) = 1 := by
       rw [HeightOneSpectrum.valuation_of_algebraMap]
       exact le_antisymm (la.intValuation_le_one s)
@@ -123,21 +103,26 @@ private theorem exists_heightOneSpectrum_range_iff_finitePlace_le_one {O : Type}
     have hva : la.intValuation a < 1 := by
       rw [← HeightOneSpectrum.valuation_of_algebraMap (K := K)]
       change la.valuation K (algebraMap (𝓞 K) K a) < 1
-      rw [hsa, map_mul, hvs, mul_one]
+      rw [← hsa, map_mul, hvs, mul_one]
       exact hy
     have ha : ψ a ∈ IsLocalRing.maximalIdeal O :=
       Ideal.mem_comap.mp ((la.intValuation_lt_one_iff_mem a).mp hva)
     have heq : o * ψ a = ψ s := hinj (by
-      rw [map_mul, ho, hψ, hψ, hsa, map_mul, ← mul_assoc, ← map_mul, mul_inv_cancel₀ hx0,
+      rw [map_mul, ho, hψ, hψ, ← hsa, map_mul, ← mul_assoc, ← map_mul, mul_inv_cancel₀ hx0,
         map_one, one_mul])
     have hunit : IsUnit (o * ψ a) := by
       rw [heq]
       exact hunitP s hs
     exact (IsLocalRing.mem_maximalIdeal _).mp ha (isUnit_of_mul_isUnit_right hunit)
   · intro h
-    obtain ⟨a, s, hs, rfl⟩ := (valuation_le_one_iff_exists_eq_mul_inv_of_notMem la x).mp h
+    obtain ⟨a, ⟨s, hs⟩, hxa⟩ := HeightOneSpectrum.exists_primeCompl_mul_eq_of_integer la x h
+    have hs0 : ι (algebraMap (𝓞 K) K s) ≠ 0 := by
+      have : s ≠ 0 := fun h0 => hs (h0 ▸ zero_mem _)
+      exact (map_ne_zero_iff _ ι.injective).mpr
+        ((map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr this)
     refine ⟨ψ a * ↑(hunitP s hs).unit⁻¹, ?_⟩
-    rw [map_mul, map_units_inv, IsUnit.unit_spec, hψ, hψ, map_mul, map_inv₀]
+    rw [map_mul, map_units_inv, IsUnit.unit_spec, hψ, hψ, ← hxa, map_mul, mul_assoc,
+      mul_inv_cancel₀ hs0, mul_one]
 
 
 open NumberField IsDedekindDomain in

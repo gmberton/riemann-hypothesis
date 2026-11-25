@@ -105,46 +105,32 @@ theorem inclT_update (M : DSModel V S) (τ : D.what₂.Tau) (v : M.Vec) (y : M.s
 theorem exists_ctr (M : DSModel V S) (τ : D.what₂.Tau) (w : ∀ ρ, M.H ρ) :
     ∃ c : (⨂[ℂ] ρ, M.H ρ) →ₗ[ℂ] M.H τ, (∀ u x, ⟪u, c x⟫_ℂ = ellT M (Function.update w τ u) x) ∧
       ∀ g x, c (actT M τ g x) = M.rep τ g (c x) := by
-  have hadd : ∀ (z : ∀ ρ, M.H ρ) (i : D.what₂.Tau) (x y : M.H i),
-      (∏ ρ ∈ Finset.univ.erase τ, ⟪w ρ, Function.update z i (x + y) ρ⟫_ℂ) • Function.update z i (x + y) τ =
-        (∏ ρ ∈ Finset.univ.erase τ, ⟪w ρ, Function.update z i x ρ⟫_ℂ) • Function.update z i x τ +
-          (∏ ρ ∈ Finset.univ.erase τ, ⟪w ρ, Function.update z i y ρ⟫_ℂ) • Function.update z i y τ := by
-    intro z i x y
+  have hupd : ∀ (z : ∀ ρ, M.H ρ) (i : D.what₂.Tau),
+      ∃ L : M.H i →ₗ[ℂ] M.H τ, ∀ a,
+        (∏ ρ ∈ Finset.univ.erase τ, ⟪w ρ, Function.update z i a ρ⟫_ℂ) •
+            Function.update z i a τ = L a := by
+    intro z i
+    have prod_ne (s : Finset D.what₂.Tau) (hi : i ∉ s) (a : M.H i) :
+        ∏ ρ ∈ s, ⟪w ρ, Function.update z i a ρ⟫_ℂ = ∏ ρ ∈ s, ⟪w ρ, z ρ⟫_ℂ :=
+      Finset.prod_congr rfl fun ρ hρ => by
+        rw [Function.update_of_ne fun h => by subst h; exact hi hρ]
     by_cases h : i = τ
     · subst h
-      have e : ∀ a : M.H i, ∏ ρ ∈ Finset.univ.erase i, ⟪w ρ, Function.update z i a ρ⟫_ℂ =
-          ∏ ρ ∈ Finset.univ.erase i, ⟪w ρ, z ρ⟫_ℂ := fun a =>
-        Finset.prod_congr rfl fun ρ hρ => by rw [Function.update_of_ne (Finset.ne_of_mem_erase hρ)]
-      simp only [e, Function.update_self, smul_add]
+      refine ⟨(∏ ρ ∈ Finset.univ.erase i, ⟪w ρ, z ρ⟫_ℂ) • LinearMap.id, fun a => ?_⟩
+      rw [prod_ne _ (Finset.notMem_erase _ _), Function.update_self]
+      rfl
     · have hi : i ∈ Finset.univ.erase τ := Finset.mem_erase.mpr ⟨h, Finset.mem_univ _⟩
-      have e : ∀ a : M.H i, ∏ ρ ∈ Finset.univ.erase τ, ⟪w ρ, Function.update z i a ρ⟫_ℂ =
-          ⟪w i, a⟫_ℂ * ∏ ρ ∈ (Finset.univ.erase τ).erase i, ⟪w ρ, z ρ⟫_ℂ := fun a => by
-        rw [← Finset.mul_prod_erase _ _ hi, Function.update_self]
-        congr 1
-        exact Finset.prod_congr rfl fun ρ hρ => by rw [Function.update_of_ne (Finset.ne_of_mem_erase hρ)]
-      simp only [e, Function.update_of_ne (Ne.symm h), inner_add_right, add_mul, add_smul]
-  have hsmul : ∀ (z : ∀ ρ, M.H ρ) (i : D.what₂.Tau) (a : ℂ) (x : M.H i),
-      (∏ ρ ∈ Finset.univ.erase τ, ⟪w ρ, Function.update z i (a • x) ρ⟫_ℂ) • Function.update z i (a • x) τ =
-        a • ((∏ ρ ∈ Finset.univ.erase τ, ⟪w ρ, Function.update z i x ρ⟫_ℂ) • Function.update z i x τ) := by
-    intro z i a x
-    by_cases h : i = τ
-    · subst h
-      have e : ∀ b : M.H i, ∏ ρ ∈ Finset.univ.erase i, ⟪w ρ, Function.update z i b ρ⟫_ℂ =
-          ∏ ρ ∈ Finset.univ.erase i, ⟪w ρ, z ρ⟫_ℂ := fun b =>
-        Finset.prod_congr rfl fun ρ hρ => by rw [Function.update_of_ne (Finset.ne_of_mem_erase hρ)]
-      simp only [e, Function.update_self]
-      exact smul_comm _ _ _
-    · have hi : i ∈ Finset.univ.erase τ := Finset.mem_erase.mpr ⟨h, Finset.mem_univ _⟩
-      have e : ∀ b : M.H i, ∏ ρ ∈ Finset.univ.erase τ, ⟪w ρ, Function.update z i b ρ⟫_ℂ =
-          ⟪w i, b⟫_ℂ * ∏ ρ ∈ (Finset.univ.erase τ).erase i, ⟪w ρ, z ρ⟫_ℂ := fun b => by
-        rw [← Finset.mul_prod_erase _ _ hi, Function.update_self]
-        congr 1
-        exact Finset.prod_congr rfl fun ρ hρ => by rw [Function.update_of_ne (Finset.ne_of_mem_erase hρ)]
-      simp only [e, Function.update_of_ne (Ne.symm h), inner_smul_right, mul_assoc, mul_smul]
+      refine ⟨(innerₛₗ ℂ (w i)).smulRight
+        ((∏ ρ ∈ (Finset.univ.erase τ).erase i, ⟪w ρ, z ρ⟫_ℂ) • z τ), fun a => ?_⟩
+      rw [← Finset.mul_prod_erase _ _ hi, Function.update_self,
+        prod_ne _ (Finset.notMem_erase _ _), Function.update_of_ne (Ne.symm h), mul_smul]
+      rfl
   let m : MultilinearMap (RingHom.id ℂ) (fun ρ => M.H ρ) (M.H τ) :=
     { toFun := fun z => (∏ ρ ∈ Finset.univ.erase τ, ⟪w ρ, z ρ⟫_ℂ) • z τ
-      map_update_add' := fun z i x y => by convert hadd z i x y
-      map_update_smul' := fun z i a x => by convert hsmul z i a x }
+      map_update_add' := fun z i x y => by
+        obtain ⟨L, hL⟩ := hupd z i; convert map_add L x y <;> convert hL _
+      map_update_smul' := fun z i a x => by
+        obtain ⟨L, hL⟩ := hupd z i; convert map_smul L a x <;> convert hL _ }
   refine ⟨PiTensorProduct.lift m, fun u x => ?_, fun g x => ?_⟩
   · have key : (innerₛₗ ℂ u).comp (PiTensorProduct.lift m) = ellT M (Function.update w τ u) := by
       apply PiTensorProduct.ext

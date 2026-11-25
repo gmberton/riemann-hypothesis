@@ -49,27 +49,6 @@ variable {G : Type} [Group G] {Qp K₀ K : Type} [Field Qp] [Field K₀] [Field 
     [Algebra Qp BdR] [Algebra K₀ BdR] [Algebra K BdR] [IsScalarTower Qp K BdR]
     [IsScalarTower K₀ K BdR] [IsScalarTower Qp K₀ BdR]
     (PD : _root_.Formalism.WeaklyAdmissibleFiltrations.PeriodData G Qp K₀ K B BdR) {LL : Type} [Field LL] [Algebra Qp LL] in
-private theorem eq_sum_basis_tmul_coord {V : Type} [AddCommGroup V] [Module Qp V] {ι : Type}
-    [Fintype ι] (b : Basis ι Qp V) (x : V ⊗[Qp] B) :
-    x = ∑ i, b i ⊗ₜ[Qp] TensorProduct.lid Qp B (LinearMap.rTensor B (b.coord i) x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
-  | tmul m n =>
-    simp only [LinearMap.rTensor_tmul, TensorProduct.lid_tmul, Basis.coord_apply]
-    simp_rw [← TensorProduct.smul_tmul, ← TensorProduct.sum_tmul, b.sum_repr]
-  | add x y hx hy =>
-    conv_lhs => rw [hx, hy]
-    simp only [map_add (f := _), TensorProduct.tmul_add, Finset.sum_add_distrib]
-
-
-open PowerSeries in
-open Module TensorProduct in
-variable {G : Type} [Group G] {Qp K₀ K : Type} [Field Qp] [Field K₀] [Field K]
-    [Algebra Qp K₀] [Algebra Qp K] [Algebra K₀ K] [IsScalarTower Qp K₀ K]
-    {B BdR : Type} [CommRing B] [CommRing BdR] [Algebra Qp B] [Algebra K₀ B] [IsScalarTower Qp K₀ B]
-    [Algebra Qp BdR] [Algebra K₀ BdR] [Algebra K BdR] [IsScalarTower Qp K BdR]
-    [IsScalarTower K₀ K BdR] [IsScalarTower Qp K₀ BdR]
-    (PD : _root_.Formalism.WeaklyAdmissibleFiltrations.PeriodData G Qp K₀ K B BdR) {LL : Type} [Field LL] [Algebra Qp LL] in
 theorem _root_.GlobalTheory.TrivCrys.dcris_of_trivial {V : Type} [AddCommGroup V] [Module Qp V]
     [Module LL V] [IsScalarTower Qp LL V] [FiniteDimensional Qp V] (ρ : Representation LL G V)
     (hρ : ∀ g x, ρ g x = x) :
@@ -95,7 +74,13 @@ theorem _root_.GlobalTheory.TrivCrys.dcris_of_trivial {V : Type} [AddCommGroup V
     choose k hk using hc
     refine ⟨∑ i, b i ⊗ₜ[Qp] k i, ?_⟩
 
-    rw [map_sum, eq_sum_basis_tmul_coord b x]
+    have hxsum : x =
+        ∑ i, b i ⊗ₜ[Qp] TensorProduct.lid Qp B (LinearMap.rTensor B (b.coord i) x) := by
+      have h1 := ((TensorProduct.equivFinsuppOfBasisLeft b).symm_apply_apply x).symm
+      rw [TensorProduct.equivFinsuppOfBasisLeft_symm_apply,
+        Finsupp.sum_fintype _ _ (fun _ => TensorProduct.tmul_zero _ _)] at h1
+      simpa only [TensorProduct.equivFinsuppOfBasisLeft_apply] using h1
+    rw [map_sum, hxsum]
     refine Finset.sum_congr rfl fun i _ => ?_
     rw [AlgebraTensorModule.map_tmul, ← hk i]
     rfl

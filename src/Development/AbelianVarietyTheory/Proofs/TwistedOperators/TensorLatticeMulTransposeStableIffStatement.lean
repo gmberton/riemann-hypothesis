@@ -1,6 +1,7 @@
 module
 
 public import Development.AbelianVarietyTheory.BlockTheory.DivisorBase.WeilTensorModels
+import Development.AbelianVarietyTheory.Proofs.DivisorProofs.WeilOperatorLatticeStabiliserRightPreservesVacuu
 import Mathlib.Algebra.Order.Floor.Extended
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Algebra.Order.Interval.Basic
@@ -89,30 +90,8 @@ theorem vecMulVec_mem {n d : ℕ} (X : Spc F E n) (W : Spc F E d) (w : GlobalThe
     (hu : u ∈ AddSubgroup.closure {z | ∃ b : AF F, At (evFin F w) b ∧
           evFin F w b ∈ w.adicCompletionIntegers F ∧
           ∃ y' ∈ W.L, z = b • fun i => inclR (F := F) (AF F) (y' i)}) :
-    Matrix.vecMulVec (fun i => inclR (F := F) (AF F) (x i)) u ∈ latAtV X W w := by
-  induction hu using AddSubgroup.closure_induction with
-  | mem u hu =>
-    obtain ⟨b, hb, hbi, y', hy', rfl⟩ := hu
-    apply AddSubgroup.subset_closure
-    refine ⟨b, hb, hbi, x, hx, y', hy', ?_⟩
-    ext i j
-    simp only [incM, Matrix.smul_apply, Matrix.map_apply, Matrix.vecMulVec_apply, Pi.smul_apply, map_mul]
-    rw [mul_smul_comm]
-  | zero =>
-    have : Matrix.vecMulVec (fun i => inclR (F := F) (AF F) (x i)) (0 : Fin d → AE F E) = 0 := by
-      ext i j; simp [Matrix.vecMulVec_apply]
-    rw [this]; exact zero_mem _
-  | add u v _ _ hu hv =>
-    have : Matrix.vecMulVec (fun i => inclR (F := F) (AF F) (x i)) (u + v) =
-        Matrix.vecMulVec (fun i => inclR (F := F) (AF F) (x i)) u +
-          Matrix.vecMulVec (fun i => inclR (F := F) (AF F) (x i)) v := by
-      ext i j; simp [Matrix.vecMulVec_apply, mul_add]
-    rw [this]; exact add_mem hu hv
-  | neg u _ hu =>
-    have : Matrix.vecMulVec (fun i => inclR (F := F) (AF F) (x i)) (-u) =
-        -Matrix.vecMulVec (fun i => inclR (F := F) (AF F) (x i)) u := by
-      ext i j; simp [Matrix.vecMulVec_apply]
-    rw [this]; exact neg_mem hu
+    Matrix.vecMulVec (fun i => inclR (F := F) (AF F) (x i)) u ∈ latAtV X W w :=
+  GlobalTheory.VacTransport.vecMulVec_mem X W w hx hu
 
 theorem mul_transpose_mem {n d : ℕ} (X : Spc F E n) (W : Spc F E d) (w : GlobalTheory.IndefiniteRowSideFullHecke.WeilTensorModels.Pl (F := F))
     (K : Matrix (Fin d) (Fin d) (AE F E))

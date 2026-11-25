@@ -53,6 +53,8 @@ import Development.AbelianVarietyTheory.Proofs.DivisorProofs.EqOfComponentTensor
 import Mathlib.RingTheory.PiTensorProduct
 import Mathlib.Tactic.Basify
 import Mathlib.Tactic.ENatToNat
+import Development.AbelianVarietyTheory.Proofs.DivisorProofs.GenPtSubset
+import Development.AbelianVarietyTheory.Proofs.DivisorProofs.TraceSymplecticFormEqOrientedHomSymplecticForm
 
 -- This file was produced by scripts/clump.py from the modules listed below.
 -- Members: Development.AbelianVarietyTheory.Proofs.TwistedOperators.SchrodingerModelSymplecticEqOrientedPair, Development.AbelianVarietyTheory.Proofs.TwistedOperators.RealPlaceHeisenbergDerivThetaTransformAlgebraicD
@@ -77,24 +79,8 @@ namespace GlobalTheory.SquareAgree.SympForm
 theorem symplO_eq_symp_one {D : D7} (S T : HSp D) (x y : WO S T) : symplO S T x y =
     GlobalTheory.WeilM.symp (GlobalTheory.IndefiniteRowSideFullHecke.WeilTensorModels.cA D.sp.cm.sig) 1 (GlobalTheory.IndefiniteRowSideFullHecke.WeilTensorModels.incM D.host.F T.gramᵀ)
       (GlobalTheory.IndefiniteRowSideFullHecke.WeilTensorModels.incM D.host.F (D.host.xi0 • S.gram⁻¹)) x y := by
-  unfold symplO GlobalTheory.WeilM.symp hO GlobalTheory.WeilM.hTens
-  congr 1
-  have h : ∀ j l, (1 : AE D) * GlobalTheory.IndefiniteRowSideFullHecke.WeilTensorModels.incM D.host.F (D.host.xi0 • S.gram⁻¹) j l =
-      incA D D.host.xi0 * incA D (S.gram⁻¹ j l) := fun j l => by
-    rw [one_mul, ← map_mul]
-    rfl
-  have hc : ∀ z, GlobalTheory.IndefiniteRowSideFullHecke.WeilTensorModels.cA D.sp.cm.sig z = cA D z := fun z => rfl
-  simp only [Finset.mul_sum, hc]
-  conv_rhs => rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun a _ => ?_
-  rw [Finset.sum_comm]
-  conv_rhs => rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun c _ => ?_
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun d _ => Finset.sum_congr rfl fun b _ => ?_
-  have h' : GlobalTheory.IndefiniteRowSideFullHecke.WeilTensorModels.incM D.host.F T.gramᵀ d c = incA D (T.gram c d) := rfl
-  rw [h']
-  linear_combination (-(x d a * incA D (T.gram c d) * cA D (y c b))) * h a b
+  exact (GlobalTheory.WeilSchrodinger.symp_eq_symplO D S T T.gramᵀ
+    (D.host.xi0 • S.gram⁻¹) 1 rfl (one_smul _ _) x y).symm
 
 end GlobalTheory.SquareAgree.SympForm
 
@@ -176,14 +162,7 @@ variable {F : Type} [Field F] [NumberField F] {W : Type} [AddCommGroup W] [Modul
 
 theorem rho_rho (d : Darboux B κ) (ψ : AddChar (AF F) ℂ) (w v : W) (Φ : (κ → AF F) → ℂ) :
     d.rho ψ w (d.rho ψ v Φ) = ψ (⅟(2 : AF F) * B w v) • d.rho ψ (w + v) Φ := by
-  funext x
-  simp only [Darboux.rho, schr, Pi.smul_apply, smul_eq_mul, map_add (f := _), Prod.fst_add, Prod.snd_add, ← mul_assoc,
-    ← AddChar.map_add_eq_mul, add_assoc]
-  congr 2
-  rw [d.form]
-  simp only [add_dotProduct, dotProduct_add]
-  have h2 : ⅟(2 : AF F) + ⅟(2 : AF F) = 1 := invOf_two_add_invOf_two
-  linear_combination (-((d.e w).1 ⬝ᵥ (d.e v).2)) * h2
+  exact GlobalTheory.BigDat.rho_rho d ψ w v Φ
 
 theorem thetaSum_smul (c : ℂ) (Φ : (κ → AF F) → ℂ) : thetaSum F (c • Φ) = c * thetaSum F Φ := by
   simp only [thetaSum, Pi.smul_apply, smul_eq_mul]
