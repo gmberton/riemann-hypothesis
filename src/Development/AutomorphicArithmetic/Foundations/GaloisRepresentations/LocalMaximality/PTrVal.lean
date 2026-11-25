@@ -59,44 +59,7 @@ noncomputable section
 
 namespace UpperTheory.Gal.productCup_of_system.PartialTraceValue
 
-private theorem nakGen {A B : Type} [CommRing A] [CommRing B] [Algebra A B] [Module.Finite A B] (I : Ideal A) (𝔟 : Ideal B)
-    (hb : 𝔟 ⊔ I.map (algebraMap A B) = ⊤) : ∃ r : A, r - 1 ∈ I ∧ algebraMap A B r ∈ 𝔟 := by
-  let N : Submodule A B := 𝔟.restrictScalars A
-  have key : ∀ j ∈ I.map (algebraMap A B), ∀ b : B,
-      (Submodule.Quotient.mk (j * b) : B ⧸ N) ∈ I • (⊤ : Submodule A (B ⧸ N)) := by
-    intro j hj
-    refine Submodule.span_induction ?_ ?_ ?_ ?_ hj
-    · rintro _ ⟨i, hi, rfl⟩ b
-      rw [← Algebra.smul_def, Submodule.Quotient.mk_smul]
-      exact Submodule.smul_mem_smul hi Submodule.mem_top
-    · intro b
-      rw [zero_mul]
-      exact Submodule.zero_mem _
-    · intro u v _ _ hu hv b
-      rw [add_mul, Submodule.Quotient.mk_add]
-      exact Submodule.add_mem _ (hu b) (hv b)
-    · intro c u _ hu b
-      rw [smul_eq_mul, show c * u * b = u * (c * b) by ring]
-      exact hu _
-  have hin : (⊤ : Submodule A (B ⧸ N)) ≤ I • ⊤ := by
-    rintro q -
-    obtain ⟨b, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-    obtain ⟨a, ha, j, hj, haj⟩ := Submodule.mem_sup.1 (hb ▸ Submodule.mem_top : (1 : B) ∈ 𝔟 ⊔ I.map (algebraMap A B))
-    have : (Submodule.Quotient.mk b : B ⧸ N) = Submodule.Quotient.mk (j * b) := by
-      rw [Submodule.Quotient.eq]
-      have : b - j * b = a * b := by
-        linear_combination (-b) * haj
-      rw [this]
-      exact 𝔟.mul_mem_right b ha
-    rw [this]
-    exact key j hj b
-  obtain ⟨r, hr1, hr⟩ := Submodule.exists_sub_one_mem_and_smul_eq_zero_of_fg_of_le_smul I
-    (⊤ : Submodule A (B ⧸ N)) Module.Finite.fg_top hin
-  refine ⟨r, hr1, ?_⟩
-  have h0 := hr (Submodule.Quotient.mk 1) Submodule.mem_top
-  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, Algebra.smul_def, mul_one] at h0
-  exact h0
-
+open scoped Pointwise in
 private theorem nakHom {A B : Type} [CommRing A] [CommRing B] [Algebra ℂ A] [Algebra ℂ B] [Algebra.FiniteType ℂ B]
     (φ : A →ₐ[ℂ] B) (hint : ∀ b : B, φ.toRingHom.IsIntegralElem b) (I : Ideal A) (𝔟 : Ideal B)
     (hb : 𝔟 ⊔ I.map φ.toRingHom = ⊤) : ∃ r : A, r - 1 ∈ I ∧ φ r ∈ 𝔟 := by
@@ -105,7 +68,20 @@ private theorem nakHom {A B : Type} [CommRing A] [CommRing B] [Algebra ℂ A] [A
   haveI int : Algebra.IsIntegral A B := ⟨hint⟩
   haveI : Algebra.FiniteType A B := Algebra.FiniteType.of_restrictScalars_finiteType ℂ _ _
   haveI fin : Module.Finite A B := Algebra.IsIntegral.finite
-  exact nakGen I 𝔟 hb
+  have hle : (⊤ : Submodule A B) ≤ 𝔟.restrictScalars A ⊔ I • ⊤ := by
+    rw [Ideal.smul_top_eq_map, RingHom.algebraMap_toAlgebra]
+    intro x _
+    have hx : x ∈ 𝔟 ⊔ I.map φ.toRingHom := hb ▸ Submodule.mem_top
+    obtain ⟨a, ha, b, hb', hEq⟩ := Submodule.mem_sup.1 hx
+    rw [← hEq]
+    exact Submodule.add_mem_sup ha hb'
+  obtain ⟨r, hr1, hr⟩ := Submodule.exists_sub_one_mem_and_smul_le_of_fg_of_le_sup
+    Module.Finite.fg_top le_rfl hle
+  refine ⟨r, hr1, ?_⟩
+  have hmem := hr (Submodule.smul_mem_pointwise_smul (1 : B) r ⊤ Submodule.mem_top)
+  rw [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra,
+    AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] at hmem
+  exact hmem
 
 variable {F L : Type} [Field F] [Field L] [Algebra ℂ F] [Algebra ℂ L] [Algebra F L] [IsScalarTower ℂ F L]
   {d : ℕ} (x : Fin (d + 1) → F)

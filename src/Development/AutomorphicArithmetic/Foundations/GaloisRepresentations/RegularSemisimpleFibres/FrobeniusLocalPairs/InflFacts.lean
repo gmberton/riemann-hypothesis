@@ -19,17 +19,15 @@ section Alg
 
 variable {k : Type} [Field k] [ValuativeRel k] {F₀ : Type} [Field F₀] {n : ℕ}
 
-private theorem incl_inj :
-    Function.Injective (GeneralLinearGroup.map (n := Fin n) (algebraMap 𝒪[k] k)) := fun a b h =>
-  Units.ext <| Matrix.ext fun i j => Subtype.ext
-    (congrArg (fun g : GL (Fin n) k => (g : Matrix (Fin n) (Fin n) k) i j) h)
-
 private theorem infl_incl (rd : 𝒪[k] →+* F₀) (fb : GL (Fin n) F₀ → ℂ) (y : GL (Fin n) 𝒪[k]) :
     infl rd fb (GeneralLinearGroup.map (algebraMap 𝒪[k] k) y) = fb (GeneralLinearGroup.map rd y) := by
   have h : ∃ y' : GL (Fin n) 𝒪[k], GeneralLinearGroup.map (algebraMap 𝒪[k] k) y' =
       GeneralLinearGroup.map (algebraMap 𝒪[k] k) y := ⟨y, rfl⟩
+  have hy : h.choose = y := Units.map_injective
+    (f := (RingHom.mapMatrix (m := Fin n) (algebraMap 𝒪[k] k)).toMonoidHom)
+    (Matrix.map_injective Subtype.val_injective) h.choose_spec
   unfold infl
-  rw [dite_eq_left h, incl_inj h.choose_spec]
+  rw [dite_eq_left h, hy]
 
 private theorem infl_not_mem (rd : 𝒪[k] →+* F₀) (fb : GL (Fin n) F₀ → ℂ) {x : GL (Fin n) k}
     (hx : x ∉ KO k n) : infl rd fb x = 0 :=
@@ -56,27 +54,6 @@ private theorem infl_right (rd : 𝒪[k] →+* F₀) (fb : GL (Fin n) F₀ → �
     rw [← map_mul, infl_incl, infl_incl, map_mul, MonoidHom.mem_ker.1 hu, mul_one]
   · rw [infl_not_mem rd fb hx, infl_not_mem rd fb]
     exact fun h => hx (by simpa using (KO k n).mul_mem h ((KO k n).inv_mem (principal_congruence_le_maximal_compact rd hc)))
-
-private theorem rd_eq_zero (rd : 𝒪[k] →+* F₀) (hrd : Function.Surjective rd) (x : 𝒪[k])
-    (hx : valuation k (x : k) < 1) : rd x = 0 := by
-  by_contra h0
-  obtain ⟨y, hy⟩ := hrd (rd x)⁻¹
-  have hxy : rd (1 - x * y) = 0 := by
-    rw [map_sub, map_mul, hy, mul_inv_cancel₀ h0, map_one, sub_self]
-  have hyle : valuation k (y : k) ≤ 1 := y.2
-  have hlt : valuation k ((x * y : 𝒪[k]) : k) < 1 := by
-    rw [Subring.coe_mul, map_mul]
-    exact mul_lt_one_of_lt_of_le hx hyle
-  have hval : valuation k ((1 - x * y : 𝒪[k]) : k) = 1 := by
-    have : ((1 - x * y : 𝒪[k]) : k) = 1 - ((x * y : 𝒪[k]) : k) := by push_cast; ring
-    rw [this, Valuation.map_one_sub_of_lt _ hlt]
-  set u : 𝒪[k] := 1 - x * y with hu
-  have hu0 : (u : k) ≠ 0 := fun h => by rw [h, map_zero] at hval; exact zero_ne_one hval
-  have hinv : valuation k (u : k)⁻¹ ≤ 1 := by rw [map_inv₀, hval, inv_one]
-  have hone : u * ⟨(u : k)⁻¹, hinv⟩ = 1 := Subtype.ext (mul_inv_cancel₀ hu0)
-  have := congrArg rd hone
-  rw [map_mul, hxy, zero_mul, map_one] at this
-  exact zero_ne_one this
 
 end Alg
 
@@ -118,10 +95,16 @@ theorem inflFacts :
       have : GeneralLinearGroup.map (algebraMap 𝒪[k] k) y ∈ (B : Set (GL (Fin n) k)) := hg
       rw [hB] at this
       exact this i j
-    have h0 := rd_eq_zero rd hrd ((y : Matrix (Fin n) (Fin n) 𝒪[k]) i j - (1 : Matrix (Fin n) (Fin n) 𝒪[k]) i j) (by
+    have hlt : valuation k ((((y : Matrix (Fin n) (Fin n) 𝒪[k]) i j -
+        (1 : Matrix (Fin n) (Fin n) 𝒪[k]) i j : 𝒪[k]) : k)) < 1 := by
       refine lt_of_le_of_lt (le_of_eq ?_) (hb.trans_lt hr1)
       congr 1
-      by_cases hij : i = j <;> simp [Matrix.one_apply, hij] <;> rfl)
+      by_cases hij : i = j <;> simp [Matrix.one_apply, hij] <;> rfl
+    have h0 : rd ((y : Matrix (Fin n) (Fin n) 𝒪[k]) i j -
+        (1 : Matrix (Fin n) (Fin n) 𝒪[k]) i j) = 0 :=
+      RingHom.mem_ker.1 <| (IsLocalRing.ker_eq_maximalIdeal rd hrd).symm ▸
+        (IsLocalRing.mem_maximalIdeal _).2 (mem_nonunits_iff.2
+          (Valuation.Integer.not_isUnit_iff_valuation_lt_one.2 hlt))
     rw [map_sub, sub_eq_zero] at h0
     simp only [GeneralLinearGroup.map_apply, Units.val_one]
     rw [h0]

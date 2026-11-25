@@ -21,18 +21,12 @@ theorem UpperTheory.Reformulated.B.Qi58.aeval_inter :
         (c : M → N) (((Polynomial.aeval f : Polynomial L → Module.End L M) Q : M → M) x) =
           ((Polynomial.aeval g : Polynomial L → Module.End L N) Q : N → N) ((c : M → N) x) := by
   intro L M N _ _ _ _ _ c f g h Q x
-  have hp : ∀ (n : ℕ) (y : M), c ((f ^ n) y) = (g ^ n) (c y) := by
-    intro n
-    induction n with
-    | zero => intro y; simp
-    | succ n ih =>
-      intro y
-      rw [pow_succ, pow_succ, Module.End.mul_apply, Module.End.mul_apply, ih, h]
   induction Q using Polynomial.induction_on' with
   | add p q hp' hq' => simp only [map_add (f := _), LinearMap.add_apply, hp', hq']
   | monomial n a =>
     simp only [Polynomial.aeval_monomial, Module.End.mul_apply, Module.algebraMap_end_apply,
-      map_smul, hp]
+      map_smul, pow_apply_eq_iterate]
+    rw [Function.Semiconj.iterate_right h n x]
 end -- clump:auto
 end -- clump:auto
 -- ===== end clump member: Development.AutomorphicArithmetic.IntegralCasts.CapelliIdentities.AevalInterAlt =====
@@ -44,13 +38,6 @@ section -- clump:auto
 
 open TensorProduct Module
 open UpperTheory.Gal.crystallineComparison
-
-private theorem pow_inter {L M N : Type} [Field L] [AddCommGroup M] [Module L M] [AddCommGroup N] [Module L N]
-    (c : M →ₗ[L] N) (f : End L M) (g : End L N) (h : ∀ x, c (f x) = g (c x)) (n : ℕ) (x : M) :
-    c ((f ^ n) x) = (g ^ n) (c x) := by
-  induction n generalizing x with
-  | zero => simp
-  | succ n ih => rw [pow_succ, pow_succ, Module.End.mul_apply, Module.End.mul_apply, ih, h]
 
 theorem UpperTheory.Gal.crystallineComparison.nilSubq_of :
     AdmExact → NilEmb → NilSubq := by
@@ -76,7 +63,9 @@ theorem UpperTheory.Gal.crystallineComparison.nilSubq_of :
     | zero => simp
     | tmul u b => simp [onPer]
     | add a b ha hb => simp only [map_add (f := _), ha, hb]
-  rw [← pow_inter _ _ _ (fun z => _root_.UpperTheory.Reformulated.B.Qi58.aeval_inter _ _ _ h1 Q z) N x, hN x hx, map_zero]
+  rw [pow_apply_eq_iterate, ← Function.Semiconj.iterate_right
+    (_root_.UpperTheory.Reformulated.B.Qi58.aeval_inter _ _ _ h1 Q) N x,
+    ← pow_apply_eq_iterate, hN x hx, map_zero]
 end -- clump:auto
 end -- clump:auto
 -- ===== end clump member: Development.AutomorphicArithmetic.Foundations.GaloisRepresentations.AnnihilatorModels.PNilSubq =====

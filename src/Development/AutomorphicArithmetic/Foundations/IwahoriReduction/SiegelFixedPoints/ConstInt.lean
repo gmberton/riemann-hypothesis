@@ -38,23 +38,12 @@ open scoped MatrixGroups Matrix
 open GlobalTheory.KZ GlobalTheory.K4 Polynomial
 attribute [local instance] algMdl algPoly algRat
 
-private theorem integral_map_of_base_integral {R L : Type*} [CommRing R] [CommRing L] [Algebra R L] (t : L →+* L)
-    (h : ∀ r : R, IsIntegral R (t (algebraMap R L r))) {x : L} (hx : IsIntegral R x) : IsIntegral R (t x) := by
-  obtain ⟨p, hp, h0⟩ := hx
+private theorem integral_map_of_base_integral {R L : Type*} [CommRing R] [CommRing L]
+    [Algebra R L] (t : L →+* L) (h : ∀ r : R, IsIntegral R (t (algebraMap R L r)))
+    {x : L} (hx : IsIntegral R x) : IsIntegral R (t x) :=
   let g : R →+* integralClosure R L :=
     (t.comp (algebraMap R L)).codRestrict (integralClosure R L).toSubring h
-  have h1 : IsIntegral (integralClosure R L) (t x) := by
-    refine ⟨p.map g, hp.map g, ?_⟩
-    rw [Polynomial.eval₂_map]
-    have e : (algebraMap (integralClosure R L) L).comp g = t.comp (algebraMap R L) := RingHom.ext fun _ => rfl
-    rw [e, ← Polynomial.hom_eval₂, h0, map_zero]
-  exact isIntegral_trans _ h1
-
-private theorem isIntegral_map_algebraic {Ω R L : Type*} [Field Ω] [Algebra ℚ Ω] [CommRing R] [Field L] [Algebra R L]
-    (i : ℚ →+* R) (s : Ω →+* L) {c : Ω} (hc : IsIntegral ℚ c) : IsIntegral R (s c) := by
-  obtain ⟨p, hpm, hp⟩ := hc
-  refine ⟨p.map i, hpm.map i, ?_⟩
-  rw [eval₂_map, RingHom.ext_rat ((algebraMap R L).comp i) (s.comp (algebraMap ℚ Ω)), ← Polynomial.hom_eval₂, hp, map_zero]
+  isIntegral_trans _ (hx.map_of_comp_eq g t rfl)
 
 theorem UpperTheory.algEquiv_mem_ringOfIntegers_modularTowerTop :
     ∀ {Ω : Type} [Field Ω] [Algebra ℚ Ω] [IsAlgClosure ℚ Ω] {ε : Ω →+* ℂ} (X : Tower Ω ε) (M : ℕ) (τ : topL X M ≃ₐ[topF X M] topL X M) (x : topL X M), x ∈ FunctionField.ringOfIntegers Ω (topL X M) → τ x ∈ FunctionField.ringOfIntegers Ω (topL X M) := by
@@ -79,9 +68,9 @@ theorem UpperTheory.algEquiv_mem_ringOfIntegers_modularTowerTop :
       rw [hjL, ← map_pow, ← map_mul, C_mul_X_pow_eq_monomial]
     rw [e, map_mul, map_pow]
     refine IsIntegral.mul ?_ (IsIntegral.pow ?_ n)
-    · exact isIntegral_map_algebraic (algebraMap ℚ (Polynomial Ω))
-        ((τ.toRingEquiv.toRingHom).comp ((algebraMap (Polynomial Ω) (topL X M)).comp Polynomial.C))
-        (Algebra.IsIntegral.isIntegral c)
+    · exact (Algebra.IsIntegral.isIntegral c).map_of_comp_eq (algebraMap ℚ (Polynomial Ω))
+        ((τ.toRingEquiv.toRingHom).comp ((algebraMap (Polynomial Ω) (topL X M)).comp
+          Polynomial.C)) (RingHom.ext_rat _ _)
     · change IsIntegral _ (τ jL)
       rw [hjτ]
       exact isIntegral_algebraMap
@@ -212,23 +201,11 @@ private theorem jhol (X : Tower Ω ε) : ∃ φ : ℂ → ℂ, DifferentiableOn 
   obtain ⟨φ, h, d⟩ := X.j_hol
   exact ⟨φ, d, h⟩
 
-private theorem val_one {K : Type} [Field K] (W : ValuationSubring K) {x : K} (h0 : x ≠ 0) (hx : x ∈ W) (hi : x⁻¹ ∈ W) :
-    W.valuation x = 1 := by
-  have hu : IsUnit (⟨x, hx⟩ : W) :=
-    isUnit_iff_exists_inv.mpr ⟨⟨x⁻¹, hi⟩, Subtype.ext (by simp [h0])⟩
-  exact (W.valuation_eq_one_iff ⟨x, hx⟩).mp hu
-
 private theorem mem_of_int (X : Tower Ω ε) (W : ValuationSubring X.K) (hW : X.OverY W) {x : X.K}
-    (h : IsIntegral (Algebra.adjoin Ω {X.jK}) x) : x ∈ W := by
-  have hle : ∀ y ∈ Algebra.adjoin Ω {X.jK}, y ∈ W := X.adjoin_le_of_overY W hW
-  let φ : Algebra.adjoin Ω {X.jK} →+* W :=
-    { toFun := fun a => ⟨a, hle a a.2⟩
-      map_one' := rfl
-      map_mul' := fun _ _ => rfl
-      map_zero' := rfl
-      map_add' := fun _ _ => rfl }
-  have hi := IsIntegral.map_of_comp_eq φ (RingHom.id X.K) (by ext; rfl) h
-  exact vs_mem_of_isIntegral W hi
+    (h : IsIntegral (Algebra.adjoin Ω {X.jK}) x) : x ∈ W :=
+  vs_mem_of_isIntegral W <| h.map_of_comp_eq
+    ((Algebra.adjoin Ω {X.jK}).val.toRingHom.codRestrict W.toSubring
+      fun a => X.adjoin_le_of_overY W hW a a.2) (RingHom.id X.K) rfl
 
 private theorem sgC_hol {c : ℕ} {x : Fin 2 → ℚ} (hx : GlobalTheory.Sieg.admitted c x) : DifferentiableOn ℂ (sgC c x) Hs :=
   UpperHalfPlane.mdifferentiable_iff.1 (GlobalTheory.Sieg.mdifferentiable_sg c x hx)
@@ -363,9 +340,10 @@ private theorem val_sl [IsAlgClosure ℚ Ω] (X : Tower Ω ε) {c : ℕ} {x : Fi
   have h1 := mem_of_int X _ hY (int_of_hol X _ (siegel_hol X hx))
   have h2 := mem_of_int X _ hY (int_of_hol X _ (siegel_inv_hol X hx))
   rw [ValuationSubring.mem_comap] at h1 h2
-  refine val_one W ((_root_.map_ne_zero _).2 (_root_.GlobalTheory.KZ.siegel_ne_zero Ω ε X c x hx)) h1 ?_
-  rw [← map_inv₀]
-  exact h2
+  have h0 : X.sl g (siegel X c x) ≠ 0 :=
+    (_root_.map_ne_zero _).2 (_root_.GlobalTheory.KZ.siegel_ne_zero Ω ε X c x hx)
+  exact (W.valuation_eq_one_iff ⟨_, h1⟩).1 <| isUnit_iff_exists_inv.2
+    ⟨⟨_, by rw [← map_inv₀]; exact h2⟩, Subtype.ext (mul_inv_cancel₀ h0)⟩
 
 end UpperTheory.V.L.SiegelUnitIntegral
 
@@ -430,21 +408,6 @@ private theorem polyMem (X : Tower Ω ε) (M : ℕ) (B : ValuationSubring (topBa
     rw [pow_succ, ← mul_assoc, map_mul, map_mul]
     exact mul_mem h hX
 
-private theorem memOfInt (X : Tower Ω ε) (M : ℕ) (B : ValuationSubring (topBar X M))
-    (hB : ∀ f : topL X M, ((f : X.K) = X.jK ∨ (f : X.K) ∈ Set.range (algebraMap Ω X.K)) → algebraMap (topL X M) (topBar X M) f ∈ B)
-    (x : topL X M) (hx : x ∈ FunctionField.ringOfIntegers Ω (topL X M)) : algebraMap (topL X M) (topBar X M) x ∈ B := by
-  obtain ⟨p, hp, hev⟩ : IsIntegral (Polynomial Ω) x := hx
-  let φ : Polynomial Ω →+* B :=
-    ((algebraMap (topL X M) (topBar X M)).comp (algebraMap (Polynomial Ω) (topL X M))).codRestrict B.toSubring
-      (fun P => polyMem X M B hB P)
-  have hφ : (algebraMap B (topBar X M)).comp φ = (algebraMap (topL X M) (topBar X M)).comp (algebraMap (Polynomial Ω) (topL X M)) := rfl
-  have hi : IsIntegral B (algebraMap (topL X M) (topBar X M) x) := by
-    refine ⟨p.map φ, hp.map φ, ?_⟩
-    rw [Polynomial.eval₂_map, hφ, ← Polynomial.hom_eval₂, hev, map_zero]
-  obtain ⟨y, hy⟩ := IsIntegrallyClosed.isIntegral_iff.1 hi
-  rw [← hy]
-  exact y.2
-
 private theorem topexOf [IsAlgClosure ℚ Ω] (X : Tower Ω ε) {M l n : ℕ} (hM : M ≠ 0) (hl : l ≠ 0) (hd : l ^ n ∣ M) {u v : X.K}
     (hu : u ∈ topF X M) (hv : v ∈ topF X M) (hu0 : u ≠ 0) (hv0 : v ≠ 0)
     (hW : ∀ W : ValuationSubring X.K, X.OverY W → W.valuation u = 1 ∧ W.valuation v = 1) :
@@ -500,9 +463,11 @@ private theorem topexOf [IsAlgClosure ℚ Ω] (X : Tower Ω ε) {M l n : ℕ} (h
     · intro B g hB hI hg
       obtain ⟨g', hg'⟩ := resGeo g hg
       rw [hηe g g' hg hg']
-      refine hin B (fun x hx => memOfInt X M B hB x hx) g' fun z hz => ?_
-      rw [hg']
-      exact hI z hz
+      let φ := ((algebraMap (topL X M) (topBar X M)).comp
+        (algebraMap (Polynomial Ω) (topL X M))).codRestrict B.toSubring (polyMem X M B hB)
+      refine hin B (fun x hx => ?_) g' fun z hz => by rw [hg']; exact hI z hz
+      exact vs_mem_of_isIntegral B
+        (IsIntegral.map_of_comp_eq φ (algebraMap (topL X M) (topBar X M)) rfl hx)
   have hT := isTopEta_topEta X M hex
   refine ⟨hT, fun σ => ⟨topW (K := topL X M) (topZeta X M l n) (topChar X M l n u) (topChar X M l n v)
         (topEta X M (topChar X M l n u) (topChar X M l n v)) σ, ?_⟩⟩

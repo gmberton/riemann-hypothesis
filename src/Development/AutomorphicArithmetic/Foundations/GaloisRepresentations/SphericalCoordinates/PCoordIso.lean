@@ -55,29 +55,9 @@ private theorem same_of_eq {p : ℕ} [Fact p.Prime] {G : HTGroup p} {v : Infinit
     (K : Subgroup G.GAf) (K' : Subgroup (Gr G 1)) (a b : GlobalTheory.LKCx.Dat G v B.β)
     (h : (Quot.mk _ a : GlobalTheory.LKCx.Form.Pts v B K K') = Quot.mk _ b) :
     GlobalTheory.LKCx.Same G v B.β B.trivAf.choose B.trivAf.choose_spec.choose B.trivAf.choose_spec.choose_spec K K' b a := by
-  have key : ∀ a b : GlobalTheory.LKCx.Dat G v B.β,
-      Relation.EqvGen (GlobalTheory.LKCx.Same G v B.β B.trivAf.choose B.trivAf.choose_spec.choose
-        B.trivAf.choose_spec.choose_spec K K') a b →
-      (∃ y : GlobalTheory.LKCx.grp G B.β, y • GlobalTheory.CxUnfold.OrbitSumGen.pairOfDat G v B.β B.trivAf.choose
-          B.trivAf.choose_spec.choose B.trivAf.choose_spec.choose_spec K K' a =
-        GlobalTheory.CxUnfold.OrbitSumGen.pairOfDat G v B.β B.trivAf.choose
-          B.trivAf.choose_spec.choose B.trivAf.choose_spec.choose_spec K K' b) ∧
-      (∃ y : GlobalTheory.LKCx.grp G B.β, y • GlobalTheory.CxUnfold.OrbitSumGen.pairOfDat G v B.β B.trivAf.choose
-          B.trivAf.choose_spec.choose B.trivAf.choose_spec.choose_spec K K' b =
-        GlobalTheory.CxUnfold.OrbitSumGen.pairOfDat G v B.β B.trivAf.choose
-          B.trivAf.choose_spec.choose B.trivAf.choose_spec.choose_spec K K' a) := by
-    intro a b hab
-    induction hab with
-    | rel x y hxy =>
-      obtain ⟨g, hg⟩ := (GlobalTheory.CxUnfold.OrbitSumGen.same_iff_smul _ _ _ _ _ _ _ _ x y).1 hxy
-      exact ⟨⟨g, hg⟩, ⟨g⁻¹, by rw [← hg, inv_smul_smul]⟩⟩
-    | refl x => exact ⟨⟨1, one_smul _ _⟩, ⟨1, one_smul _ _⟩⟩
-    | symm x y _ ih => exact ⟨ih.2, ih.1⟩
-    | trans x y z _ _ ih1 ih2 =>
-      obtain ⟨⟨g1, hg1⟩, ⟨h1, hh1⟩⟩ := ih1
-      obtain ⟨⟨g2, hg2⟩, ⟨h2, hh2⟩⟩ := ih2
-      exact ⟨⟨g2 * g1, by rw [mul_smul, hg1, hg2]⟩, ⟨h1 * h2, by rw [mul_smul, hh2, hh1]⟩⟩
-  exact (GlobalTheory.CxUnfold.OrbitSumGen.same_iff_smul _ _ _ _ _ _ _ _ b a).2 (key a b (Quot.eqvGen_exact h)).2
+  exact (GlobalTheory.CxUnfold.OrbitSumGen.same_iff_smul _ _ _ _ _ _ _ _ b a).2
+    (Quotient.exact
+      (congrArg (GlobalTheory.CxUnfold.OrbitSumGen.ptsToOrbit G v B.β _ _ _ K K') h))
 
 end UpperTheory.Gal.W2
 

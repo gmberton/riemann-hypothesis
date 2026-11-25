@@ -211,14 +211,6 @@ private lemma mem_eigIn {W : Submodule ℂ H} {T : H →L[ℂ] H} {c : ℝ} {v :
     v ∈ eigIn W T c ↔ v ∈ W ∧ T v = (c : ℂ) • v := by
   simp [eigIn, Submodule.mem_inf]
 
-private lemma closed_eigIn {W : Submodule ℂ H} (hW : IsClosed (W : Set H)) (T : H →L[ℂ] H) (c : ℝ) :
-    IsClosed (eigIn W T c : Set H) := by
-  have : (eigIn W T c : Set H) = (W : Set H) ∩ {v | T v = (c : ℂ) • v} := by
-    ext v
-    exact mem_eigIn
-  rw [this]
-  exact hW.inter (isClosed_eq T.continuous (continuous_const_smul _))
-
 private lemma A_cut (h : Slots π V m ι E A U) (i : Fin (m + 1)) {v : H} (hv : v ∈ eigIn V E 1) :
     A i v ∈ eigIn V E 1 := by
   obtain ⟨h1, h2⟩ := mem_eigIn.1 hv
@@ -363,22 +355,6 @@ private lemma list_ne (h : Slots π V m ι E A U) (hall : ∀ j, ∃ v ∈ eigIn
       simp only [map_one, UnitaryRep.map_one_apply] at this
       exact hAv this
 
-private lemma fd_of_compact {T : H →L[ℂ] H} (hT : IsCompactOperator T) {x : ℂ} (hx : x ≠ 0)
-    (P : Submodule ℂ H) (hP : IsClosed (P : Set H)) (hTP : ∀ v ∈ P, T v = x • v) :
-    FiniteDimensional ℂ P := by
-  have hC : IsCompact (closure (T '' Metric.closedBall 0 1)) :=
-    hT.isCompact_closure_image_closedBall 1
-  have hK : IsCompact ((fun z : H => x⁻¹ • z) '' closure (T '' Metric.closedBall 0 1)) :=
-    hC.image (continuous_const_smul _)
-  have hK' := hP.isClosedEmbedding_subtypeVal.isCompact_preimage hK
-  refine FiniteDimensional.of_isCompact_closedBall ℂ (c := (0 : P)) (r := 1) one_pos
-    (hK'.of_isClosed_subset Metric.isClosed_closedBall ?_)
-  intro p hp
-  refine ⟨T p, subset_closure ⟨p, ?_, rfl⟩, ?_⟩
-  · simpa using hp
-  · simp only
-    rw [hTP p p.2, smul_smul, inv_mul_cancel₀ hx, one_smul]
-
 private lemma prj_fix {W : Submodule ℂ H} {v : H} (hv : v ∈ W) : prj W v = v :=
   (Submodule.starProjection_eq_self_iff).2 (Submodule.le_topologicalClosure _ hv)
 
@@ -412,11 +388,16 @@ theorem UpperTheory.ConvolutionTheory.L1.jointEx :
   obtain ⟨hcl, -, -⟩ := cutIrr Γ G H π V m ι E A U h
   have hfd : ∀ x : ℝ, x ≠ 0 → FiniteDimensional ℂ (prodEig V E A x) := by
     intro x hx
-    refine fd_of_compact hcomp (x := (x : ℂ)) (by exact_mod_cast hx) _ (closed_eigIn hcl _ _) ?_
-    intro v hv
-    obtain ⟨h1, h2⟩ := mem_eigIn.1 hv
-    rw [ContinuousLinearMap.comp_apply, prj_fix h1]
-    exact h2
+    have := ContinuousLinearMap.finite_dimensional_eigenspace
+      hcomp (x : ℂ) (by exact_mod_cast hx)
+    have hle : prodEig V E A x ≤ Module.End.eigenspace
+        ((List.ofFn A).prod ∘L prj (eigIn V E 1)).toLinearMap (x : ℂ) := by
+      intro v hv
+      obtain ⟨h1, h2⟩ := mem_eigIn.1 hv
+      rw [Module.End.mem_eigenspace_iff]
+      change ((List.ofFn A).prod ∘L prj (eigIn V E 1)) v = (x : ℂ) • v
+      rwa [ContinuousLinearMap.comp_apply, prj_fix h1]
+    exact Submodule.finiteDimensional_of_le hle
   refine ⟨fun x hx => hfd x hx.ne', ?_⟩
   rintro ⟨i, v₀, hv₀, hne⟩
   have hall := ne_all h ⟨v₀, hv₀, hne⟩

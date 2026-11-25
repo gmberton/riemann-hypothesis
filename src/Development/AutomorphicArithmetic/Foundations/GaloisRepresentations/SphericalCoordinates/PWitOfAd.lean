@@ -929,22 +929,6 @@ private theorem actOn_comm {p : ℕ} [Fact p.Prime] {D : Datum p} {G : HTGroup p
     rw [GlobalTheory.LKGeo.MultScale.actOn_tmul, smul_mul_assoc, mul_smul_comm]
     exact congrArg (a • ·) h2
 
-private theorem EFQ_adj {p : ℕ} [Fact p.Prime] (D : Datum p) (c : D.O) (u w : VQ D) :
-    D.EF.baseChange ℚ (actQ D c u) w = D.EF.baseChange ℚ u (actQ D (D.inv c) w) := by
-  induction u using TensorProduct.induction_on with
-  | zero => simp
-  | add x x' h h' => simp only [map_add (f := _), LinearMap.add_apply, h, h']
-  | tmul q x =>
-    induction w using TensorProduct.induction_on with
-    | zero => simp
-    | add y y' h h' => simp only [map_add (f := _), h, h']
-    | tmul q' y =>
-      rw [UpperTheory.Gal.W2.Wit.actQ_tmul, UpperTheory.Gal.W2.Wit.actQ_tmul]
-      have e := D.EFQ_tmul q q' (c • x) y
-      have e' := D.EFQ_tmul q q' x (D.inv c • y)
-      rw [Datum.EFQ] at e e'
-      rw [e, e', D.adj]; rfl
-
 theorem UpperTheory.Gal.W2.witOfAd_of :
     UpperTheory.Gal.W2.RdForm → UpperTheory.Gal.W2.RdDense → UpperTheory.Gal.W2.RdAct → UpperTheory.Gal.W2.WitOfAd := by
   intro hForm hDense _ p _ D G L B N hN hNp h₁ M hM hs
@@ -1001,9 +985,13 @@ theorem UpperTheory.Gal.W2.witOfAd_of :
     have h : L.rep ((B.β⁻¹ : G.Cˣ) : G.C) * actQ D c' = actQ D c' * L.rep ((B.β⁻¹ : G.Cˣ) : G.C) :=
       (L.rep_range _).1 ⟨_, rfl⟩ c'
     have h2 := congrArg (fun f : Module.End ℚ (VQ D) => f u) h
-    change D.EF.baseChange ℚ (L.rep ((B.β⁻¹ : G.Cˣ) : G.C) (actQ D c' u)) w = _
+    have hact : ∀ b : D.O, actQ D b = D.actQ b := fun b =>
+      congrArg (LinearMap.baseChange ℚ) (LinearMap.ext fun _ => rfl)
+    change D.EFQ (L.rep ((B.β⁻¹ : G.Cˣ) : G.C) (actQ D c' u)) w =
+      D.EFQ (L.rep ((B.β⁻¹ : G.Cˣ) : G.C) u) (actQ D (D.star c').unop w)
     change L.rep ((B.β⁻¹ : G.Cˣ) : G.C) (actQ D c' u) = actQ D c' (L.rep ((B.β⁻¹ : G.Cˣ) : G.C) u) at h2
-    rw [h2, EFQ_adj]; rfl
+    rw [h2, hact c', hact (D.star c').unop]
+    exact D.EFQ_actQ c' _ w
   let X : UpperTheory.Gal.W2.Wit.Sys D :=
     { T := T, S := S, ST := hST, comm := hcomm, B := Bq, alt := halt, nondeg := hnd, adj := hadj, M := M, hM := hM,
       s := s₁, s_pos := hs₁

@@ -1,6 +1,7 @@
 module
 
 public import Development.AutomorphicArithmetic.Foundations.GaloisRepresentations.LocalMaximality.ResidueOfTraceIsFiberSum
+import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import Mathlib.Tactic.Linter.HaveILetI
 import Std.Tactic.BVDecide.Normalize.Prop
 
@@ -16,62 +17,25 @@ private theorem alt_expand {R M N : Type} [CommRing R] [AddCommGroup M] [Module 
         (Matrix.of fun i j => a i (S.1.orderEmbOfFin S.2 j)).det •
           f (fun j => v (S.1.orderEmbOfFin S.2 j)) := by
   classical
-  have h1 : f (fun i => ∑ l, a i l • v l) =
-      ∑ φ : Fin q → Fin d, (∏ i, a i (φ i)) • f (fun i => v (φ i)) := by
-    have h := f.toMultilinearMap.map_sum (fun i l => a i l • v l)
-    refine h.trans (Finset.sum_congr rfl fun φ _ => ?_)
-    exact f.toMultilinearMap.map_smul_univ _ _
-  let e : {S : Finset (Fin d) // S.card = q} → Fin q → Fin d := fun S j => S.1.orderEmbOfFin S.2 j
-  have he : ∀ S, Function.Injective (e S) := fun S => (S.1.orderEmbOfFin S.2).injective
-  have hr : ∀ S, Set.range (e S) = S.1 := fun S => Finset.range_orderEmbOfFin S.1 S.2
-  let Φ : (Σ _ : {S : Finset (Fin d) // S.card = q}, Equiv.Perm (Fin q)) →
-      {φ : Fin q → Fin d // Function.Injective φ} :=
-    fun p => ⟨e p.1 ∘ p.2, (he p.1).comp p.2.injective⟩
-  have hΦ : Function.Bijective Φ := by
-    constructor
-    · rintro ⟨S, σ⟩ ⟨S', σ'⟩ h
-      have h' : e S ∘ σ = e S' ∘ σ' := congrArg Subtype.val h
-      have hS : S = S' := by
-        apply Subtype.ext
-        apply Finset.coe_injective
-        rw [← hr S, ← hr S', ← σ.surjective.range_comp (e S), ← σ'.surjective.range_comp (e S'), h']
-      subst hS
-      have : σ = σ' := by
-        ext i
-        exact congrArg _ (he S (congrFun h' i))
-      rw [this]
-    · rintro ⟨φ, hφ⟩
-      have hc : (Finset.univ.image φ).card = q := by
-        rw [Finset.card_image_of_injective _ hφ]; simp
-      let S : {S : Finset (Fin d) // S.card = q} := ⟨_, hc⟩
-      have hm : ∀ i, ∃ j, e S j = φ i := fun i => by
-        have : φ i ∈ Set.range (e S) := by rw [hr]; simp [S]
-        exact this
-      choose s hs using hm
-      have hsi : Function.Injective s := fun i i' h => hφ (by rw [← hs, ← hs, h])
-      refine ⟨⟨S, Equiv.ofBijective s (Finite.injective_iff_bijective.1 hsi)⟩, ?_⟩
-      apply Subtype.ext
-      funext i
-      exact hs i
-  rw [h1, ← Fintype.sum_subtype_add_sum_subtype (fun φ : Fin q → Fin d => Function.Injective φ)]
-  have h0 : ∑ φ : {φ : Fin q → Fin d // ¬ Function.Injective φ},
-      (∏ i, a i (φ.1 i)) • f (fun i => v (φ.1 i)) = 0 := by
-    refine Finset.sum_eq_zero fun φ _ => ?_
-    have : ¬ Function.Injective (fun i => v (φ.1 i)) := fun h => φ.2 fun i i' hi => h (by simp [hi])
-    rw [f.map_eq_zero_of_not_injective _ this, smul_zero]
-  rw [h0, add_zero, ← hΦ.sum_comp, Fintype.sum_sigma]
-  refine Finset.sum_congr rfl fun S _ => ?_
-  rw [← Matrix.det_transpose, Matrix.det_apply, Finset.sum_smul]
-  refine Finset.sum_congr rfl fun σ _ => ?_
-  have hp := f.map_perm (fun j => v (e S j)) σ
-  have hp' : f (fun i => v (e S (σ i))) = Equiv.Perm.sign σ • f (fun j => v (e S j)) := hp
-  change (∏ i, a i (e S (σ i))) • f (fun i => v (e S (σ i))) = _
-  rw [hp']
-  have hq : ∏ i, (Matrix.of fun i j => a i (S.1.orderEmbOfFin S.2 j)).transpose (σ i) i =
-      ∏ i, a i (e S (σ i)) := by
-    rfl
-  rw [hq]
-  rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h | h <;> simp [h, e]
+  let b := Pi.basisFun R (Fin d)
+  let φ : (Fin d → R) [⋀^Fin q]→ₗ[R] N := f.compLinearMap (Fintype.linearCombination R v)
+  let ψ : ExteriorAlgebra R (Fin d → R) →ₗ[R] N :=
+    ExteriorAlgebra.liftAlternating fun k => if h : k = q then h ▸ φ else 0
+  have hx := congrArg (fun z : ⋀[R]^q (Fin d → R) => ψ z)
+    ((b.exteriorPower q).sum_repr (exteriorPower.ιMulti R q a))
+  simp only [Submodule.coe_sum, Submodule.coe_smul, map_sum, map_smul,
+    exteriorPower.ιMulti_apply_coe] at hx
+  have h1 : ψ (ExteriorAlgebra.ιMulti R q a) = f (fun i => ∑ l, a i l • v l) := by
+    simp [ψ, φ, Fintype.linearCombination_apply]
+  rw [← h1, ← hx]
+  let e : Set.powersetCard (Fin d) q ≃ {S : Finset (Fin d) // S.card = q} :=
+    ⟨fun s => ⟨s.1, s.2⟩, fun s => ⟨s.1, s.2⟩, fun _ => rfl, fun _ => rfl⟩
+  refine Fintype.sum_equiv e _ _ fun s => congrArg₂ (· • ·) ?_ ?_
+  · rw [exteriorPower.basis_repr_apply, exteriorPower.ιMultiDual_apply_ιMulti]
+    simp [Module.Basis.coord_apply, Pi.basisFun_repr, b, e,
+      Set.powersetCard.ofFinEmbEquiv_symm_apply]
+  · simp [ψ, φ, exteriorPower.basis_apply, ExteriorAlgebra.ιMulti_family, b, e,
+      Fintype.linearCombination_apply_single, Set.powersetCard.ofFinEmbEquiv_symm_apply]
 
 private theorem mapDR_iM (K L : Type) [Field K] [Field L] [Algebra ℂ K] [Algebra ℂ L] [Algebra K L]
     [IsScalarTower ℂ K L] (n : ℕ) (v : Fin n → K) :

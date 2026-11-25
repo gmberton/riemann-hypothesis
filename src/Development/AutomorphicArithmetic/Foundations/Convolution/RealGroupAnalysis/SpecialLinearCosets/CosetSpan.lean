@@ -19,24 +19,11 @@ theorem UpperTheory.ConvolutionTheory.R2.I.cosetSpan :
   have hcs : HasCompactSupport a := (GroundTheory.LocalField.mem_schwartzBruhat.1 ha).2
   have hK : IsCompact (tsupport a) := hcs
   have hS : IsOpen {p : G × G | a (p.1 * p.2) = a p.1} := by
-    rw [isOpen_iff_mem_nhds]
-    intro p hp
-    have hev := (IsLocallyConstant.iff_eventually_eq a).1 hlc
-    have e1 : ∀ᶠ q : G × G in 𝓝 p, a (q.1 * q.2) = a (p.1 * p.2) :=
-      ((continuous_fst.mul continuous_snd).tendsto p).eventually (hev (p.1 * p.2))
-    have e2 : ∀ᶠ q : G × G in 𝓝 p, a q.1 = a p.1 :=
-      (continuous_fst.tendsto p).eventually (hev p.1)
-    filter_upwards [e1, e2] with q h1 h2
-    show a (q.1 * q.2) = a q.1
-    rw [h1, h2]
-    exact hp
+    simpa using ((hlc.comp_continuous (continuous_fst.mul continuous_snd)).comp₂
+      (hlc.comp_continuous continuous_fst) (· = ·)).isOpen_fiber True
   obtain ⟨W1, W0, -, hW0, hKW, h1W, hWS⟩ :=
-    generalized_tube_lemma hK (isCompact_singleton (x := (1 : G))) hS (by
-      rintro ⟨x, u⟩ ⟨-, hu⟩
-      have hu' : u = 1 := hu
-      subst hu'
-      show a (x * 1) = a x
-      rw [mul_one])
+    generalized_tube_lemma hK (isCompact_singleton (x := (1 : G))) hS
+      (by rintro ⟨x, u⟩ ⟨-, rfl⟩; simp)
   have hN' : N ∩ W0 ∈ 𝓝 (1 : G) := Filter.inter_mem hN (hW0.mem_nhds (h1W rfl))
   obtain ⟨U, hUo, hUc, hUN⟩ := hL _ hN'
   have hinv0 : ∀ x ∈ tsupport a, ∀ u ∈ U, a (x * u) = a x := fun x hx u hu =>
@@ -50,14 +37,8 @@ theorem UpperTheory.ConvolutionTheory.R2.I.cosetSpan :
       rw [mul_inv_cancel_right] at h
       exact h.symm
     · rw [image_eq_zero_of_notMem_tsupport hxu, image_eq_zero_of_notMem_tsupport hx]
-  obtain ⟨t, -, ht⟩ := hK.elim_nhds_subcover (fun x => {y : G | x⁻¹ * y ∈ U}) (by
-    intro x _
-    have ho : IsOpen {y : G | x⁻¹ * y ∈ U} :=
-      hUo.preimage (continuous_const.mul continuous_id)
-    refine ho.mem_nhds ?_
-    show x⁻¹ * x ∈ U
-    rw [inv_mul_cancel]
-    exact U.one_mem)
+  obtain ⟨t, -, ht⟩ := hK.elim_nhds_subcover (fun x => {y : G | x⁻¹ * y ∈ U}) fun x _ =>
+    (hUo.preimage (continuous_const.mul continuous_id)).mem_nhds (by simp [U.one_mem])
   let r : G → G := fun x => Quotient.out (QuotientGroup.mk x : G ⧸ U)
   have hr : ∀ x, (r x)⁻¹ * x ∈ U := fun x => QuotientGroup.eq.1 (QuotientGroup.out_eq' _)
   have h1 : ∀ y ∈ U, ind U y = 1 := fun y hy => by simp [ind, hy]

@@ -30,19 +30,6 @@ open GlobalTheory.PD GlobalTheory.CechDR KaehlerDifferential
 namespace GlobalTheory
 
 open KaehlerDifferential in
-private theorem projective_of_isScalarTower_projective (R A M : Type) [CommRing R] [CommRing A] [Algebra R A]
-    [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M] [Module.Projective R A]
-    [Module.Projective A M] : Module.Projective R M := by
-  classical
-  obtain ⟨s, hs⟩ := Module.projective_def'.mp (inferInstance : Module.Projective A M)
-  have : Module.Projective R (M →₀ A) :=
-    Module.Projective.of_equiv (finsuppLequivDFinsupp R : (M →₀ A) ≃ₗ[R] Π₀ _ : M, A).symm
-  exact Module.Projective.of_split ((s.restrictScalars R))
-    ((Finsupp.linearCombination A id).restrictScalars R)
-    (LinearMap.ext fun m => LinearMap.congr_fun hs m)
-
-
-open KaehlerDifferential in
 theorem _root_.GlobalTheory.finite_projective_span_of_integralClosure :
     ∀ (k F K : Type) [Field k] [Field F] [Field K] [Algebra k F] [Algebra k K] [Algebra F K] [IsScalarTower k F K] (A : Subalgebra k F) (B : Subalgebra k K), (∀ y : K, y ∈ B ↔ y ∈ integralClosure A K) → Module.Finite A (integralClosure A K) → Module.Projective A (integralClosure A K) → ∀ (W : Type) [AddCommGroup W] [Module K W] [Module F W] [IsScalarTower F K W] (S : Set W), (∀ c ∈ B, ∀ w ∈ S, (c : K) • w ∈ S) → Module.Finite B (Submodule.span B S) → Module.Projective B (Submodule.span B S) → Module.Finite A (Submodule.span A S) ∧ Module.Projective A (Submodule.span A S) := by
   intro k F K _ _ _ _ _ _ _ A B hB hfin hproj W _ _ _ _ S hS hfinB hprojB
@@ -68,7 +55,7 @@ theorem _root_.GlobalTheory.finite_projective_span_of_integralClosure :
   haveI : Module.Finite A B := Module.Finite.equiv ψ.symm
   haveI : Module.Projective A B := Module.Projective.of_equiv ψ.symm
   haveI : Module.Finite A (Submodule.span B S) := Module.Finite.trans B _
-  haveI : Module.Projective A (Submodule.span B S) := projective_of_isScalarTower_projective A B _
+  haveI : Module.Projective A (Submodule.span B S) := Module.Projective.trans A B _
   have hclosed : ∀ c : B, ∀ w ∈ Submodule.span A S, c • w ∈ Submodule.span A S := by
     intro c w hw
     induction hw using Submodule.span_induction with

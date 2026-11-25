@@ -32,12 +32,6 @@ private def intEquiv (i : k ≃+* K) (hi : ∀ x : k, valuation K (i x) ≤ 1 �
 
 private def resEquiv (i₀ : 𝒪[k] ≃+* 𝒪[K]) : 𝓀[k] ≃+* 𝓀[K] := IsLocalRing.ResidueField.mapEquiv i₀
 
-private def glEquiv {F F' : Type} [Field F] [Field F'] (r : F ≃+* F') (n : ℕ) : GL (Fin n) F ≃ GL (Fin n) F' where
-  toFun := Matrix.GeneralLinearGroup.map r.toRingHom
-  invFun := Matrix.GeneralLinearGroup.map r.symm.toRingHom
-  left_inv g := by ext a b; simp
-  right_inv g := by ext a b; simp
-
 variable (i : k ≃+* K) (hi : ∀ x : k, valuation K (i x) ≤ 1 ↔ valuation k x ≤ 1) {n : ℕ}
 
 include hi
@@ -74,15 +68,7 @@ private theorem red_map (g : KO k (Fin n)) :
 private theorem map_mem_KOne_iff {g : GL (Fin n) k} (hg : g ∈ KO k (Fin n)) :
     Matrix.GeneralLinearGroup.map i.toRingHom g ∈ KOne K (Fin n) ↔ g ∈ KOne k (Fin n) := by
   rw [← redK_eq_one_iff ⟨g, hg⟩, ← redK_eq_one_iff ⟨_, map_mem_KO i hi hg⟩, red_map i hi ⟨g, hg⟩]
-  constructor
-  · intro h
-    have := congrArg (glEquiv (resEquiv (intEquiv i hi)) n).symm h
-    rw [show Matrix.GeneralLinearGroup.map (resEquiv (intEquiv i hi)).toRingHom (redK k (Fin n) ⟨g, hg⟩) =
-      glEquiv (resEquiv (intEquiv i hi)) n (redK k (Fin n) ⟨g, hg⟩) from rfl, Equiv.symm_apply_apply] at this
-    rw [this]
-    exact map_one (Matrix.GeneralLinearGroup.map (resEquiv (intEquiv i hi)).symm.toRingHom)
-  · intro h
-    rw [h, map_one]
+  exact (Matrix.GeneralLinearGroup.mapEquiv (Fin n) (resEquiv (intEquiv i hi))).map_eq_one_iff
 
 variable {V W : Type} [AddCommGroup V] [Module ℂ V] [AddCommGroup W] [Module ℂ W]
   (π : Representation ℂ (GL (Fin n) k) V) (P : Representation ℂ (GL (Fin n) K) W) (e : V ≃ₗ[ℂ] W)
@@ -141,10 +127,10 @@ theorem UpperTheory.Gal.InertialTypesAlt.lblIso :
     exact hj y (intEquiv i hi y) rfl
   refine ⟨hok, hq.trans (Nat.card_congr (resEquiv (intEquiv i hi)).toEquiv), hn, ?_⟩
   unfold Meets at hm ⊢
-  rw [← finsum_comp_equiv (glEquiv (resEquiv (intEquiv i hi)) N)]
+  let eGL := (Matrix.GeneralLinearGroup.mapEquiv (Fin N) (resEquiv (intEquiv i hi))).toEquiv
+  rw [← finsum_comp_equiv eGL]
   have key : ∀ γ : GL (Fin N) 𝓀[k],
-      star (JD θ a.D a.L N (glEquiv (resEquiv (intEquiv i hi)) N γ)) *
-          LinearMap.trace ℂ _ (levelZero P (glEquiv (resEquiv (intEquiv i hi)) N γ)) =
+      star (JD θ a.D a.L N (eGL γ)) * LinearMap.trace ℂ _ (levelZero P (eGL γ)) =
         star (JD (θ.comp j.toMonoidHom) a.D a.L N γ) * LinearMap.trace ℂ _ (levelZero π γ) := by
     intro γ
     rw [← hJ _ _ (resEquiv (intEquiv i hi)) j hjr θ a.D a.L N γ, ← trace_level i hi π P e he γ]

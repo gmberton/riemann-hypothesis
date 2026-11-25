@@ -4,6 +4,7 @@ public import Development.AutomorphicArithmetic.Foundations.Convolution.Integrab
 public import Development.AutomorphicArithmetic.Foundations.Convolution.PowerSumTraces.OfinProd
 import Development.AbelianVarietyTheory.Definitions.Divisors.T2SpaceGeneralLinearGroup
 public import Development.AutomorphicArithmetic.Foundations.Convolution.ConvolutionKernels.KernelTransforms.CommPrj
+import Development.AutomorphicArithmetic.Foundations.Convolution.ConvolutionKernels.CommProj
 public import Development.AutomorphicArithmetic.Foundations.Convolution.ConvolutionKernels.KernelTransforms.CompatEx
 public import Development.AutomorphicArithmetic.Foundations.Convolution.ConvolutionKernels.KernelTransforms.FinTens
 import Development.AutomorphicArithmetic.Foundations.Convolution.ConvolutionKernels.KernelTransforms.LocEmb
@@ -29,49 +30,34 @@ namespace UpperTheory.ConvolutionTheory.L1
 section Hil
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
-private theorem prj_mem {V : Submodule ℂ H} (hV : IsClosed (V : Set H)) (v : H) : prj V v ∈ V := by
-  have hc : V.topologicalClosure = V := hV.submodule_topologicalClosure_eq
-  have h : prj V v ∈ V.topologicalClosure := Submodule.starProjection_apply_mem V.topologicalClosure v
-  rwa [hc] at h
-
-private theorem prj_inner {V : Submodule ℂ H} (hV : IsClosed (V : Set H)) (v w : H) (hw : w ∈ V) :
-    ⟪v - prj V v, w⟫_ℂ = 0 := by
-  have hc : V.topologicalClosure = V := hV.submodule_topologicalClosure_eq
-  exact Submodule.starProjection_inner_eq_zero v w (hc.symm ▸ hw)
-
-private theorem prj_eq_of {V : Submodule ℂ H} (hV : IsClosed (V : Set H)) (x y : H) (hy : y ∈ V)
-    (h : ∀ w ∈ V, ⟪x - y, w⟫_ℂ = 0) : prj V x = y := by
-  have hc : V.topologicalClosure = V := hV.submodule_topologicalClosure_eq
-  show V.topologicalClosure.starProjection x = y
-  have hy' : y ∈ V.topologicalClosure := by rw [hc]; exact hy
-  have h' : ∀ w ∈ V.topologicalClosure, ⟪x - y, w⟫_ℂ = 0 := fun w hw => h w (by rwa [hc] at hw)
-  exact Submodule.eq_starProjection_of_mem_of_inner_eq_zero hy' h'
-
-private theorem prj_comp_of_commute {E G : Submodule ℂ H} (hE : IsClosed (E : Set H)) (hG : IsClosed (G : Set H))
-    (hc : Commute (prj E) (prj G)) : prj E ∘L prj G = prj (E ⊓ G) := by
+private theorem prj_comp_of_commute {E G : Submodule ℂ H} (hE : IsClosed (E : Set H))
+    (hG : IsClosed (G : Set H)) (hc : Commute (prj E) (prj G)) :
+    prj E ∘L prj G = prj (E ⊓ G) := by
+  have hcE : E.topologicalClosure = E := hE.submodule_topologicalClosure_eq
+  have hcG : G.topologicalClosure = G := hG.submodule_topologicalClosure_eq
   have hEG : IsClosed ((E ⊓ G : Submodule ℂ H) : Set H) := by
     rw [Submodule.coe_inf]; exact hE.inter hG
-  refine ContinuousLinearMap.ext fun x => ?_
-  symm
-  refine prj_eq_of hEG x _ ⟨prj_mem hE _, ?_⟩ fun w hw => ?_
-  · have : (prj E * prj G) x = (prj G * prj E) x := by rw [hc.eq]
-    show prj E (prj G x) ∈ G
-    have h2 : prj E (prj G x) = prj G (prj E x) := this
-    rw [h2]; exact prj_mem hG _
-  · have h1 := prj_inner hG x w hw.2
-    have h2 := prj_inner hE (prj G x) w hw.1
-    have : x - (prj E ∘L prj G) x = (x - prj G x) + (prj G x - prj E (prj G x)) := by
-      simp
-    rw [this, inner_add_left, h1, h2, add_zero]
-
-private theorem prj_commute {V : Submodule ℂ H} (hV : IsClosed (V : Set H)) (T : H →L[ℂ] H) (h1 : ∀ v ∈ V, T v ∈ V)
-    (h2 : ∀ v ∈ V, ContinuousLinearMap.adjoint T v ∈ V) : Commute T (prj V) := by
-  refine ContinuousLinearMap.ext fun v => ?_
-  show T (prj V v) = prj V (T v)
-  symm
-  refine prj_eq_of hV _ _ (h1 _ (prj_mem hV v)) fun w hw => ?_
-  rw [← map_sub, ← ContinuousLinearMap.adjoint_inner_right]
-  exact prj_inner hV v _ (h2 w hw)
+  have hcEG : (E ⊓ G).topologicalClosure = E ⊓ G := hEG.submodule_topologicalClosure_eq
+  refine ContinuousLinearMap.ext fun x => Eq.symm <|
+    Submodule.eq_starProjection_of_mem_of_inner_eq_zero ?_ fun w hw => ?_
+  · rw [hcEG]
+    refine ⟨?_, ?_⟩
+    · have hmem : (prj E ∘L prj G) x ∈ E.topologicalClosure :=
+        Submodule.starProjection_apply_mem E.topologicalClosure (prj G x)
+      rwa [hcE] at hmem
+    · have h2 : (prj E ∘L prj G) x = prj G (prj E x) :=
+        congrArg (fun T : H →L[ℂ] H => T x) hc.eq
+      have hmem : prj G (prj E x) ∈ G.topologicalClosure :=
+        Submodule.starProjection_apply_mem G.topologicalClosure (prj E x)
+      rw [hcG] at hmem
+      rwa [h2]
+  · rw [hcEG] at hw
+    have h1 : ⟪x - prj G x, w⟫_ℂ = 0 :=
+      Submodule.starProjection_inner_eq_zero x w (hcG.symm ▸ hw.2)
+    have h2 : ⟪prj G x - prj E (prj G x), w⟫_ℂ = 0 :=
+      Submodule.starProjection_inner_eq_zero _ w (hcE.symm ▸ hw.1)
+    rw [show x - (prj E ∘L prj G) x = (x - prj G x) + (prj G x - prj E (prj G x)) by simp,
+      inner_add_left, h1, h2, add_zero]
 
 end Hil
 
@@ -170,9 +156,11 @@ private theorem GA_stable {A : Set (Pl K)} {v : Pl K} (hv : v ∉ A) (g : Gw n v
 
 private theorem GA_commute (hco : ∀ w, CO (J w) ∧ IsChr (J w) (χ w)) {A : Set (Pl K)} {v : Pl K} (hv : v ∉ A) (g : Gw n v) :
     Commute (rhoL μ v g) (prj (L1.GA μ J χ A)) := by
-  refine prj_commute (GA_closed μ hco A) _ (GA_stable μ hv g) fun x hx => ?_
-  rw [L1.rhoL_adj]
-  exact GA_stable μ hv _ x hx
+  have hc : (L1.GA μ J χ A).topologicalClosure = L1.GA μ J χ A :=
+    (GA_closed μ hco A).submodule_topologicalClosure_eq
+  exact UpperTheory.ConvolutionTheory.K.commProj (L1.GA μ J χ A).topologicalClosure (rhoL μ v g)
+    (fun x hx => hc.symm ▸ GA_stable μ hv g x (hc ▸ hx))
+    (fun x hx => by rw [L1.rhoL_adj]; exact hc.symm ▸ GA_stable μ hv _ x (hc ▸ hx))
 
 protected theorem list_prj (hco : ∀ w, CO (J w) ∧ IsChr (J w) (χ w)) (L : List (Pl K)) :
     L.Nodup → ∀ (A : Set (Pl K)), (∀ v ∈ L, v ∉ A) →
@@ -198,38 +186,20 @@ end Loc
 
 section Haar
 
-private theorem haar_right {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
-    [SecondCountableTopology G] [T2Space G] [MeasurableSpace G] [BorelSpace G] (m : Measure G) [m.IsHaarMeasure]
-    (J : Subgroup G) (hJ : CO J) (u : G) (hu : u ∈ J) : MeasurePreserving (· * u) m m := by
+private theorem haar_right {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    [LocallyCompactSpace G] [SecondCountableTopology G] [T2Space G] [MeasurableSpace G]
+    [BorelSpace G] (m : Measure G) [m.IsHaarMeasure] (J : Subgroup G) (hJ : CO J)
+    (u : G) (hu : u ∈ J) : MeasurePreserving (· * u) m m := by
   refine ⟨measurable_mul_const u, ?_⟩
-  have hpre : ∀ S : Set G, (· * u) ⁻¹' S = (· * u⁻¹) '' S := fun S => by
-    ext x
-    simp only [Set.mem_preimage, Set.mem_image]
-    exact ⟨fun h => ⟨_, h, by simp⟩, by rintro ⟨y, hy, rfl⟩; simpa using hy⟩
-  haveI : (Measure.map (· * u) m).IsMulLeftInvariant := ⟨fun g => by
-    rw [Measure.map_map (measurable_const_mul g) (measurable_mul_const u)]
-    have : (g * ·) ∘ (· * u) = (· * u) ∘ (g * ·) := by ext; simp [mul_assoc]
-    rw [this, ← Measure.map_map (measurable_mul_const u) (measurable_const_mul g), map_mul_left_eq_self]⟩
-  haveI : IsFiniteMeasureOnCompacts (Measure.map (· * u) m) := ⟨fun C hC => by
-    rw [Measure.map_apply (measurable_mul_const u) hC.measurableSet, hpre]
-    exact (hC.image (continuous_mul_const _)).measure_lt_top⟩
+  have : (Measure.map (· * u) m).IsHaarMeasure := Measure.isHaarMeasure_map_mul_right m u
   have e := Measure.isMulLeftInvariant_eq_smul (Measure.map (· * u) m) m
-  generalize Measure.haarScalarFactor (Measure.map (· * u) m) m = a at e
-  have hJm : MeasurableSet (J : Set G) := hJ.2.measurableSet
-  have h1 : (· * u) ⁻¹' (J : Set G) = J := by
-    ext x
-    simp only [Set.mem_preimage, SetLike.mem_coe]
-    exact Subgroup.mul_mem_cancel_right J hu
-  have h2 : m J = a * m J := by
-    have := congrArg (· (J : Set G)) e
-    simp only [Measure.map_apply (measurable_mul_const u) hJm, h1] at this
-    simpa [Measure.smul_apply] using this
-  have h3 : m (J : Set G) ≠ 0 := (hJ.2.measure_pos m ⟨1, J.one_mem⟩).ne'
-  have h4 : m (J : Set G) ≠ ⊤ := hJ.1.measure_lt_top.ne
-  have ha : (a : ENNReal) = 1 := by
-    have h5 : (a : ENNReal) * m J = 1 * m J := by rw [one_mul]; exact h2.symm
-    exact (ENNReal.mul_left_inj h3 h4).1 h5
-  have ha' : a = 1 := by exact_mod_cast ha
+  have h1 : (· * u) ⁻¹' (J : Set G) = J := Set.ext fun _ => Subgroup.mul_mem_cancel_right J hu
+  have h2 := congrArg (· (J : Set G)) e
+  simp only [Measure.map_apply (measurable_mul_const u) hJ.2.measurableSet, h1,
+    smul_apply, ENNReal.smul_def] at h2
+  have ha : (Measure.haarScalarFactor (Measure.map (· * u) m) m : ENNReal) = 1 :=
+    (ENNReal.mul_eq_right (hJ.2.measure_pos m ⟨1, J.one_mem⟩).ne' hJ.1.measure_lt_top.ne).1 h2.symm
+  have ha' : Measure.haarScalarFactor (Measure.map (· * u) m) m = 1 := by exact_mod_cast ha
   rw [e, ha', one_smul]
 
 end Haar

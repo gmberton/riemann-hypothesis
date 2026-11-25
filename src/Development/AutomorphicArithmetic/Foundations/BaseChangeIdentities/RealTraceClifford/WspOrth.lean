@@ -14,29 +14,19 @@ open PositivityTheory.RgTw (Mat)
 open PositivityTheory.RgBcC PositivityTheory.RgBcC.Real PositivityTheory.RgBcC.RealD UpperTheory.RealTr
 open Formalism.REAL (GlRel IsWeight KHighest Cas)
 
-private theorem wsp_orth {n : ℕ} {V : Type} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
-    {F : Fin n → Fin n → Module.End ℂ V} (hF : UF F) {μ ν : Wt n} (h : μ ≠ ν) {x y : V}
-    (hx : x ∈ wsp F μ) (hy : y ∈ wsp F ν) : ⟪x, y⟫_ℂ = 0 := by
-  obtain ⟨a, ha⟩ := Function.ne_iff.1 h
-  have h1 := hF.unit a a x y
-  have hx' : F a a x = (μ a : ℂ) • x := hx a
-  have hy' : F a a y = (ν a : ℂ) • y := hy a
-  rw [hx', hy', inner_smul_left, inner_smul_right, Complex.conj_ofReal] at h1
-  have h2 : ((μ a : ℂ) - (ν a : ℂ)) * ⟪x, y⟫_ℂ = 0 := by rw [sub_mul, h1, sub_self]
-  have h3 : (μ a : ℂ) - (ν a : ℂ) ≠ 0 := by
-    rw [sub_ne_zero]
-    exact fun e => ha (Complex.ofReal_injective e)
-  exact (mul_eq_zero.1 h2).resolve_left h3
-
 theorem UpperTheory.RealTr.wtDec :
     ∀ (n : ℕ) (V : Type) [NormedAddCommGroup V] [InnerProductSpace ℂ V] (F : Fin n → Fin n → Module.End ℂ V), UF F → ∀ S : Submodule ℂ V, FiniteDimensional ℂ S → Stb F S → ∃ s : Finset (Wt n), (∀ μ ∉ s, wsp F μ ⊓ S = ⊥) ∧ (⨆ μ ∈ s, wsp F μ ⊓ S) = S ∧ iSupIndep fun μ => wsp F μ ⊓ S := by
   intro n V _ _ F hF S hSfin hS
-  have hind : iSupIndep fun μ => wsp F μ ⊓ S := by
-    refine OrthogonalFamily.independent (OrthogonalFamily.of_pairwise fun μ ν hne => ?_)
-    show (wsp F μ ⊓ S) ⟂ (wsp F ν ⊓ S)
-    rw [Submodule.isOrtho_iff_inner_eq]
-    intro x hx y hy
-    exact wsp_orth hF hne hx.1 hy.1
+  have hW : Pairwise fun μ ν => wsp F μ ⟂ wsp F ν := fun μ ν hne => by
+    obtain ⟨a, ha⟩ := Function.ne_iff.1 hne
+    have hle : ∀ γ : Wt n, wsp F γ ≤ Module.End.eigenspace (F a a) (γ a : ℂ) :=
+      fun γ _ hx => Module.End.mem_eigenspace_iff.2 (hx a)
+    have hsym : (F a a).IsSymmetric := hF.unit a a
+    exact (hsym.orthogonalFamily_eigenspaces.isOrtho
+      (Complex.ofReal_injective.ne ha)).mono (hle μ) (hle ν)
+  have hind : iSupIndep fun μ => wsp F μ ⊓ S :=
+    OrthogonalFamily.independent (OrthogonalFamily.of_pairwise fun _ _ hne =>
+      (hW hne).mono inf_le_left inf_le_left)
   let T : Fin n → Module.End ℂ S := fun a => (F a a).restrict (fun x hx => hS a a x hx)
   have hT : ∀ a, (T a).IsSymmetric := by
     intro a x y
@@ -82,13 +72,11 @@ theorem UpperTheory.RealTr.wtDec :
     exact hle
   have hfin : Set.Finite {μ : Wt n | wsp F μ ⊓ S ≠ ⊥} := by
     let W' : Wt n → Submodule ℂ S := fun μ => (wsp F μ).comap S.subtype
-    have hind' : iSupIndep W' := by
-      refine OrthogonalFamily.independent (OrthogonalFamily.of_pairwise fun μ ν hne => ?_)
-      show W' μ ⟂ W' ν
-      rw [Submodule.isOrtho_iff_inner_eq]
-      intro x hx y hy
-      rw [Submodule.coe_inner]
-      exact wsp_orth hF hne hx hy
+    have hind' : iSupIndep W' :=
+      OrthogonalFamily.independent (OrthogonalFamily.of_pairwise fun _ _ hne =>
+        Submodule.isOrtho_iff_inner_eq.2 fun _ hx _ hy => by
+          rw [Submodule.coe_inner]
+          exact (hW hne).inner_eq hx hy)
     haveI := hind'.fintypeNeBotOfFiniteDimensional
     refine (Set.finite_range (fun i : {μ // W' μ ≠ ⊥} => (i : Wt n))).subset ?_
     intro μ hμ

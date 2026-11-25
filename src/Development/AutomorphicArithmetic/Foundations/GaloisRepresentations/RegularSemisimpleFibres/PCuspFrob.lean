@@ -1,6 +1,8 @@
 module
 
 public import Development.AutomorphicArithmetic.Foundations.GaloisRepresentations.RegularSemisimpleFibres.SuppBCOfMix
+import
+  Development.AbelianVarietyTheory.Proofs.InertiaEigenvalues.GreenCuspidalCharsByRegularCharsProof
 public import Development.AbelianVarietyTheory.Definitions.CommutativeAlgebra.InvariantSubspaceMobiusInverseRecEqOfFinrankLt
 public import Development.AbelianVarietyTheory.Proofs.CharacterTheory.InvariantSubspaceMobiusInverseCharpolyLinearEqui
 public import Development.AbelianVarietyTheory.Proofs.CharacterTheory.InvertibleEndInnerProductRootPowerSumMobius
@@ -18,50 +20,6 @@ open GlobalTheory.PRep GlobalTheory.SmGL GlobalTheory.SplitWeil GlobalTheory.Loc
 open GroundTheory.Global GroundTheory.Global.SemiLocal UpperTheory.V.Published UpperTheory.CBC UpperTheory.Gal.InertialTypesAlt
 open GlobalTheory.CuspGL GlobalTheory.BI
 open scoped Classical
-
-private theorem pow_mod_modEq (q m : ℕ) (hq : 0 < q) (hm : 0 < m) (e : ℕ) :
-    q ^ e ≡ q ^ (e % m) [MOD q ^ m - 1] := by
-  have h1 : q ^ m ≡ 1 [MOD q ^ m - 1] := Nat.modEq_sub (Nat.one_le_pow _ _ hq)
-  conv_lhs => rw [← Nat.div_add_mod e m, pow_add, pow_mul]
-  calc (q ^ m) ^ (e / m) * q ^ (e % m) ≡ 1 ^ (e / m) * q ^ (e % m) [MOD q ^ m - 1] :=
-        (h1.pow _).mul_right _
-    _ = q ^ (e % m) := by rw [one_pow, one_mul]
-
-private theorem count_le (q m c c' i k : ℕ) (hq : 0 < q) (hm : 0 < m)
-    (h : c' ≡ c * q ^ i [MOD q ^ m - 1]) :
-    ((Finset.range m).filter fun j => c' * q ^ j ≡ k [MOD q ^ m - 1]).card ≤
-      ((Finset.range m).filter fun j => c * q ^ j ≡ k [MOD q ^ m - 1]).card := by
-  apply Finset.card_le_card_of_injOn (fun j => (j + i) % m)
-  · intro j hj
-    simp only [Finset.coe_filter, Finset.mem_range, Set.mem_setOf_eq] at hj ⊢
-    refine ⟨Nat.mod_lt _ hm, ?_⟩
-    calc c * q ^ ((j + i) % m) ≡ c * q ^ (j + i) [MOD q ^ m - 1] :=
-          ((pow_mod_modEq q m hq hm (j + i)).symm).mul_left _
-      _ = c * q ^ i * q ^ j := by ring
-      _ ≡ c' * q ^ j [MOD q ^ m - 1] := h.symm.mul_right _
-      _ ≡ k [MOD q ^ m - 1] := hj.2
-  · intro a ha b hb hab
-    simp only [Finset.coe_filter, Finset.mem_range, Set.mem_setOf_eq] at ha hb
-    have h' : a ≡ b [MOD m] := Nat.ModEq.add_right_cancel' i hab
-    unfold Nat.ModEq at h'
-    rwa [Nat.mod_eq_of_lt ha.1, Nat.mod_eq_of_lt hb.1] at h'
-
-private theorem count_eq (q m c c' i k : ℕ) (hq : 0 < q) (hm : 0 < m)
-    (h : c' ≡ c * q ^ i [MOD q ^ m - 1]) :
-    ((Finset.range m).filter fun j => c' * q ^ j ≡ k [MOD q ^ m - 1]).card =
-      ((Finset.range m).filter fun j => c * q ^ j ≡ k [MOD q ^ m - 1]).card := by
-  apply le_antisymm (count_le q m c c' i k hq hm h)
-  apply count_le q m c' c (m - i % m) k hq hm
-  have hr : i % m < m := Nat.mod_lt _ hm
-  have hd : m * (i / m) + i % m = i := Nat.div_add_mod i m
-  have hs : i + (m - i % m) = m * (i / m + 1) := by
-    rw [mul_add, mul_one]
-    omega
-  calc c = c * q ^ ((i + (m - i % m)) % m) := by rw [hs, Nat.mul_mod_right, pow_zero, mul_one]
-    _ ≡ c * q ^ (i + (m - i % m)) [MOD q ^ m - 1] :=
-        ((pow_mod_modEq q m hq hm _).symm).mul_left _
-    _ = c * q ^ i * q ^ (m - i % m) := by ring
-    _ ≡ c' * q ^ (m - i % m) [MOD q ^ m - 1] := h.symm.mul_right _
 
 private theorem psi_eq (F : Type) [Field F] [Finite F] (V : Type) [AddCommGroup V] [Module F V]
     [FiniteDimensional F V] (θ : AlgebraicClosure F →* ℂ)
@@ -84,8 +42,12 @@ private theorem psi_eq (F : Type) [Field F] [Finite F] (V : Type) [AddCommGroup 
       (ipGL (psi (rootSum θ c) V) fun x ↦ rootSum θ k (LinearMap.charpoly x)) *
         psi (rootSum θ k) V g := by
     refine Finset.sum_congr rfl fun k _ => ?_
-    rw [_root_.GlobalTheory.CuspGL.ipGL_psi_rootSum F V θ hθ hn, _root_.GlobalTheory.CuspGL.ipGL_psi_rootSum F V θ hθ hn,
-      count_eq (Nat.card F) (Module.finrank F V) c c' i k Nat.card_pos hn h]
+    have hmod := h.trans ((GlobalTheory.GreenRegular.pow_modEq_pow_mod
+      (Module.finrank F V) Nat.card_pos i).mul_left c)
+    rw [_root_.GlobalTheory.CuspGL.ipGL_psi_rootSum F V θ hθ hn,
+      _root_.GlobalTheory.CuspGL.ipGL_psi_rootSum F V θ hθ hn,
+      GlobalTheory.GreenRegular.filter_modEq_congr hmod,
+      GlobalTheory.GreenRegular.card_filter_shift Nat.card_pos hn c _ k (Nat.mod_lt i hn).le]
   have hne : glCard F (Module.finrank F V) * (Module.finrank F V : ℂ) ≠ 0 := by
     refine mul_ne_zero ?_ (Nat.cast_ne_zero.mpr hn.ne')
     exact Nat.cast_ne_zero.mpr Nat.card_pos.ne'

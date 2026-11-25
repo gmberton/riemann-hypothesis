@@ -88,10 +88,6 @@ private theorem entry {T : Type} [CommRing T] [TopologicalSpace T] (a b : Fin n)
     Continuous fun x : GL (Fin n) T => (x : Matrix (Fin n) (Fin n) T) a b :=
   (Units.continuous_val (M := Matrix (Fin n) (Fin n) T)).matrix_elem a b
 
-private theorem entryInv {T : Type} [CommRing T] [TopologicalSpace T] (a b : Fin n) :
-    Continuous fun x : GL (Fin n) T => ((x⁻¹ : GL (Fin n) T) : Matrix (Fin n) (Fin n) T) a b :=
-  (Units.continuous_iff.mp (continuous_id (X := GL (Fin n) T))).2.matrix_elem a b
-
 private theorem norm_shift {G : Type} [Group G] (c : Fin (m + 1) → G) (j : Fin (m + 1)) :
     (List.ofFn fun i => c (j + i)).prod * c j = c j * (List.ofFn fun i => c (j + 1 + i)).prod := by
   rw [List.ofFn_succ, List.ofFn_succ' (f := fun i => c (j + 1 + i))]
@@ -121,19 +117,12 @@ theorem UpperTheory.ConvolutionTheory.L1.glueBasic :
     · refine continuous_matrix fun a b => ?_
       exact D.cont_symm.comp (continuous_pi fun i => (entry n a b).comp (continuous_apply i))
     · refine continuous_matrix fun a b => ?_
-      exact D.cont_symm.comp (continuous_pi fun i => (entryInv n a b).comp (continuous_apply i))
+      exact D.cont_symm.comp (continuous_pi fun i =>
+        ((Units.continuous_coe_inv (M := _)).matrix_elem a b).comp (continuous_apply i))
   · intro i
-    refine Units.continuous_iff.mpr ⟨?_, ?_⟩
-    · refine continuous_matrix fun a b => ?_
-      exact (continuous_apply i).comp (D.cont.comp (entry n a b))
-    · refine continuous_matrix fun a b => ?_
-      have : (fun x : GL (Fin n) S => (((D.comp n i x)⁻¹ : GL (Fin n) R) : Matrix (Fin n) (Fin n) R) a b) =
-          fun x => D.e (((x⁻¹ : GL (Fin n) S) : Matrix (Fin n) (Fin n) S) a b) i := by
-        funext x
-        rw [← map_inv, comp_apply]
-      show Continuous (fun x : GL (Fin n) S => (((D.comp n i x)⁻¹ : GL (Fin n) R) : Matrix (Fin n) (Fin n) R) a b)
-      rw [this]
-      exact (continuous_apply i).comp (D.cont.comp (entryInv n a b))
+    refine Continuous.of_coeHom_comp (f := D.comp n i) (continuous_matrix fun a b => ?_)
+    exact ((continuous_apply i).comp (D.cont.comp (entry n a b))).congr fun x =>
+      (comp_apply D n i x a b).symm
   · intro δ γ
     constructor
     · intro h

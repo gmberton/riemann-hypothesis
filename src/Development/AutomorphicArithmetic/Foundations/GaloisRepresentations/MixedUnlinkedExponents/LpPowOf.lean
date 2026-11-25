@@ -35,21 +35,8 @@ private lemma prod_factor {f : ℕ} (hf : 0 < f) (a : ℂ) :
     simp only [map_sub, map_one, aeval_X_pow, map_prod, aeval_X, aeval_C,
       Polynomial.algebraMap_eq] at e
     exact e.symm
-  have h3 : ∀ w : ℂ[X], ∏ u ∈ S, (w - C u⁻¹) = ∏ u ∈ S, (w - C u) := by
-    intro w
-    refine Finset.prod_nbij' (fun u => u⁻¹) (fun u => u⁻¹) ?_ ?_ ?_ ?_ ?_
-    · intro u hu
-      rw [mem] at hu ⊢
-      rw [inv_pow, hu, inv_one]
-    · intro u hu
-      rw [mem] at hu ⊢
-      rw [inv_pow, hu, inv_one]
-    · intro u _
-      exact inv_inv u
-    · intro u _
-      exact inv_inv u
-    · intro u _
-      rfl
+  have h3 : ∀ w : ℂ[X], ∏ u ∈ S, (w - C u⁻¹) = ∏ u ∈ S, (w - C u) := fun w =>
+    Finset.prod_equiv (Equiv.inv ℂ) (fun u => by simp [mem]) (fun _ _ => rfl)
   have h2 : ∀ w : ℂ[X], ∏ u ∈ S, (1 - C u * w) = (∏ u ∈ S, (-C u)) * (w ^ f - 1) := by
     intro w
     rw [← h1, ← h3, ← Finset.prod_mul_distrib]

@@ -56,42 +56,13 @@ private theorem dom_int {n : ℕ} {x : Wt n} (h : Dom x) (a b : Fin n) :
   · obtain ⟨m, hm⟩ := h b a hab
     exact ⟨-m, by push_cast; linarith⟩
 
-private theorem sum_swap {n : ℕ} (r u : Wt n) {a b : Fin n} (hab : a ≠ b) :
-    ∑ i, r i * u (Equiv.swap a b i) = ∑ i, r i * u i + (r a - r b) * (u b - u a) := by
-  have h : ∑ i, (r i * u (Equiv.swap a b i) - r i * u i) = (r a - r b) * (u b - u a) := by
-    rw [← Finset.sum_subset (Finset.subset_univ {a, b})]
-    · rw [Finset.sum_pair hab]
-      simp only [Equiv.swap_apply_left, Equiv.swap_apply_right]
-      ring
-    · intro i _ hi
-      simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hi
-      rw [Equiv.swap_apply_of_ne_of_ne hi.1 hi.2, sub_self]
-  rw [Finset.sum_sub_distrib] at h
-  linarith
-
 private theorem rho_strict {n : ℕ} {κ : Wt n} (hκ : Antitone κ) (w : Equiv.Perm (Fin n))
     (hne : κ ∘ w ≠ κ) : ∑ a, rhoV n a * (κ ∘ w) a < ∑ a, rhoV n a * κ a := by
-  obtain ⟨hre, hdom, hanti, -, -, -⟩ := rearr n
-  have hex : ∃ a b, a < b ∧ (κ ∘ w) a < (κ ∘ w) b := by
-    by_contra hcon
-    push Not at hcon
-    have hu : Antitone (κ ∘ w) := by
-      intro a b hab
-      rcases hab.lt_or_eq with h | rfl
-      · exact hcon a b h
-      · exact le_rfl
-    apply hne
-    have h1 := (hdom (κ ∘ w)).2.2.1 hu
-    have h2 := (hdom κ).2.2.2.1 w
-    have h3 := (hdom κ).2.2.1 hκ
-    rw [← h1, h2, h3]
-  obtain ⟨a, b, hab, hlt⟩ := hex
-  have h1 := (hre (rhoV n) κ hanti.antitone hκ (w * Equiv.swap a b)).1
-  have h2 := sum_swap (rhoV n) (κ ∘ w) hab.ne
-  have h3 : ∑ i, rhoV n i * (κ ∘ w) (Equiv.swap a b i) = ∑ i, rhoV n i * κ ((w * Equiv.swap a b) i) := rfl
-  have h4 : 0 < (rhoV n a - rhoV n b) * ((κ ∘ w) b - (κ ∘ w) a) :=
-    mul_pos (sub_pos.2 (hanti hab)) (sub_pos.2 hlt)
-  linarith
+  obtain ⟨-, hdom, hanti, -, -, -⟩ := rearr n
+  refine (hanti.antitone.monovary hκ).sum_mul_comp_perm_lt_sum_mul_iff.2 fun hM => hne ?_
+  have hu : Antitone (κ ∘ w) := fun a b hab => not_lt.1 fun hlt =>
+    absurd (hM hlt) (not_le.2 (hanti (hab.lt_of_ne fun h => hlt.ne (congrArg (κ ∘ w) h))))
+  rw [← (hdom (κ ∘ w)).2.2.1 hu, (hdom κ).2.2.2.1 w, (hdom κ).2.2.1 hκ]
 
 private theorem dM_lt {n : ℕ} {κ : Wt n} (hκ : Antitone κ) (w : Equiv.Perm (Fin n))
     (hne : κ ∘ w ≠ κ) : dM (κ ∘ w + rhoV n) < dM (κ + rhoV n) := by
@@ -119,58 +90,29 @@ private theorem dM_lt {n : ℕ} {κ : Wt n} (hκ : Antitone κ) (w : Equiv.Perm 
 
 private theorem dom_sub {n : ℕ} {x : Wt n} (hx : StrictAnti x)
     (hi : ∀ a b, ∃ m : ℤ, x a - x b = m) : Dom (x - rhoV n) := by
-  have key : ∀ (d a : ℕ) (h : a + d < n),
-      (d : ℝ) ≤ x ⟨a, by omega⟩ - x ⟨a + d, h⟩ := by
-    intro d
-    induction d with
-    | zero => intro a h; simp
-    | succ d ih =>
-      intro a h
-      have h1 := ih a (by omega)
-      have h2 : x ⟨a + d + 1, h⟩ < x ⟨a + d, by omega⟩ := hx (by simp [Fin.lt_def])
-      obtain ⟨m, hm⟩ := hi ⟨a + d, by omega⟩ ⟨a + d + 1, h⟩
-      have h3 : (0 : ℝ) < m := by rw [← hm]; linarith
-      have h4 : (1 : ℝ) ≤ m := by exact_mod_cast (by exact_mod_cast h3 : (0 : ℤ) < m)
-      have h5 : x ⟨a + (d + 1), h⟩ = x ⟨a + d + 1, h⟩ := rfl
+  obtain ⟨-, hdom, -, -, hDD, -⟩ := rearr n
+  have hD : Dom x := fun a b hab => by
+    obtain ⟨m, hm⟩ := hi a b
+    have hm0 : (0 : ℤ) ≤ m := by exact_mod_cast (sub_pos.2 (hx hab)).le.trans_eq hm
+    obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le hm0
+    exact ⟨k, by rw [hm, hk]; simp⟩
+  have ha : Antitone (x - rhoV n) := by
+    cases n with
+    | zero => exact fun a => a.elim0
+    | succ n =>
+      refine Fin.antitone_iff_succ_le.2 fun i => ?_
+      obtain ⟨m, hm⟩ := hi i.castSucc i.succ
+      have hm0 : (0 : ℤ) < m := by exact_mod_cast (sub_pos.2 (hx i.castSucc_lt_succ)).trans_eq hm
+      have h1 : (1 : ℝ) ≤ m := by exact_mod_cast (show (1 : ℤ) ≤ m by omega)
+      simp only [Pi.sub_apply, rhoV, Fin.val_succ, Fin.val_castSucc]
       push_cast
-      rw [h5]
       linarith
-  intro a b hab
-  obtain ⟨m, hm⟩ := hi a b
-  have hd : a.val + (b.val - a.val) < n := by have := b.2; have := Fin.lt_def.1 hab; omega
-  have h1 := key (b.val - a.val) a.val hd
-  have h2 : (⟨a.val + (b.val - a.val), hd⟩ : Fin n) = b := by
-    ext; have := Fin.lt_def.1 hab; simp; omega
-  rw [h2] at h1
-  have h3 : (((b.val - a.val : ℕ) : ℤ) : ℝ) ≤ m := by
-    rw [← hm]; simpa using h1
-  have h4 : ((b.val - a.val : ℕ) : ℤ) ≤ m := by exact_mod_cast h3
-  obtain ⟨t, ht⟩ := Int.eq_ofNat_of_zero_le (sub_nonneg.2 h4)
-  refine ⟨t, ?_⟩
-  have h5 : ((b.val - a.val : ℕ) : ℝ) = (b.val : ℝ) - a.val := by
-    rw [Nat.cast_sub (Fin.lt_def.1 hab).le]
-  have h6 : (t : ℝ) = (m : ℝ) - ((b.val - a.val : ℕ) : ℝ) := by
-    have : ((t : ℤ) : ℝ) = ((m - ((b.val - a.val : ℕ) : ℤ) : ℤ) : ℝ) := by rw [ht]
-    simpa using this
-  simp only [Pi.sub_apply, rhoV]
-  rw [h6, h5, ← hm]
-  ring
-
-private theorem cf_ex {n : ℕ} (x y : Wt n) : cf (ex y) x = if y = x then 1 else 0 := by
-  simp [cf, ex, AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
-
-private theorem cf_zero {n : ℕ} (x : Wt n) : cf (0 : FR n) x = 0 := by
-  simp [cf]
+  have h2 := (hDD x hD).2
+  rwa [(hdom (x - rhoV n)).2.2.1 ha] at h2
 
 private theorem cf_sum {n : ℕ} {ι : Type} (s : Finset ι) (f : ι → FR n) (x : Wt n) :
     cf (∑ i ∈ s, f i) x = ∑ i ∈ s, cf (f i) x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp [cf_zero]
-  | insert a s ha ih =>
-    rw [Finset.sum_insert ha, Finset.sum_insert ha, ((cfBasic n).2.2.2.1 _ _ 0 x).1, ih]
-
-private theorem sym_zero {n : ℕ} : Sym (0 : FR n) := fun _ x => by rw [cf_zero, cf_zero]
+  simp [cf, Finsupp.finsetSum_apply]
 
 private theorem sym_add {n : ℕ} {f g : FR n} (hf : Sym f) (hg : Sym g) : Sym (f + g) := fun w x => by
   rw [((cfBasic n).2.2.2.1 f g 0 _).1, ((cfBasic n).2.2.2.1 f g 0 x).1, hf, hg]
@@ -187,7 +129,7 @@ private theorem sym_orbit {n : ℕ} (κ : Wt n) : Sym (∑ w : Equiv.Perm (Fin n
   classical
   intro v x
   rw [cf_sum, cf_sum]
-  simp only [cf_ex]
+  simp only [cf, ex, AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
   rw [← Equiv.sum_comp (Equiv.mulRight v⁻¹) (fun w : Equiv.Perm (Fin n) => if κ ∘ w = x then (1 : ℂ) else 0)]
   refine Finset.sum_congr rfl fun w _ => ?_
   have : (κ ∘ w = x ∘ v) ↔ (κ ∘ (Equiv.mulRight v⁻¹ w) = x) := by
@@ -225,10 +167,6 @@ private theorem alt_orbit {n : ℕ} (κ : Wt n) :
         ext a
         simp [add_comm]
 
-private theorem sg_sq {n : ℕ} (u : Equiv.Perm (Fin n)) : sg u * sg u = 1 := by
-  unfold sg
-  rcases Int.units_eq_one_or (Equiv.Perm.sign u) with h | h <;> simp [h]
-
 private theorem step {n N : ℕ}
     (ih : ∀ κ : Wt n, Dom κ → dM (κ + rhoV n) < N →
       ∃ χ : FR n, Sym χ ∧ alt (rhoV n) * χ = alt (κ + rhoV n))
@@ -250,8 +188,10 @@ private theorem step {n N : ℕ}
     obtain ⟨χ, hS, hχ⟩ := ih _ hD hlt
     rw [sub_add_cancel, hu, (cfBasic n).2.2.2.2.2.2.2.1 z u] at hχ
     refine ⟨sg u • χ, sym_smul _ hS, ?_⟩
-    rw [mul_smul_comm, hχ, smul_smul, sg_sq, one_smul]
-  · refine ⟨0, sym_zero, ?_⟩
+    have hsg : sg u * sg u = 1 := by
+      unfold sg; rw [← Int.cast_mul, Int.units_coe_mul_self, Int.cast_one]
+    rw [mul_smul_comm, hχ, smul_smul, hsg, one_smul]
+  · refine ⟨0, fun _ _ => rfl, ?_⟩
     rw [mul_zero, (cfBasic n).2.2.2.2.2.2.2.2.2.2.2.2 z hinj]
 
 theorem UpperTheory.RealTr.divEx :

@@ -37,18 +37,11 @@ theorem UpperTheory.ConvolutionTheory.L1.archBasic :
     congr 2
     funext i
     exact map_mul (archEquiv F n).symm (g i) (h i)
-  have c4 : Continuous (UpperTheory.ConvolutionTheory.L1.glueA D n) := by
-    have : Continuous fun g : Fin (m + 1) → archGroup F n =>
-        archEquiv E n (D.glue n fun i => (archEquiv F n).symm (g i)) :=
-      (archEquiv E n).continuous.comp
-        (h4.comp (continuous_pi fun i => (archEquiv F n).symm.continuous.comp (continuous_apply i)))
-    exact this
-  have c5 : ∀ i, Continuous (UpperTheory.ConvolutionTheory.L1.compA D n i) := by
-    intro i
-    have : Continuous fun x : archGroup E n =>
-        archEquiv F n (D.comp n i ((archEquiv E n).symm x)) :=
-      (archEquiv F n).continuous.comp ((h5 i).comp (archEquiv E n).symm.continuous)
-    exact this
+  have c4 : Continuous (UpperTheory.ConvolutionTheory.L1.glueA D n) :=
+    (archEquiv E n).continuous.comp
+      (h4.comp (continuous_pi fun i => (archEquiv F n).symm.continuous.comp (continuous_apply i)))
+  have c5 : ∀ i, Continuous (UpperTheory.ConvolutionTheory.L1.compA D n i) := fun i =>
+    (archEquiv F n).continuous.comp ((h5 i).comp (archEquiv E n).symm.continuous)
   let e : (Fin (m + 1) → archGroup F n) ≃ₜ* archGroup E n :=
     { toFun := UpperTheory.ConvolutionTheory.L1.glueA D n
       invFun := fun x i => UpperTheory.ConvolutionTheory.L1.compA D n i x
@@ -62,13 +55,9 @@ theorem UpperTheory.ConvolutionTheory.L1.archBasic :
     · intro i g
       rfl
     · intro i
-      have hm : Continuous fun g : archGroup F n => (Pi.mulSingle i g : Fin (m + 1) → archGroup F n) :=
-        by
-          refine continuous_pi fun j => ?_
-          by_cases hj : j = i
-          · subst hj
-            simpa using (continuous_id' : Continuous fun a : archGroup F n => a)
-          · simpa [Pi.mulSingle_eq_of_ne hj] using continuous_const
+      have hm : Continuous fun g : archGroup F n =>
+          (Pi.mulSingle i g : Fin (m + 1) → archGroup F n) :=
+        continuous_mulSingle (A := fun _ => archGroup F n) i
       exact c4.comp hm
   · intro νF _
     exact e.isHaarMeasure_map (Measure.pi fun _ => νF)

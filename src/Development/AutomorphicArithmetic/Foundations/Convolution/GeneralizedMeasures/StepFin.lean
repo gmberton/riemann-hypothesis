@@ -57,17 +57,15 @@ private theorem ccToL1_smul {G : Type*} [Group G] [TopologicalSpace G] [Measurab
 private theorem ccToL1_finsetSum {G ι : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G] [OpensMeasurableSpace G]
     (ν : Measure G) [IsFiniteMeasureOnCompacts ν] (s : Finset ι) (f : ι → CompactlySupportedContinuousMap G ℂ) :
     UnitaryRep.ccToL1 ν (∑ i ∈ s, f i) = ∑ i ∈ s, UnitaryRep.ccToL1 ν (f i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    rw [Finset.sum_empty, Finset.sum_empty]
-    unfold UnitaryRep.ccToL1
-    exact MemLp.toLp_zero _
-  | insert a s ha ih =>
-    rw [Finset.sum_insert ha, Finset.sum_insert ha, ← ih]
-    unfold UnitaryRep.ccToL1
-    rw [← MemLp.toLp_add]
-    rfl
+  refine Lp.ext ?_
+  have h0 : (UnitaryRep.ccToL1 ν (∑ i ∈ s, f i) : G → ℂ) =ᵐ[ν] ⇑(∑ i ∈ s, f i) := MemLp.coeFn_toLp _
+  have hs : ∀ᵐ x ∂ν, ∀ i ∈ s, (UnitaryRep.ccToL1 ν (f i) : G → ℂ) x = f i x :=
+    s.eventually_all.2 fun i _ =>
+      (MemLp.coeFn_toLp _ : (UnitaryRep.ccToL1 ν (f i) : G → ℂ) =ᵐ[ν] f i)
+  filter_upwards [h0,
+    Lp.coeFn_fun_finsetSum s (fun i => UnitaryRep.ccToL1 ν (f i)), hs] with x hx hfx hi
+  rw [hx, hfx, CompactlySupportedContinuousMap.sum_apply]
+  exact Finset.sum_congr rfl fun i hmi => (hi i hmi).symm
 
 private theorem integrated_sum {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
     {G ι : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G] [OpensMeasurableSpace G]
@@ -94,24 +92,6 @@ private theorem cf_local {K : Type} [Field K] [NumberField K] {n : ℕ} (w : Pl 
     (x : AdelicGLn.FiniteAdelicGL K n) : cf w (AdelicGLn.localEmbedding w y * x) = y * cf w x := by
   unfold cf
   rw [map_mul, finAt_mul, (UpperTheory.ConvolutionTheory.Tf.locEmb K n w).2.1]
-
-private theorem exists_cover {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] (J : Subgroup G)
-    (hJ : IsOpen (J : Set G)) (h : G → ℂ) (hc : HasCompactSupport h) :
-    ∃ t : Finset (G ⧸ J), ∀ y, h y ≠ 0 → (QuotientGroup.mk y : G ⧸ J) ∈ t := by
-  have hop : ∀ c : G ⧸ J, IsOpen ((QuotientGroup.mk : G → G ⧸ J) ⁻¹' {c}) := fun c => by
-    have : (QuotientGroup.mk : G → G ⧸ J) ⁻¹' {c} = (fun g => c.out⁻¹ * g) ⁻¹' (J : Set G) := by
-      ext g
-      simp only [Set.mem_preimage, Set.mem_singleton_iff, SetLike.mem_coe]
-      rw [← QuotientGroup.eq, QuotientGroup.out_eq']
-      exact eq_comm
-    rw [this]
-    exact hJ.preimage (continuous_const_mul _)
-  obtain ⟨t, ht⟩ := hc.isCompact.elim_finite_subcover _ hop fun y _ =>
-    Set.mem_iUnion.2 ⟨QuotientGroup.mk y, rfl⟩
-  refine ⟨t, fun y hy => ?_⟩
-  obtain ⟨c, hc', hyc⟩ := Set.mem_iUnion₂.1 (ht (subset_tsupport _ hy))
-  rw [show (QuotientGroup.mk y : G ⧸ J) = c from hyc]
-  exact hc'
 
 private theorem coset_sum {G : Type*} [Group G] (J : Subgroup G) (h : G → ℂ) (hinv : ∀ k ∈ J, ∀ x, h (x * k) = h x)
     (t : Finset (G ⧸ J)) (ht : ∀ y, h y ≠ 0 → (QuotientGroup.mk y : G ⧸ J) ∈ t) (y : G) :
@@ -159,7 +139,11 @@ theorem UpperTheory.ConvolutionTheory.GM.stepFin :
         exact hx (by simpa using J.mul_mem hk q)
     have := congrArg (fun A : LL μ →L[ℂ] LL μ => A u) (rhoF_comp_Ofin μ m (AdelicGLn.localEmbedding w k) e₀)
     simpa [e] using this
-  · obtain ⟨t, ht⟩ := exists_cover J hJ h hc
+  · have : DiscreteTopology _ := QuotientGroup.discreteTopology hJ
+    have hft := (hc.isCompact.image (QuotientGroup.continuous_mk (N := J))).finite_of_discrete
+    let t := hft.toFinset
+    have ht : ∀ y, h y ≠ 0 → (QuotientGroup.mk y : _ ⧸ J) ∈ t := fun y hy =>
+      hft.mem_toFinset.2 ⟨y, subset_tsupport _ hy, rfl⟩
     have hfs : (∑ᶠ c : GL (Fin n) (w.adicCompletion K) ⧸ J, h c.out • rhoL μ w c.out) = ∑ c ∈ t, h c.out • rhoL μ w c.out := by
       refine finsum_eq_sum_of_support_subset _ fun c hc' => ?_
       have hne : h c.out ≠ 0 := fun q => hc' (by simp [q])
