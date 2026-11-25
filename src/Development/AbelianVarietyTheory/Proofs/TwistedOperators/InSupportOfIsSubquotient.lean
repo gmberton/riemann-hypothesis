@@ -49,6 +49,7 @@ import Mathlib.Tactic.ReduceModChar
 import Mathlib.Topology.Algebra.Group.Units
 import Mathlib.Topology.Sheaves.Init
 import Std.Tactic.BVDecide.Normalize.Prop
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.JacquetModuleMapInjectiveOfInjective
 
 @[expose] public section
 
@@ -95,19 +96,8 @@ variable [TopologicalSpace G] [IsTopologicalGroup G]
 
 theorem mem_twKer_of_compact {σ : Representation ℂ G V} {τ : Representation ℂ G W} (hτ : IsSmooth τ)
     (f : σ.IntertwiningMap τ) (hf : Function.Injective f) {H : Subgroup G} (hH : IsCompact (H : Set G))
-    {v : V} (hv : f v ∈ twKer τ H 1) : v ∈ twKer σ H 1 := by
-  have hσ : IsSmooth σ := (IsSubquotient.of_injective f hf).isSmooth hτ
-  obtain ⟨v', hv', he⟩ := IwahoriOnto.exists_fixed_map_eq hσ hH (twKer σ H 1).mkQ v fun h hh =>
-    (Submodule.Quotient.eq _).2 (GlobalTheory.IwahoriInj.sub_mem_twKer hh v)
-  have h1 : v' - v ∈ twKer σ H 1 := (Submodule.Quotient.eq _).1 he
-  have h2 : f v' ∈ twKer τ H 1 := by
-    have := add_mem (map_mem_twKer f h1) hv
-    rwa [map_sub, sub_add_cancel] at this
-  have h3 : f v' ∈ fixed τ H := GlobalTheory.IwahoriInj.mem_fixed.2 fun h hh => by
-    rw [← f.isIntertwining, GlobalTheory.IwahoriInj.mem_fixed.1 hv' h hh]
-  have h4 : v' = 0 := hf ((GlobalTheory.IwahoriInj.eq_zero_of_fixed hτ hH h3 h2).trans (map_zero f).symm)
-  rw [h4, zero_sub] at h1
-  exact neg_mem_iff.1 h1
+    {v : V} (hv : f v ∈ twKer τ H 1) : v ∈ twKer σ H 1 :=
+  GlobalTheory.JacInj.mem_twKer_of_map f hτ hf hH hv
 
 end Abstract
 
@@ -119,49 +109,8 @@ variable {k : Type} [Field k] [ValuativeRel k] [TopologicalSpace k] [IsNonarchim
 
 theorem jacMap_injective (e : (Σ a, Fin (d a)) ≃ n) {σ : Representation ℂ (GL n k) V}
     {τ : Representation ℂ (GL n k) W} (hτ : IsSmooth τ) (f : σ.IntertwiningMap τ)
-    (hf : Function.Injective f) : Function.Injective (jacMap e f) := by
-  refine (injective_iff_map_eq_zero _).2 fun x hx => ?_
-  obtain ⟨v, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-  have h1 : f v ∈ twKer τ (unipRad k e) 1 := (Submodule.Quotient.mk_eq_zero _).1 hx
-  let c : n → ℤ := fun i => (blk e i).val
-  have hN : unipRad k e = unipOf k c := unipRad_eq_unipOf k fun i j => by simp [c]
-  obtain ⟨S, hS, h2⟩ := exists_finset_of_mem_twKer h1
-  have hcompact : ∃ H : Subgroup (GL n k), H ≤ unipOf k c ∧
-      IsCompact (H : Set (GL n k)) ∧ ∀ u ∈ S, u ∈ H := by
-    let K (m : ℕ) := GlobalTheory.IwahoriInj.grp k (GlobalTheory.UnipCompact.conc_mul_sub c m)
-    have hentries {u : GL n k} (hu : u ∈ unipOf k c) :
-        ∀ᶠ m : ℕ in Filter.atTop, ∀ i j, Deep ((m : ℤ) * (c i - c j)) (u.val i j) := by
-      simp only [Filter.eventually_all]
-      intro i j
-      by_cases hij : c i < c j
-      · filter_upwards [GlobalTheory.IwahoriInj.eventually_deep (u.val i j)] with m hm
-        exact hm.mono (by nlinarith [Int.natCast_nonneg m])
-      · rw [mem_unipOf.1 hu i j hij]
-        refine Filter.Eventually.of_forall fun m => ?_
-        by_cases heq : i = j
-        · subst j
-          simp [GlobalTheory.IwahoriInj.deep_zero_iff]
-        · simp [one_apply_ne heq, GlobalTheory.IwahoriInj.deep_zero]
-    have hmem : ∀ᶠ m in Filter.atTop, ∀ u ∈ S, u ∈ K m :=
-      (Filter.eventually_all_finset S).2 fun u hu => by
-        have hu' := hN ▸ hS u hu
-        exact (hentries hu').and (hentries (inv_mem hu'))
-    obtain ⟨m, hm⟩ := hmem.exists
-    refine ⟨K m ⊓ unipOf k c, inf_le_right, ?_, fun u hu => ⟨hm u hu, hN ▸ hS u hu⟩⟩
-    obtain ⟨_, _⟩ := Model.secondCountable_and_t2_local_field (k := k)
-    have hclosed : IsClosed (unipOf k c : Set (GL n k)) := by
-      have heq : (unipOf k c : Set (GL n k)) =
-          ⋂ i, ⋂ j, ⋂ (_ : ¬ c i < c j), {g : GL n k | g.val i j = (1 : Matrix n n k) i j} := by
-        ext g
-        simp only [SetLike.mem_coe, mem_unipOf, Set.mem_iInter, Set.mem_ofPred_eq]
-      rw [heq]
-      exact isClosed_iInter fun i => isClosed_iInter fun j => isClosed_iInter fun _ =>
-        isClosed_eq (Units.continuous_val.matrix_elem i j) continuous_const
-    rw [Subgroup.coe_inf]
-    exact (GlobalTheory.IwahoriInj.isCompact_grp _).inter_right hclosed
-  obtain ⟨H, hle, hH, hSH⟩ := hcompact
-  refine (Submodule.Quotient.mk_eq_zero _).2 ?_
-  exact GlobalTheory.IwahoriInj.twKer_mono (hle.trans hN.ge) (mem_twKer_of_compact hτ f hf hH (h2 H hSH))
+    (hf : Function.Injective f) : Function.Injective (jacMap e f) :=
+  GlobalTheory.JacInj.jacMap_injective k (Fin s) n (fun a => Fin (d a)) e V W σ τ f hτ hf
 
 theorem jacMap_surjective (e : (Σ a, Fin (d a)) ≃ n) {σ : Representation ℂ (GL n k) V}
     {τ : Representation ℂ (GL n k) W} (f : σ.IntertwiningMap τ)

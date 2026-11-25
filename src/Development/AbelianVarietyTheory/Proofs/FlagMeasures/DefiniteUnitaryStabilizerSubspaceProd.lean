@@ -2,6 +2,7 @@ module
 
 public import Development.AbelianVarietyTheory.Definitions.SemilocalFrames.ChartGen
 public import Formalism.HermitianLattices.StatementMass
+import Development.AbelianVarietyTheory.Proofs.FlagMeasures.WittExtensionTotallyDefiniteHermitian
 import Mathlib.Algebra.Order.Floor.Extended
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Algebra.Order.Interval.Basic
@@ -160,59 +161,6 @@ private lemma apply_self_ne_zero_of_PD_of_numberField [NumberField K] {h : V →
 open NumberField Matrix in
 open scoped ENNReal Classical in
 variable {K V : Type} [Field K] [StarRing K] [AddCommGroup V] [Module K V] in
-private lemma disjoint_perp_of_PD [NumberField K]
-    {h : V →ₗ⋆[K] V →ₗ[K] K} (hpd : _root_.GlobalTheory.Mass.PD h) (U : Submodule K V) :
-    Disjoint U (_root_.GlobalTheory.Mass.perp h U) := by
-  rw [Submodule.disjoint_def]
-  intro x hxU hxW
-  by_contra hx
-  exact apply_self_ne_zero_of_PD_of_numberField hpd hx
-    ((_root_.GlobalTheory.Mass.StabSplit.mem_perp h U x).1 hxW x hxU)
-
-open NumberField Matrix in
-open scoped ENNReal Classical in
-variable {K V : Type} [Field K] [StarRing K] [AddCommGroup V] [Module K V] in
-private lemma finrank_le_finrank_add_finrank_perp [FiniteDimensional K V]
-    (h : V →ₗ⋆[K] V →ₗ[K] K) (U : Submodule K V) :
-    Module.finrank K V ≤
-      Module.finrank K U + Module.finrank K (_root_.GlobalTheory.Mass.perp h U) := by
-  set b := Module.finBasis K U
-  let F : V →ₗ[K] (Fin (Module.finrank K U) → K) := LinearMap.pi fun i => h (b i : V)
-  have hker : LinearMap.ker F = _root_.GlobalTheory.Mass.perp h U := by
-    ext v
-    rw [LinearMap.mem_ker, _root_.GlobalTheory.Mass.StabSplit.mem_perp]
-    constructor
-    · intro hv x hx
-      have hzero : (h.flip v).comp U.subtype = 0 := b.ext fun i => by
-        simpa [F] using congrFun hv i
-      simpa using LinearMap.congr_fun hzero ⟨x, hx⟩
-    · intro hv
-      funext i
-      simpa [F] using hv (b i : V) (b i).2
-  have hrn := LinearMap.finrank_range_add_finrank_ker F
-  have hle : Module.finrank K (LinearMap.range F) ≤ Module.finrank K U := by
-    simpa using Submodule.finrank_le (LinearMap.range F)
-  rw [hker] at hrn
-  omega
-
-open NumberField Matrix in
-open scoped ENNReal Classical in
-variable {K V : Type} [Field K] [StarRing K] [AddCommGroup V] [Module K V] in
-private lemma isCompl_perp_of_PD [NumberField K] [FiniteDimensional K V]
-    {h : V →ₗ⋆[K] V →ₗ[K] K} (hpd : _root_.GlobalTheory.Mass.PD h) (U : Submodule K V) :
-    IsCompl U (_root_.GlobalTheory.Mass.perp h U) := by
-  have hdisj := disjoint_perp_of_PD hpd U
-  refine ⟨hdisj, codisjoint_iff.2 ?_⟩
-  apply Submodule.eq_top_of_finrank_eq
-  have hsum := Submodule.finrank_sup_add_finrank_inf_eq U (_root_.GlobalTheory.Mass.perp h U)
-  rw [disjoint_iff.1 hdisj, finrank_bot] at hsum
-  have hle := finrank_le_finrank_add_finrank_perp h U
-  have hle' := Submodule.finrank_le (U ⊔ _root_.GlobalTheory.Mass.perp h U)
-  omega
-
-open NumberField Matrix in
-open scoped ENNReal Classical in
-variable {K V : Type} [Field K] [StarRing K] [AddCommGroup V] [Module K V] in
 private lemma apply_add_add_of_mem_perp {h : V →ₗ⋆[K] V →ₗ[K] K} (hs : h.IsSymm)
     {U : Submodule K V} {u u' w w' : V} (hu' : u' ∈ U) (hu : u ∈ U)
     (hw : w ∈ _root_.GlobalTheory.Mass.perp h U)
@@ -241,7 +189,9 @@ theorem _root_.GlobalTheory.Mass.StabSplit.main : ∀ (K V : Type) [Field K] [Nu
         (φ γ).2 • _root_.GlobalTheory.Mass.latIn (_root_.GlobalTheory.Mass.perp h U) L := by
   intro K V _ _ _ _ _ _ _ _ h _ hs hpd U
   set W := _root_.GlobalTheory.Mass.perp h U with hW
-  have hc : IsCompl U W := isCompl_perp_of_PD hpd U
+  have hc : IsCompl U W :=
+    _root_.GlobalTheory.Mass.Witt.isCompl_perp h
+      (fun _ hx => by_contra fun h0 => apply_self_ne_zero_of_PD_of_numberField hpd h0 hx) U
   have hinj : Function.Injective (_root_.GlobalTheory.Mass.StabSplit.resHom h U) := by
     intro γ δ hγδ
     have eU : ∀ u ∈ U, γ.1.1 u = δ.1.1 u := fun u hu => by

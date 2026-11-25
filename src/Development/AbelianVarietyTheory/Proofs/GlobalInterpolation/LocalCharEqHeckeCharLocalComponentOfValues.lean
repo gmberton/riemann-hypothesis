@@ -56,92 +56,37 @@ open NumberField IsDedekindDomain Formalism.BasicNotions Formalism.HermitianLatt
 
 namespace GlobalTheory.LocCharComp
 
-private theorem eventually_abs_le_half_add_of_doubling_bounds {E : Type} [Field E] [NumberField E] (P : HeightOneSpectrum (𝓞 E)) (π : 𝓞 E)
-    (hπ : π ∈ P.asIdeal) (hπ2 : π ∉ P.asIdeal ^ 2) :
-    ∃ s : 𝓞 E, s ∉ P.asIdeal ∧ ∀ x ∈ P.asIdeal, ∃ x₂ : 𝓞 E, x * s = x₂ * π := by
-  have hle : Ideal.span {π} ≤ P.asIdeal := (Ideal.span_singleton_le_iff_mem _).2 hπ
-  obtain ⟨J, hJ⟩ := Ideal.dvd_iff_le.2 hle
-  have hJP : ¬ J ≤ P.asIdeal := by
-    intro h
-    apply hπ2
-    have hsub : Ideal.span {π} ≤ P.asIdeal ^ 2 := by
-      rw [hJ, pow_two]
-      exact Ideal.mul_mono_right h
-    exact hsub (Ideal.mem_span_singleton_self π)
-  obtain ⟨s, hsJ, hsP⟩ := SetLike.not_le_iff_exists.1 hJP
-  refine ⟨s, hsP, fun x hx => ?_⟩
-  have hmem : x * s ∈ Ideal.span {π} := hJ ▸ Ideal.mul_mem_mul hx hsJ
-  obtain ⟨x₂, hx₂⟩ := Ideal.mem_span_singleton'.1 hmem
-  exact ⟨x₂, hx₂.symm⟩
-
-private theorem exists_unit_mul_eq_mul_uniformizer_pow {E : Type} [Field E] [NumberField E] (P : HeightOneSpectrum (𝓞 E)) (π : 𝓞 E)
-    (hπ : π ∈ P.asIdeal) (hπ2 : π ∉ P.asIdeal ^ 2) :
-    ∀ n : ℕ, ∀ x : 𝓞 E, x ∉ P.asIdeal ^ (n + 1) →
-      ∃ (m : ℕ) (s x' : 𝓞 E), s ∉ P.asIdeal ∧ x' ∉ P.asIdeal ∧ s * x = x' * π ^ m := by
-  obtain ⟨s₀, hs₀, hstep⟩ := eventually_abs_le_half_add_of_doubling_bounds P π hπ hπ2
-  have h1 : (1 : 𝓞 E) ∉ P.asIdeal := (Ideal.ne_top_iff_one _).1 P.isPrime.ne_top
-  intro n
-  induction n with
-  | zero =>
-    intro x hx
-    exact ⟨0, 1, x, h1, by simpa using hx, by simp⟩
-  | succ n ih =>
-    intro x hx
-    by_cases hxP : x ∈ P.asIdeal
-    · obtain ⟨x₂, hx₂⟩ := hstep x hxP
-      have hx₂n : x₂ ∉ P.asIdeal ^ (n + 1) := by
-        intro h
-        apply hx
-        have hmem : x * s₀ ∈ P.asIdeal ^ (n + 1 + 1) := by
-          rw [hx₂, pow_succ]
-          exact Ideal.mul_mem_mul h hπ
-        have hv := (P.intValuation_le_pow_iff_mem _ _).2 hmem
-        rw [map_mul, HeightOneSpectrum.intValuation_eq_one_iff.2 hs₀, mul_one] at hv
-        exact (P.intValuation_le_pow_iff_mem _ _).1 hv
-      obtain ⟨m, s, x', hs, hx', he⟩ := ih x₂ hx₂n
-      refine ⟨m + 1, s * s₀, x', fun h => (P.isPrime.mem_or_mem h).elim hs hs₀, hx', ?_⟩
-      calc s * s₀ * x = s * (x * s₀) := by ring
-        _ = s * x₂ * π := by rw [hx₂]; ring
-        _ = x' * π ^ (m + 1) := by rw [he]; ring
-    · exact ⟨0, 1, x, h1, hxP, by simp⟩
-
-private theorem exists_notMem_pow_succ {E : Type} [Field E] [NumberField E] (P : HeightOneSpectrum (𝓞 E)) (x : 𝓞 E)
-    (hx : x ≠ 0) : ∃ n : ℕ, x ∉ P.asIdeal ^ (n + 1) := by
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, P.intValuation x = WithZero.exp (-(n : ℤ)) := ⟨_, P.intValuation_if_neg hx⟩
-  refine ⟨n, fun h => ?_⟩
-  have hv := (P.intValuation_le_pow_iff_mem _ _).2 h
-  rw [hn, WithZero.exp_le_exp] at hv
-  push_cast at hv
-  omega
-
-private theorem exists_zpow_uniformizer_factorization {E : Type} [Field E] [NumberField E] (P : HeightOneSpectrum (𝓞 E)) (π : 𝓞 E)
-    (hπ : π ∈ P.asIdeal) (hπ2 : π ∉ P.asIdeal ^ 2) (a : E) (ha : a ≠ 0) :
+private theorem exists_zpow_uniformizer_factorization {E : Type} [Field E] [NumberField E]
+    (P : HeightOneSpectrum (𝓞 E)) (π : 𝓞 E) (hπ : π ∈ P.asIdeal) (hπ2 : π ∉ P.asIdeal ^ 2)
+    (a : E) (ha : a ≠ 0) :
     ∃ (z : ℤ) (r s : 𝓞 E), r ∉ P.asIdeal ∧ s ∉ P.asIdeal ∧
       algebraMap (𝓞 E) E s * a = algebraMap (𝓞 E) E r * algebraMap (𝓞 E) E π ^ z := by
-  obtain ⟨x, y, hy, rfl⟩ := IsFractionRing.div_surjective (𝓞 E) a
-  have hinj := IsFractionRing.injective (𝓞 E) E
-  have hy0 : y ≠ 0 := nonZeroDivisors.ne_zero hy
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    simp at ha
-  obtain ⟨n₁, hn₁⟩ := exists_notMem_pow_succ P x hx0
-  obtain ⟨n₂, hn₂⟩ := exists_notMem_pow_succ P y hy0
-  obtain ⟨m₁, s₁, x₁, hs₁, hx₁, e₁⟩ := exists_unit_mul_eq_mul_uniformizer_pow P π hπ hπ2 n₁ x hn₁
-  obtain ⟨m₂, s₂, y₁, hs₂, hy₁, e₂⟩ := exists_unit_mul_eq_mul_uniformizer_pow P π hπ hπ2 n₂ y hn₂
-  refine ⟨(m₁ : ℤ) - m₂, x₁ * s₂, y₁ * s₁, fun h => (P.isPrime.mem_or_mem h).elim hx₁ hs₂,
-    fun h => (P.isPrime.mem_or_mem h).elim hy₁ hs₁, ?_⟩
-  have e₁' := congrArg (algebraMap (𝓞 E) E) e₁
-  have e₂' := congrArg (algebraMap (𝓞 E) E) e₂
-  simp only [map_mul, map_pow] at e₁' e₂'
-  have hπ0 : π ≠ 0 := by
-    rintro rfl
-    exact hπ2 (Submodule.zero_mem _)
-  have hY : algebraMap (𝓞 E) E y ≠ 0 := (map_ne_zero_iff _ hinj).2 hy0
-  have hpi : algebraMap (𝓞 E) E π ≠ 0 := (map_ne_zero_iff _ hinj).2 hπ0
-  rw [zpow_sub₀ hpi, zpow_natCast, zpow_natCast, map_mul, map_mul]
-  field_simp
-  linear_combination (algebraMap (𝓞 E) E y₁ * algebraMap (𝓞 E) E π ^ m₂) * e₁' -
-    (algebraMap (𝓞 E) E x₁ * algebraMap (𝓞 E) E π ^ m₁) * e₂'
+  have hπ0 : π ≠ 0 := fun h => hπ2 (h ▸ Submodule.zero_mem _)
+  have hlog : WithZero.log (P.intValuation π) = -1 := by
+    have h1 : WithZero.exp (WithZero.log (P.intValuation π)) ≤ WithZero.exp (-(1 : ℕ) : ℤ) := by
+      rw [WithZero.exp_log (P.intValuation_ne_zero π hπ0), P.intValuation_le_pow_iff_mem]
+      simpa using hπ
+    have h2 : ¬ WithZero.exp (WithZero.log (P.intValuation π)) ≤ WithZero.exp (-(2 : ℕ) : ℤ) := by
+      rw [WithZero.exp_log (P.intValuation_ne_zero π hπ0), P.intValuation_le_pow_iff_mem]
+      exact hπ2
+    rw [WithZero.exp_le_exp] at h1 h2
+    omega
+  have hvπ : P.valuation E (algebraMap (𝓞 E) E π) = WithZero.exp (-1 : ℤ) := by
+    rw [P.valuation_of_algebraMap, ← WithZero.exp_log (P.intValuation_ne_zero π hπ0), hlog]
+  set z : ℤ := -WithZero.log (P.valuation E a)
+  have hva : P.valuation E a ≠ 0 := (Valuation.ne_zero_iff _).2 ha
+  have hx1 : P.valuation E (a / algebraMap (𝓞 E) E π ^ z) = 1 := by
+    rw [map_div₀, map_zpow₀, hvπ, ← WithZero.exp_zsmul, zsmul_eq_mul, mul_neg_one, Int.cast_id]
+    dsimp only [z]
+    rw [neg_neg, WithZero.exp_log hva, div_self hva]
+  obtain ⟨r, s, hrs⟩ := P.exists_primeCompl_mul_eq_of_integer _ hx1.le
+  refine ⟨z, r, s.1, ?_, s.2, ?_⟩
+  · rw [← P.valuation_eq_one_iff_notMem (K := E), ← hrs, map_mul, hx1, one_mul,
+      P.valuation_eq_one_iff_notMem]
+    exact s.2
+  · have hpi : algebraMap (𝓞 E) E π ≠ 0 :=
+      (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 E) E)).2 hπ0
+    rw [← hrs, mul_right_comm, div_mul_cancel₀ _ (zpow_ne_zero z hpi), mul_comm]
 
 private theorem exists_integer_ratio_of_isUnit_redP {E : Type} [Field E] [NumberField E] (P : HeightOneSpectrum (𝓞 E)) (b : E)
     (hb : IsUnit (redP P b)) :

@@ -39,6 +39,7 @@ import Mathlib.Tactic.NormNum.RealSqrt
 import Mathlib.Tactic.Polynomial.Basic
 import Mathlib.Topology.Sheaves.Init
 import Development.AbelianVarietyTheory.BlockTheory.GlobalSignature.IndexExponentDegree
+import Lemmata.GeneralBFactThirdVersion.Imports
 
 @[expose] public section
 
@@ -134,45 +135,6 @@ theorem eq_homAt (AA : Submodule (𝓞 E) E) (P : HeightOneSpectrum (𝓞 E)) (N
     have h2 := GlobalTheory.ThetaMove.PeriodComp.smul_mem_perO hv1 htx
     rwa [smul_one_smul, ← mul_smul] at h2
 
-private theorem exists_nsmul_mem_of_isLattice (N' : Submodule (𝓞 E) (Sp E b)) (hN' : Submodule.IsFullLattice E N') (v : Sp E b) :
-    ∃ n : ℕ, 0 < n ∧ (n : 𝓞 E) • v ∈ N' := by
-  have hv : v ∈ Submodule.span E (N' : Set (Sp E b)) := by
-    let _ : Submodule.IsFullLattice E N' := hN'
-    rw [Submodule.IsFullLattice.span_eq_top (A := E) (M := N')]; exact Submodule.mem_top
-  induction hv using Submodule.span_induction with
-  | mem w hw => exact ⟨1, one_pos, by rw [Nat.cast_one, one_smul]; exact hw⟩
-  | zero => exact ⟨1, one_pos, by rw [smul_zero]; exact N'.zero_mem⟩
-  | add v w _ _ hv hw =>
-    obtain ⟨m, hm, hmv⟩ := hv
-    obtain ⟨k, hk, hkw⟩ := hw
-    refine ⟨m * k, Nat.mul_pos hm hk, ?_⟩
-    rw [smul_add, Nat.cast_mul]
-    refine N'.add_mem ?_ ?_
-    · rw [mul_comm, mul_smul]; exact N'.smul_mem _ hmv
-    · rw [mul_smul]; exact N'.smul_mem _ hkw
-  | smul c v _ hv =>
-    obtain ⟨m, hm, hmv⟩ := hv
-    obtain ⟨y, hy0, hyint⟩ := exists_integral_multiples ℤ ℚ ({c} : Finset E)
-    have h1 : IsIntegral ℤ ((y : E) * c) := by
-      simpa [zsmul_eq_mul] using hyint c (Finset.mem_singleton_self c)
-    have hint : IsIntegral ℤ ((y.natAbs : E) * c) := by
-      rcases Int.natAbs_eq y with h | h
-      · rw [h] at h1; simpa using h1
-      · rw [h] at h1; simpa using h1.neg
-    refine ⟨y.natAbs * m, Nat.mul_pos (Int.natAbs_pos.mpr hy0) hm, ?_⟩
-    have key : ((y.natAbs * m : ℕ) : 𝓞 E) • (c • v) =
-        (⟨(y.natAbs : E) * c, hint⟩ : 𝓞 E) • ((m : 𝓞 E) • v) := by
-      ext i
-      rw [Pi.smul_apply, Pi.smul_apply, Pi.smul_apply, Pi.smul_apply]
-      simp only [smul_eq_mul, Algebra.smul_def, map_natCast]
-      push_cast
-      have hα : ∀ z : ↥(integralClosure ℤ E), algebraMap (↥(integralClosure ℤ E)) E z = (z : E) :=
-        fun _ => rfl
-      simp only [hα]
-      ring
-    rw [key]
-    exact N'.smul_mem _ hmv
-
 theorem full (AA : Submodule (𝓞 E) E) (N : Submodule (𝓞 E) (Sp E a)) (N' : Submodule (𝓞 E) (Sp E b)) (hN : N.FG)
     (hN' : Submodule.IsFullLattice E N') (hA : AA ≠ ⊥) : Full (perO AA N N') := by
   obtain ⟨r, hrA, hr0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hA
@@ -184,8 +146,8 @@ theorem full (AA : Submodule (𝓞 E) E) (N : Submodule (𝓞 E) (Sp E a)) (N' :
         exact ⟨m * k, Nat.mul_pos hm hk, by push_cast; rfl⟩
       one_mem' := ⟨1, one_pos, Nat.cast_one⟩ }
   have hmult : ∀ y ∈ N, ∃ s ∈ S, s • (r⁻¹ • x) y ∈ N' := fun y _ => by
-    obtain ⟨n, hn, h⟩ := exists_nsmul_mem_of_isLattice N' hN' ((r⁻¹ • x) y)
-    exact ⟨n, ⟨n, hn, rfl⟩, h⟩
+    obtain ⟨n, hn, h⟩ := Bl.general_b_fact_third_version.goal1 N' hN' ((r⁻¹ • x) y)
+    exact ⟨n, ⟨n, Nat.pos_of_ne_zero hn, rfl⟩, by simpa only [Nat.cast_smul_eq_nsmul] using h⟩
   obtain ⟨s, hsS, hs⟩ := GlobalTheory.ThetaMove.PeriodComp.exists_common S hN N' (r⁻¹ • x) hmult
   obtain ⟨n, hn, rfl⟩ := hsS
   refine ⟨n, hn, ?_⟩
