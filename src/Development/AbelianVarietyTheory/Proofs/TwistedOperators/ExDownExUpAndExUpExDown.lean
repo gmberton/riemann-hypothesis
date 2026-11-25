@@ -77,16 +77,6 @@ theorem colE_zero_eq_one {k : Type*} [Field k] {n : Type*} [Fintype n] [Decidabl
       (Matrix.of fun (r : n) (i : Fin c) => if i.val + 1 = p then (0 : n → k) r else 0) 0 1 = 1
   rw [hB, Matrix.fromBlocks_one]
 
-private theorem sigmaCompactSpace_nonarchimedeanLocalField (k : Type) [Field k] [ValuativeRel k] [TopologicalSpace k]
-    [IsNonarchimedeanLocalField k] : SigmaCompactSpace k := by
-  obtain ⟨γ, hγ0, hγ1⟩ := ValuativeRel.IsNontrivial.exists_lt_one (R := k)
-  have hδ : (1 : ValueGroupWithZero k) < γ⁻¹ := one_lt_inv_iff₀.mpr ⟨hγ0, hγ1⟩
-  refine ⟨⟨fun m : ℕ => {x : k | valuation k x ≤ γ⁻¹ ^ m},
-    fun m => IsNonarchimedeanLocalField.isCompact_closedBall k _, ?_⟩⟩
-  ext x
-  simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
-  exact MulArchimedean.arch (valuation k x) hδ
-
 private theorem fourier_fourier_eq_neg {k : Type} [Field k] [ValuativeRel k] [TopologicalSpace k]
     [IsNonarchimedeanLocalField k] [MeasurableSpace k] [BorelSpace k] {n : Type} [Fintype n]
     [DecidableEq n] (ψ : AddChar k Circle) (ν : Measure k) [SigmaFinite ν] [ν.IsAddHaarMeasure]
@@ -137,7 +127,8 @@ theorem exDown_exUp_and_exUp_exDown : ∀ (k : Type) [Field k] [ValuativeRel k] 
     simp [rowE_zero_eq_one]
   · intro hN
     obtain ⟨hSB, hcomm⟩ := hT.2 hN
-    have : SigmaCompactSpace k := sigmaCompactSpace_nonarchimedeanLocalField k
+    have : SecondCountableTopology k := _root_.GlobalTheory.SplitWeil.secondCountable k
+    have : SigmaCompactSpace k := inferInstance
     have : SigmaFinite ν := inferInstance
     have hF2 := fun f hf => (hF f hf).2
     have hG := (hF _ hSB).1

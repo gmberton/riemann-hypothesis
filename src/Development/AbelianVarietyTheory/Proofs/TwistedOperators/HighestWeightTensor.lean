@@ -11,6 +11,7 @@ import Mathlib.Combinatorics.Enumerative.DyckWord
 import Mathlib.Combinatorics.SimpleGraph.Triangle.Removal
 import Mathlib.Data.NNRat.Floor
 import Mathlib.Geometry.Euclidean.Volume.Basic
+import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.NumberTheory.Chebyshev
 import Mathlib.NumberTheory.Height.NumberField
 import Mathlib.NumberTheory.Height.Projectivization
@@ -315,21 +316,9 @@ lemma tens_tmul (a₁ : Mat p q →ₗ[ℂ] Module.End ℂ V₁) (a₂ : Mat p q
 lemma eq_zero_of_ctrR [FiniteDimensional ℂ V₂] (u : TensorProduct ℂ V₁ V₂)
     (h : ∀ ψ : V₂ →ₗ[ℂ] ℂ, ctrR ψ u = 0) : u = 0 := by
   let b := Module.finBasis ℂ V₂
-  have : ∀ w : TensorProduct ℂ V₁ V₂, w = ∑ i, ctrR (b.coord i) w ⊗ₜ[ℂ] b i := by
-    intro w
-    induction w using TensorProduct.induction_on with
-    | zero => simp
-    | tmul x y =>
-      conv_lhs => rw [← b.sum_repr y]
-      rw [TensorProduct.tmul_sum]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      rw [ctrR_tmul, TensorProduct.smul_tmul]
-      rfl
-    | add x y hx hy =>
-      conv_lhs => rw [hx, hy]
-      simp [TensorProduct.add_tmul, Finset.sum_add_distrib]
-  rw [this u]
-  simp [h]
+  apply (TensorProduct.equivFinsuppOfBasisRight (M := V₁) b).injective
+  ext i
+  simpa [ctrR, TensorProduct.equivFinsuppOfBasisRight_apply] using h (b.coord i)
 
 lemma ctr_swap (φ : V₁ →ₗ[ℂ] ℂ) (ψ : V₂ →ₗ[ℂ] ℂ) (u : TensorProduct ℂ V₁ V₂) :
     φ (ctrR ψ u) = ψ (ctrL φ u) := by

@@ -77,19 +77,9 @@ open scoped ENNReal in
 theorem _root_.GlobalTheory.GramExp.isMatGroup_UH {N : ℕ} (H : Matrix (Fin N) (Fin N) ℂ)
     (hH : H * H = 1) : _root_.PI.IsMatGroup (_root_.Formalism.QuantumDeterminants.UH H) := by
   unfold _root_.PI.IsMatGroup _root_.Formalism.QuantumDeterminants.UH
-  have hdetH : H.det ≠ 0 := by
-    intro h0
-    have := congrArg Matrix.det hH
-    rw [Matrix.det_mul, h0, zero_mul, Matrix.det_one] at this
-    exact zero_ne_one this
-  have hunit : ∀ a : Matrix (Fin N) (Fin N) ℂ, aᴴ * H * a = H → IsUnit a.det := by
-    intro a ha
-    have := congrArg Matrix.det ha
-    rw [Matrix.det_mul, Matrix.det_mul] at this
-    have h1 : aᴴ.det * a.det = 1 := by
-      have : (aᴴ.det * a.det) * H.det = 1 * H.det := by linear_combination this
-      exact mul_right_cancel₀ hdetH this
-    exact isUnit_iff_ne_zero.mpr fun h0 => by rw [h0, mul_zero] at h1; exact zero_ne_one h1
+  have hunit : ∀ a : Matrix (Fin N) (Fin N) ℂ, aᴴ * H * a = H → IsUnit a.det := fun a ha =>
+    Matrix.isUnit_det_of_left_inverse (B := H * aᴴ * H)
+      (by rw [Matrix.mul_assoc, Matrix.mul_assoc, ← Matrix.mul_assoc aᴴ H a, ha, hH])
   refine ⟨?_, ?_, ?_, ?_⟩
   · exact isClosed_eq
       ((continuous_id.matrix_conjTranspose.matrix_mul continuous_const).matrix_mul continuous_id)

@@ -51,22 +51,10 @@ open scoped ComplexOrder
 
 namespace GlobalTheory.Dec
 
-private lemma blockTriangular_toDual_of_isLo {n : ℕ} {b : Matrix (Fin n) (Fin n) ℂ} (hb : IsLo b) :
-    b.BlockTriangular OrderDual.toDual :=
-  fun i j hij => hb i j (OrderDual.toDual_lt_toDual.mp hij)
-
-private lemma isLo_of_blockTriangular_toDual {n : ℕ} {b : Matrix (Fin n) (Fin n) ℂ}
-    (hb : b.BlockTriangular OrderDual.toDual) : IsLo b :=
-  fun _ _ hij => hb (OrderDual.toDual_lt_toDual.mpr hij)
-
 theorem exists_isLo_mul_conjTranspose {n : ℕ} {x : Matrix (Fin n) (Fin n) ℂ} (hx : x.PosDef) :
     ∃ b : Matrix (Fin n) (Fin n) ℂ, IsLo b ∧ x = b * bᴴ := by
   classical
-
-  have hLi : (LDL.lowerInv hx).BlockTriangular OrderDual.toDual :=
-    LDL.isLowerTriangular_lowerInv hx
-  have hL : (LDL.lower hx).BlockTriangular OrderDual.toDual :=
-    Matrix.blockTriangular_inv_of_blockTriangular hLi
+  have hL : (LDL.lower hx).IsLowerTriangular := LDL.isLowerTriangular_lower hx
 
   have hD : (LDL.diag hx).PosDef := by
     rw [LDL.diag_eq_lowerInv_conj]
@@ -83,8 +71,8 @@ theorem exists_isLo_mul_conjTranspose {n : ℕ} {x : Matrix (Fin n) (Fin n) ℂ}
     apply Complex.ext
     · simp [s, Complex.mul_re, hsq]
     · simp [s, Complex.mul_im, ← him]
-  refine ⟨LDL.lower hx * Matrix.diagonal s,
-    isLo_of_blockTriangular_toDual (hL.mul (Matrix.blockTriangular_diagonal s)), ?_⟩
+  refine ⟨LDL.lower hx * Matrix.diagonal s, fun _ _ hij =>
+    (hL.mul (Matrix.blockTriangular_diagonal s)) (OrderDual.toDual_lt_toDual.mpr hij), ?_⟩
   have hDs : LDL.diag hx = Matrix.diagonal s * (Matrix.diagonal s)ᴴ := by
     rw [Matrix.diagonal_conjTranspose, Matrix.diagonal_mul_diagonal]
     unfold LDL.diag
@@ -103,7 +91,8 @@ theorem diag_ne_zero_of_posDef_mul_conjTranspose {n : ℕ} {b : Matrix (Fin n) (
   classical
   have hdet : (b * bᴴ).det ≠ 0 := hx.det_pos.ne'
   have hb' : b.det ≠ 0 := fun h => hdet (by rw [Matrix.det_mul, h, zero_mul])
-  rw [Matrix.det_of_isLowerTriangular b (blockTriangular_toDual_of_isLo hb)] at hb'
+  rw [Matrix.det_of_isLowerTriangular b
+    fun i j hij => hb i j (OrderDual.toDual_lt_toDual.mp hij)] at hb'
   exact Finset.prod_ne_zero_iff.mp hb' l (Finset.mem_univ l)
 
 private lemma phi_mul_conjTranspose_of_isLo (hT : PhiTri) {n : ℕ} (lam : Fin n → ℝ)

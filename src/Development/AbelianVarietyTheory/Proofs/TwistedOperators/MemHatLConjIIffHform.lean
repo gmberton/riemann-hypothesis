@@ -8,6 +8,7 @@ public import Formalism.SharpRestriction.CuspSpanNormBounds.BesselShellMomentBou
 public import Development.AbelianVarietyTheory.Proofs.AdelicLatticeProofs.FinTensMemLatO
 public import Development.AbelianVarietyTheory.Proofs.DivisorProofs.HformZeroRight
 import Development.AbelianVarietyTheory.Proofs.IwasawaDecomposition.UnitaryCompletionMapsDualLattices
+import Development.AbelianVarietyTheory.Proofs.DivisorProofs.EqOneOfConjMemOfPow
 import Mathlib.Algebra.Order.Floor.Extended
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Algebra.Order.Interval.Basic
@@ -111,17 +112,8 @@ theorem mulVec_eq_sum {A : Type} [CommRing A] {n : ℕ} (B : Matrix (Fin n) (Fin
 theorem smul_mem_hatL_ideal {n : ℕ} (Λ : Submodule (𝓞 E) (Fin n → E)) {𝔪 : Ideal (𝓞 E)}
     {a : 𝓞 E} (ha : a ∈ 𝔪) {z : Fin n → E ⊗[F] Formalism.L2.Herm.Af F} (hz : z ∈ Formalism.L2.Herm.hatL (F := F) Λ) :
     Formalism.UG.inclE (F := F) (Formalism.L2.Herm.Af F) (algebraMap (𝓞 E) E a) • z ∈
-      Formalism.L2.Herm.hatL (F := F) (𝔪 • Λ) := by
-  unfold Formalism.L2.Herm.hatL Formalism.UG.latS at hz ⊢
-  induction hz using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨l, hl, rfl⟩ := hx
-    refine Submodule.subset_span ⟨a • l, Submodule.smul_mem_smul ha hl, ?_⟩
-    funext i
-    simp [Algebra.smul_def]
-  | zero => simp
-  | add x y _ _ hx hy => rw [smul_add]; exact Submodule.add_mem _ hx hy
-  | smul a x _ hx => rw [smul_comm]; exact Submodule.smul_mem _ a hx
+      Formalism.L2.Herm.hatL (F := F) (𝔪 • Λ) :=
+  _root_.GlobalTheory.FunObj.smul_mem_hatL Λ ha hz
 
 theorem idS_smul_mem_hatL {n : ℕ} (Λ : Submodule (𝓞 E) (Fin n → E)) {I : Ideal (𝓞 E)}
     {s : Formalism.L2.Herm.intAf F E} (hs : s ∈ Formalism.L2.DIV.idS F I) {z : Fin n → E ⊗[F] Formalism.L2.Herm.Af F}

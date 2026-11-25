@@ -2,6 +2,7 @@ module
 
 public import Development.AbelianVarietyTheory.Proofs.TwistedOperators.ChosenSeries
 public import Development.AbelianVarietyTheory.BlockTheory.TwistedDiscreteSeries.ContractionTensorModels
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.InclTprodUpdate
 import Mathlib.Algebra.Order.Floor.Extended
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Algebra.Order.Interval.Basic
@@ -114,21 +115,12 @@ open Classical in
 theorem ellT_update (M : DSModel V S) (w v : ∀ τ, M.H τ) (τ : D.what₂.Tau) (u : M.H τ) :
     ellT M w (PiTensorProduct.tprod ℂ (Function.update v τ u)) =
       ⟪w τ, u⟫_ℂ * ∏ ρ ∈ Finset.univ.erase τ, ⟪w ρ, v ρ⟫_ℂ := by
-  rw [ellT_tprod', ← Finset.mul_prod_erase _ _ (Finset.mem_univ τ)]
-  congr 1
-  · simp
-  · exact Finset.prod_congr rfl fun ρ hρ => by simp [Finset.ne_of_mem_erase hρ]
+  exact GlobalTheory.Chain.IoLift.FinTensor.ell_update (M := M) w v τ u
 
 open Classical in
 theorem actT_tprod (M : DSModel V S) (τ : D.what₂.Tau) (g : Matrix (Fin V.rank) (Fin V.rank) ℂ) (v : ∀ τ, M.H τ) :
     actT M τ g (PiTensorProduct.tprod ℂ v) = PiTensorProduct.tprod ℂ (Function.update v τ (M.rep τ g (v τ))) := by
-  unfold actT
-  rw [PiTensorProduct.map_tprod]
-  congr 1
-  funext ρ
-  by_cases hρ : ρ = τ
-  · subst hρ; simp
-  · simp [Function.update_of_ne hρ]
+  exact GlobalTheory.Chain.IoLift.FinTensor.act_tprod (M := M) τ g v
 
 theorem der_inner {H : Type} [NormedAddCommGroup H] [InnerProductSpace ℂ H] {c : ℝ → H} {y : H}
     (h : HasDerivAt c y 0) (w : H) (k : ℂ) : HasDerivAt (fun t => ⟪w, c t⟫_ℂ * k) (⟪w, y⟫_ℂ * k) 0 := by

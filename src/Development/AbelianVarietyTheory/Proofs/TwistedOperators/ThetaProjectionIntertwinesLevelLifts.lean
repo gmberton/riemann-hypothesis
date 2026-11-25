@@ -42,6 +42,7 @@ import Mathlib.Tactic.NormNum.Parity
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.NormNum.RealSqrt
 import Mathlib.Topology.Sheaves.Init
+import Development.AbelianVarietyTheory.Proofs.DivisorProofs.ThetaLiftIntertwinesLiftsSmoothVectors
 
 @[expose] public section
 
@@ -62,25 +63,11 @@ theorem thF_shift_core (R : RealDat D A Ks) (F : Face D A) (hR : GlobalTheory.Hk
     (hy : ∀ h, (R.HV i t).e y' h = c⁻¹ • (R.HV i t).e y (h * (finHom (Vc D i)).rangeRestrict κ))
     (v : ∀ ρ, lowT (R.MW i (sg0 D A)) ρ) (x : GA D (Wc D i)) :
     R.thF i t y' (fun ρ => v ρ) x = R.thF i t y (fun ρ => v ρ) (x * κ') := by
-  refine (hR.thP.thF i t).elim fun thP hPF => ?_
-  have hpt : ∀ P, R.ωP i t (κ, κ') (R.ptP i t P) = c⁻¹ • R.ptP i t P :=
-    GlobalTheory.FiniteFock.om_pureTensorO_of_finite R.ψ R.θ (Vc D i) (Wc D i) _ _ (R.ωP i t) hR.models.inf (hR.thP.ωP i t) _ _ _ _ _ (hR.thP.pt_theta i t)
-      κ hκ.1 κ' hκ' c⁻¹ hv
-  have hker := fun P => GlobalTheory.thetaKO_rat_left_and_eigen_right R.ψ (Vc D i) (Wc D i) _ _ (R.ωP i t) (hR.thP.ωP i t)
-    (R.ptP i t P) (hR.thP.pt_theta i t P)
-  have hm := thetaLift_shift hPF.1 (GQ (Vc D i)) κ κ' c hc0
-    (integral_shift (Vc D i) (R.βV i) (R.datVt i t) g0 κ hκ (R.νV i t) (hR.models.νV i t).1.1 (R.fdV i t)
-      (hR.models.νV i t).2)
-    (fun P γ hγ g h => by
-      have := (hker P).1 γ hγ 1 (GQ (Wc D i)).one_mem h g
-      rwa [one_mul] at this)
-    (fun P g h => (hker P).2 κ κ' c⁻¹ (hpt P) h g)
-    ((R.extV i t).rangeRestrict y) ((R.extV i t).rangeRestrict y')
-    (extV_left R hR.models.HV i t y)
+  exact GlobalTheory.ThetaShift.thF_shift_of_eigen R hR.models hR.thP i t g0 κ κ' hκ y y' c hc0
+    (GlobalTheory.ThetaShift.pt_shift R hR.models hR.thP i t κ κ' hκ.1 hκ' c⁻¹ hv)
     (fun h => (congrFun ((R.extV i t).map_smul c y').symm h).trans
       (extV_shift R hR.models.cV i t κ hκ.1 c hc0 y y' hy h))
-    (PiTensorProduct.tprod ℂ v) x
-  exact (congrFun (hPF.2 y' v) x).trans (hm.trans (congrFun (hPF.2 y v) (x * κ')).symm)
+    v x
 
 theorem thG_of_value_core (R : RealDat D A Ks) (F : Face D A) (hR : GlobalTheory.Hk3.Core R F) (i : Fin D.R.m) (t : T0) (g : G)
     (y y' : (R.HV i t).H) (v : (R.MW i (sg0 D A)).Vec) (hv : ∀ τ, ‖(v τ : (R.MW i (sg0 D A)).H τ)‖ = 1)

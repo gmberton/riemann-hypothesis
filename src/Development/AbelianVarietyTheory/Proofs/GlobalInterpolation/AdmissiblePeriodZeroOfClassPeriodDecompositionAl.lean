@@ -268,17 +268,8 @@ theorem admissiblePeriodZero_of_classPeriodDecomposition {D : D7} (h : ∀ u, Fo
       simp only [ur, vDG]
       push_cast
       linarith
-    have hsum : ∀ s : Finset (D.fm u).clsP,
-        (∑ c ∈ s, ((Nat.card ((D.fm u).stabilizer₂ c) : ℕ) : D.what₂.LL)⁻¹ * y c) = 0 ∨
-        -ur D w (vDG D u w) ≤
-          (vAdd (D.plEq w) (∑ c ∈ s, ((Nat.card ((D.fm u).stabilizer₂ c) : ℕ) : D.what₂.LL)⁻¹ * y c) : ℝ) := by
-      intro s
-      induction s using Finset.induction_on with
-      | empty => simp
-      | insert a s ha ih =>
-        rw [Finset.sum_insert ha]
-        exact WeightDegreeSizes.pair_add_ge D w (hterm a) ih
-    exact hsum Finset.univ
+    exact Finset.sum_induction _ (fun z => z = 0 ∨ -ur D w (vDG D u w) ≤ (vAdd (D.plEq w) z : ℝ))
+      (fun _ _ h1 h2 => WeightDegreeSizes.pair_add_ge D w h1 h2) (Or.inl rfl) fun c _ => hterm c
 
 end Main
 

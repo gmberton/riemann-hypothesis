@@ -66,13 +66,6 @@ private lemma norm_sub_two_add_le_of_mem_strip {ρ : ℂ} {t : ℝ} (h0 : 0 < ρ
   rw [hre, him, abs_of_neg (by linarith)]
   linarith
 
-open Complex DirichletCharacter ArithmeticFunction MeasureTheory Filter Topology in
-private lemma finsum_mem_le_of_subset_of_nonneg {S D : Set ℂ} (f : ℂ → ℝ)
-    (hf : ∀ x, 0 ≤ f x) (hD : D.Finite) (hSD : S ⊆ D) :
-    ∑ᶠ x ∈ S, f x ≤ ∑ᶠ x ∈ D, f x := by
-  rw [finsum_mem_eq_finite_toFinset_sum f (hD.subset hSD), finsum_mem_eq_finite_toFinset_sum f hD]
-  exact Finset.sum_le_sum_of_subset_of_nonneg (by simpa using hSD) (fun x _ _ => hf x)
-
 
 /-- The unit-height zero-window bound holds for every Dirichlet character,
 including principal characters of composite level. -/
@@ -90,9 +83,9 @@ theorem count_zeros_window_all : ∃ C : ℝ, 0 < C ∧ ∀ (N : ℕ) [NeZero N]
     refine ⟨norm_sub_two_add_le_of_mem_strip h0 h1 h2, .inr ?_, h3⟩
     rintro rfl
     norm_num at h1
-  refine ⟨hfin.subset hsub, ?_⟩
-  exact (finsum_mem_le_of_subset_of_nonneg
-    (fun ρ => (GlobalTheory.Lin.ord χ ρ : ℝ)) (fun _ => Nat.cast_nonneg _) hfin hsub).trans hsum
+  refine ⟨hfin.subset hsub, le_trans ?_ hsum⟩
+  rw [← finsum_mem_add_sdiff hsub hfin]
+  exact le_add_of_nonneg_right (finsum_nonneg fun _ => finsum_nonneg fun _ => Nat.cast_nonneg _)
 
 theorem _root_.GlobalTheory.ZeroWindow.count_zeros_window : ∃ C : ℝ, 0 < C ∧ ∀ (N : ℕ) [NeZero N]
     (χ : DirichletCharacter ℂ N), χ.IsPrimitive → ∀ t : ℝ,

@@ -340,19 +340,12 @@ theorem chr_colLev (Λ : LevFam B.host.E B.LL (B.R.N 0) (B.primes X).vGs) (hΛ :
     hΛ.trans (funext (colLev_zero I))
   subst hΛ'
   rw [LevFam.chr, piChar]
-  have prod_hom_apply {α ι : Type} [Monoid α] (s : Finset ι) (f : ι → α →* B.LLˣ) (x : α) :
-      (∏ i ∈ s, f i) x = ∏ i ∈ s, f i x := by
-    classical
-    induction s using Finset.induction_on with
-    | empty => rfl
-    | insert i s hi ih => simp only [Finset.prod_insert hi, MonoidHom.mul_apply, ih]
   unfold LevFam.grp at g ⊢
   let f := fun w : (B.primes X).vGs =>
     (lamX (I.Ch.psi0 w) (extChi fun s => I.Ch.chi s w) (B.R.N 0) B.R.k B.R.m B.R.t 0).comp
       (piProj (fun w => Formalism.L2.Col.HX (𝓞 B.host.E ⧸ w.1.asIdeal) (B.R.N 0) B.R.k B.R.t 0) w)
   change (((∏ w, f w) g : B.LLˣ) : B.LL) = _
-  have hp : (∏ w, f w) g = ∏ w, f w g := prod_hom_apply Finset.univ f g
-  rw [hp]
+  rw [MonoidHom.finsetProd_apply]
   rw [Units.coe_prod]
   refine Finset.prod_congr rfl fun w _ => ?_
   erw [MonoidHom.comp_apply]

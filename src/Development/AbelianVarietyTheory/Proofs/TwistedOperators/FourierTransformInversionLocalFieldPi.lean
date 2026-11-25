@@ -50,6 +50,7 @@ import Mathlib.Tactic.ReduceModChar
 import Mathlib.Tactic.TypeStar
 import Mathlib.Topology.Sheaves.Init
 import Development.AbelianVarietyTheory.Definitions.Foundations.SimpleSum
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.SchwartzBruhatMatrixExistsOpenAddSubgroupInvaria
 
 @[expose] public section
 
@@ -84,21 +85,9 @@ theorem exists_box_subset {U : Set (n → k)} (hU : U ∈ 𝓝 (0 : n → k)) : 
 omit [DecidableEq n] in
 theorem exists_box_invariant {f : (n → k) → ℂ} (hf : f ∈ SB (n → k)) :
     ∃ s : kˣ, ∀ t ∈ box n s, ∀ x, f (x + t) = f x := by
-  have h1 : ∀ᶠ t in 𝓝 (0 : n → k), ∀ x ∈ tsupport f, f (x + t) = f x := by
-    refine IsCompact.eventually_forall_of_forall_eventually hf.2 fun x _ => ?_
-    have h2 : IsLocallyConstant fun q : (n → k) × (n → k) => (f (q.2 + q.1), f q.2) :=
-      (hf.1.comp_continuous (by fun_prop)).prodMk (hf.1.comp_continuous continuous_snd)
-    filter_upwards [h2.eventually_eq (0, x)] with q hq
-    simp only [Prod.mk.injEq, add_zero] at hq
-    rw [hq.1, hq.2]
-  obtain ⟨s, hs⟩ := exists_box_subset h1
-  refine ⟨s, fun t ht x => ?_⟩
-  by_cases hx : x ∈ tsupport f
-  · exact hs ht x hx
-  by_cases hx' : x + t ∈ tsupport f
-  · have := hs (show -t ∈ box n s from fun i _ => neg_mem_cball (ht i trivial)) _ hx'
-    rw [← this, add_neg_cancel_right]
-  · rw [image_eq_zero_of_notMem_tsupport hx, image_eq_zero_of_notMem_tsupport hx']
+  obtain ⟨Λ, hΛ, hF⟩ := exists_isOpen_addSubgroup_add_eq hf.1 hf.2
+  obtain ⟨s, hs⟩ := exists_box_subset (hΛ.mem_nhds Λ.zero_mem)
+  exact ⟨s, fun t ht x => hF x t (hs ht)⟩
 
 omit [DecidableEq n] in
 theorem continuous_dot : Continuous fun q : (n → k) × (n → k) => q.1 ⬝ᵥ q.2 :=

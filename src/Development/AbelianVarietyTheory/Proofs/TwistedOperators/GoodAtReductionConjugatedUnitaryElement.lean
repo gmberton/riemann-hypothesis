@@ -7,6 +7,7 @@ public import Formalism.LocalToGlobal.SiegelLatticeTheory.FlagStabilizerTensors.
 public import Development.AbelianVarietyTheory.Proofs.SatakeParameters.LevelHyperspecialTrivialCharacterSplitsOffPlaces
 public import Formalism.LocalToGlobal.SiegelLatticeTheory.FlagStabilizerTensors.RootLatticeThresholds.RedBasicsPf
 public import Formalism.LocalToGlobal.SiegelLatticeTheory.FlagStabilizerTensors.RootLatticeThresholds.RowDictPf
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.LevelSubgroupConjFiniteMovesFrame
 import Formalism.PeriodIntegrals.UnitaryGroupMassFormula.AdelicClassFiniteness.DictLat
 import Mathlib.Algebra.Order.Floor.Extended
 import Mathlib.Algebra.Order.Floor.Semifield
@@ -198,21 +199,8 @@ theorem core (I : Formalism.MainNotions.S.AutInst) (w : HeightOneSpectrum (𝓞 
 theorem redFn_conj {F E : Type} [Field F] [NumberField F] [Field E] [NumberField E] [Algebra F E] {n : ℕ}
     (a β X : GL (Fin n) (E ⊗[F] Formalism.L2.Herm.Af F)) (PP : Pl E) :
     redFn β PP (a⁻¹ * X * a) = redFn (a * β) PP X := by
-  have e : ∀ y, frGL (a * β) y = a * frGL β y * a⁻¹ := by
-    intro y
-    simp only [frGL, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply, mul_inv_rev]
-    group
-  by_cases hX : X ∈ St (a * β)
-  · obtain ⟨y, rfl⟩ := hX
-    have : a⁻¹ * frGL (a * β) y * a = frGL β y := by rw [e]; group
-    rw [this, redFn_frGL, redFn_frGL]
-  · have h2 : a⁻¹ * X * a ∉ St β := by
-      rintro ⟨y, hy⟩
-      apply hX
-      refine ⟨y, ?_⟩
-      rw [e, hy]; group
-    unfold redFn ext1
-    rw [dite_eq_right h2, dite_eq_right hX]
+  have h := (_root_.GlobalTheory.FrameConj.redFn_conj a β (a⁻¹ * X * a) PP).symm
+  rwa [show a * (a⁻¹ * X * a) * a⁻¹ = X by group] at h
 
 theorem upperLeftBlock_eq_submatrix_of_rank_eq {κ : Type} [CommRing κ] {n r : ℕ} (hr : r ≤ n) (hn : n ≤ r) (g : GL (Fin n) κ) :
     ((upperLeftBlock hr g : GL (Fin r) κ) : Matrix (Fin r) (Fin r) κ) =

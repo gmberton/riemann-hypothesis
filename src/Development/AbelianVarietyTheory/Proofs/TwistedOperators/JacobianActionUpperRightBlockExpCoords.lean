@@ -252,16 +252,6 @@ private theorem fromBlocks_unitary_conjTranspose_mul_self {p q : ℕ} (U : Matri
   rw [Matrix.fromBlocks_conjTranspose, Matrix.fromBlocks_multiply]
   simp [hU, hV]
 
-private theorem injective_of_det_ne_zero {E : Type*} [AddCommGroup E] [Module ℝ E] [FiniteDimensional ℝ E]
-    (f : E →ₗ[ℝ] E) (h : LinearMap.det f ≠ 0) : Function.Injective f :=
-  (LinearMap.equivOfDetNeZero f h).injective
-
-private theorem conjTranspose_mem_unitaryGroup {n : Type*} [Fintype n] [DecidableEq n] {U : Matrix n n ℂ}
-    (hU : U ∈ Matrix.unitaryGroup n ℂ) : Uᴴ ∈ Matrix.unitaryGroup n ℂ := by
-  rw [Matrix.mem_unitaryGroup_iff', Matrix.star_eq_conjTranspose, Matrix.conjTranspose_conjTranspose]
-  rw [Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose] at hU
-  exact hU
-
 theorem jacobian_action_p : ∀ (p q : ℕ) (g : Mat p q) (ψ : (Fin p → Fin q → ℂ) → (Fin p → Fin q → ℂ)), Continuous ψ → (∀ B, ∃ U ∈ Matrix.unitaryGroup (Fin p) ℂ, ∃ V ∈ Matrix.unitaryGroup (Fin q) ℂ, NormedSpace.exp (pY B) * g = Matrix.fromBlocks U 0 0 V * NormedSpace.exp (pY (ψ B))) → (∀ B : Fin p → Fin q → ℂ, 0 < LinearMap.det (sP (pY B))) → (∀ B C : Fin p → Fin q → ℂ, sAd (pY B) (pY C) = pY (sP (pY B) C)) → (∀ B : Fin p → Fin q → ℂ, ∃ A : (Fin p → Fin q → ℂ) →L[ℝ] (Ix p q → Ix p q → ℂ), HasStrictFDerivAt (fun (C : Fin p → Fin q → ℂ) (a b : Ix p q) => NormedSpace.exp (pY C + pY C) a b) A B ∧ ∀ C, Matrix.of (A C) = NormedSpace.exp (pY B) * sAd (pY B) (pY C + pY C) * NormedSpace.exp (pY B)) → ∀ B, ∃ P : (Fin p → Fin q → ℂ) →L[ℝ] (Fin p → Fin q → ℂ), HasFDerivAt ψ P B ∧ |P.det| * LinearMap.det (sP (pY (ψ B))) = LinearMap.det (sP (pY B)) := by
   intro p q g ψ hψ hK hdet hsAd hdiff B
   obtain ⟨A, hA, hAeq⟩ := hdiff (ψ B)
@@ -291,7 +281,8 @@ theorem jacobian_action_p : ∀ (p q : ℕ) (g : Mat p q) (ψ : (Fin p → Fin q
     rw [hAeq, hAeq] at h1
     have h2 := jac_cancel (ψ B) _ _ h1
     rw [← pY_add, ← pY_add, hsAd, hsAd] at h2
-    exact pow_two_pow_eq_neg_one_of_isPrimitiveRoot_two_pow_succ _ _ (injective_of_det_ne_zero _ (hdet (ψ B)).ne' (pY_injective _ _ h2))
+    exact pow_two_pow_eq_neg_one_of_isPrimitiveRoot_two_pow_succ _ _
+      ((LinearMap.equivOfDetNeZero _ (hdet (ψ B)).ne').injective (pY_injective _ _ h2))
   obtain ⟨P, hP, hPA⟩ := GlobalTheory.hasFDerivAt_of_comp_immersion (Fin p → Fin q → ℂ) (Ix p q → Ix p q → ℂ)
     (fun C (a b : Ix p q) => NormedSpace.exp (pY C + pY C) a b) ψ B A (L.comp A0) hA hinj
     hψ.continuousAt hLd
@@ -313,7 +304,7 @@ theorem jacobian_action_p : ∀ (p q : ℕ) (g : Mat p q) (ψ : (Fin p → Fin q
       (jacMul Uᴴ V).comp (sP (pY B)) := LinearMap.ext hkey
   have hd := congrArg (fun T => |LinearMap.det T|) hlin
   simp only [LinearMap.det_comp, abs_mul] at hd
-  rw [abs_det_unitary_mul_mul p q Uᴴ (conjTranspose_mem_unitaryGroup hU) V hV _ (of_jacMul Uᴴ V), one_mul,
+  rw [abs_det_unitary_mul_mul p q Uᴴ (Unitary.star_mem hU) V hV _ (of_jacMul Uᴴ V), one_mul,
     abs_of_pos (hdet (ψ B)), abs_of_pos (hdet B)] at hd
   show |LinearMap.det (P : (Fin p → Fin q → ℂ) →ₗ[ℝ] (Fin p → Fin q → ℂ))| * _ = _
   rw [mul_comm]

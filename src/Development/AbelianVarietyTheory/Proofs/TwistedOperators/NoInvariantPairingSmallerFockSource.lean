@@ -44,6 +44,7 @@ import Mathlib.Tactic.NormNum.RealSqrt
 import Mathlib.Tactic.ReduceModChar
 import Mathlib.Topology.Sheaves.Init
 import Formalism.LocalToGlobal.BesselHermitianTheta.IsAutFunDef
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.NoThetaTensorIntertwinerLowerTowerMembers
 
 @[expose] public section
 
@@ -261,22 +262,8 @@ theorem admissible_discreteSeries_harishChandraModule (X : ProvA) (hUnit : admQ5
     (X.ds r s lam').ι ⟨(X.ds r s lam').ι_inj, (X.ds r s lam').ι_range, (X.ds r s lam').der⟩).1
 
 theorem lamA_mem (al be ga de : List ℚ) (a : Ix (al.length + be.length) (ga.length + de.length)) :
-    lamA al be ga de a ∈ al ++ be ++ ga ++ de := by
-  cases a with
-  | inl i =>
-    have hi : (i : ℕ) < (al ++ be).length := by simp
-    have hm : (al ++ be).getD i 0 ∈ al ++ be := by
-      rw [List.getD_eq_getElem _ _ hi]; exact List.getElem_mem hi
-    simp only [lamA, ofBlocks]
-    simp only [List.mem_append] at hm ⊢
-    tauto
-  | inr j =>
-    have hj : (j : ℕ) < (ga ++ de).length := by simp
-    have hm : (ga ++ de).getD j 0 ∈ ga ++ de := by
-      rw [List.getD_eq_getElem _ _ hj]; exact List.getElem_mem hj
-    simp only [lamA, ofBlocks]
-    simp only [List.mem_append] at hm ⊢
-    tauto
+    lamA al be ga de a ∈ al ++ be ++ ga ++ de :=
+  GlobalTheory.LowerTower.lamA_mem al be ga de a
 
 theorem no_pairing_smaller_source : ∀ X : ProvA, admQ5 X → ArchimedeanRallisFifth X → ∀ (t : ℕ) (al be ga de : List ℚ), DataAR t al be ga de → (∀ e ∈ al ++ be ++ ga ++ de, ((t : ℚ) + 3) / 2 ≤ |e|) → ∀ i : ℕ, 1 ≤ i → i ≤ al.length + be.length → i ≤ ga.length + de.length → ∀ b : Pol (al.length + be.length - i) (ga.length + de.length - i) _ _ →ₗ[ℂ] (X.ds _ _ (lamA' t al be ga de)).HK.V →ₛₗ[starRingEnd ℂ] ℂ, (∀ Z ∈ upq _ _, ∀ P y, b (fockAct2 _ _ _ _ Z P) y + b P ((X.ds _ _ (lamA' t al be ga de)).HK.act Z y) = 0) → b = 0 := by
   intro X hUnit hAR5 t al be ga de hD hbig i hi1 hip hiq b hb

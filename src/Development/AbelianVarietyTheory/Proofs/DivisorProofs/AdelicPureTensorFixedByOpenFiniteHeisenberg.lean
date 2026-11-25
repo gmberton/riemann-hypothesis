@@ -68,19 +68,12 @@ theorem pureA_fixed_fin :
       refine (continuous_sub_right y).continuousAt.preimage_mem_nhds ?_
       rw [sub_self]
       exact (V y).isOpen.mem_nhds (V y).zero_mem)
-  let M0 : AddSubgroup (κ → FiniteAdeleRing (𝓞 F) F) :=
-    (V0 : AddSubgroup (κ → FiniteAdeleRing (𝓞 F) F)) ⊓ ⨅ y ∈ t, (V y : AddSubgroup (κ → FiniteAdeleRing (𝓞 F) F))
-  have hM0 : ∀ u ∈ M0, u ∈ V0 ∧ ∀ y ∈ t, u ∈ V y := fun u hu => by
-    simp only [M0, AddSubgroup.mem_inf, AddSubgroup.mem_iInf] at hu
-    exact ⟨hu.1, hu.2⟩
-  have hM0open : IsOpen (M0 : Set (κ → FiniteAdeleRing (𝓞 F) F)) := by
-    refine M0.isOpen_of_mem_nhds (g := 0) ?_
-    refine Filter.mem_of_superset (Filter.inter_mem (V0.isOpen.mem_nhds V0.zero_mem)
-      ((Filter.biInter_finset_mem t).2 fun y _ => (V y).isOpen.mem_nhds (V y).zero_mem)) ?_
-    intro u hu
-    simp only [Set.mem_inter_iff, Set.mem_iInter] at hu
-    simp only [M0, SetLike.mem_coe, AddSubgroup.mem_inf, AddSubgroup.mem_iInf]
-    exact ⟨hu.1, hu.2⟩
+  let gV : t → OpenAddSubgroup (κ → FiniteAdeleRing (𝓞 F) F) := fun y => V y.1
+  let W := V0 ⊓ OpenAddSubgroup.iInfOfFinite gV
+  let M0 : AddSubgroup (κ → FiniteAdeleRing (𝓞 F) F) := W
+  have hM0 : ∀ u ∈ M0, u ∈ V0 ∧ ∀ y ∈ t, u ∈ V y := fun u hu =>
+    ⟨(OpenAddSubgroup.mem_inf.1 hu).1, fun y hy =>
+      OpenAddSubgroup.iInfOfFinite_le gV ⟨y, hy⟩ (OpenAddSubgroup.mem_inf.1 hu).2⟩
   have hcov : ∀ y ∈ tsupport g, ∀ u ∈ M0, g (y + u) = g y ∧ ∀ v ∈ M0, χ (y ⬝ᵥ v) = 1 := by
     intro y hy u hu
     obtain ⟨z, hz, hyz⟩ : ∃ z ∈ t, y - z ∈ V z := by simpa using htK hy
@@ -102,7 +95,7 @@ theorem pureA_fixed_fin :
       rw [add_neg_cancel_right] at this
       exact this.symm
     · rw [image_eq_zero_of_notMem_tsupport hy, image_eq_zero_of_notMem_tsupport hy']
-  refine ⟨M0.prod M0, by rw [AddSubgroup.coe_prod]; exact hM0open.prod hM0open, ?_⟩
+  refine ⟨M0.prod M0, (W.prod W).isOpen, ?_⟩
   rintro ⟨u, v⟩ hm f
   rw [AddSubgroup.mem_prod] at hm
   obtain ⟨hu, hv⟩ := hm

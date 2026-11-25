@@ -147,12 +147,6 @@ theorem polyOK_bound {κ : ℕ} {P : B.Mat k r → ℂ} (hP : IsPolyDeg κ P) (v
 
 end aux
 
-private lemma foldr_max_zero_le_of_forall_le {o : ℕ} (l : List ℕ) (h : ∀ a ∈ l, a ≤ o) : l.foldr max 0 ≤ o := by
-
-  induction l with
-  | nil => exact Nat.zero_le _
-  | cons a l ih => exact max_le (h a (by simp)) (ih fun b hb => h b (by simp [hb]))
-
 theorem polyOp_ok : Formalism.FourierDecayAlt.P.CutMP.JDPolyOK := by
   intro k r Wp Wq _ _ _ _ _ o κ Θ hΘ
   refine ⟨fun UU T hT => ?_, fun d hd T hT => ?_, ?_⟩
@@ -170,8 +164,7 @@ theorem polyOp_ok : Formalism.FourierDecayAlt.P.CutMP.JDPolyOK := by
     have hx : 0 ≤ B.gN g ^ d := Real.rpow_nonneg (zero_le_one.trans (gN_ge_one hg)) d
     exact ⟨(h₁ u w hu hw hl g hg).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hx),
       (h₂ u w hu hw hl g hg).trans (mul_le_mul_of_nonneg_right (le_max_right _ _) hx)⟩
-  · show (Θ.map fun T => T.word.length).foldr max 0 ≤ o
-    refine foldr_max_zero_le_of_forall_le _ fun a ha => ?_
+  · refine List.max_le_of_forall_le _ o fun a ha => ?_
     obtain ⟨T, hT, rfl⟩ := List.mem_map.mp ha
     exact (hΘ T hT).1
 

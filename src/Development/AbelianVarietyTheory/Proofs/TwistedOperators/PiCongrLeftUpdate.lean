@@ -113,15 +113,8 @@ def vecC (c : ∀ τ, M.H τ ≃ₗᵢ⋆[ℂ] X.B.H (X.pl.symm τ)) (u : M.Vec)
 
 theorem piCongrLeft_update {α β : Type} [DecidableEq α] [DecidableEq β] (P : β → Type) (e : α ≃ β)
     (f : ∀ a, P (e a)) (a : α) (x : P (e a)) :
-    Equiv.piCongrLeft P e (Function.update f a x) = Function.update (Equiv.piCongrLeft P e f) (e a) x := by
-  apply (Equiv.piCongrLeft P e).symm.injective
-  rw [Equiv.symm_apply_apply]
-  funext a'
-  rw [Equiv.piCongrLeft_symm_apply]
-  by_cases ha : a' = a
-  · subst ha
-    rw [Function.update_self, Function.update_self]
-  · rw [Function.update_of_ne ha, Function.update_of_ne (e.injective.ne ha), Equiv.piCongrLeft_apply_apply]
+    Equiv.piCongrLeft P e (Function.update f a x) = Function.update (Equiv.piCongrLeft P e f) (e a) x :=
+  Function.piCongrLeft'_symm_update P e.symm f a x
 
 theorem vecC_update [DecidableEq D.what₂.Tau] [DecidableEq (NumberField.InfinitePlace X.B.I.F)]
     (c : ∀ τ, M.H τ ≃ₗᵢ⋆[ℂ] X.B.H (X.pl.symm τ)) (u : M.Vec) (τ : D.what₂.Tau) (w : M.sm τ) :

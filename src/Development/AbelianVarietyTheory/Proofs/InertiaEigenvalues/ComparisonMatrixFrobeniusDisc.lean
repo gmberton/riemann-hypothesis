@@ -131,17 +131,6 @@ open scoped Formalism.Per NNReal
 
 namespace GlobalTheory.BSP.Height
 
-private theorem map_smul_ringHom' {n : Type} {α β : Type} [CommRing α] [CommRing β] (F : α →+* β) (c : α)
-    (M : Matrix n n α) : (c • M).map F = F c • M.map F :=
-  Matrix.map_smul' F c M (map_mul F)
-
-private theorem smul_cancel' {n : Type} {D : Type} [CommRing D] {c : D} (hc : c ∈ nonZeroDivisors D)
-    {M M' : Matrix n n D} (h : c • M = c • M') : M = M' := by
-  ext i j
-  have := congrFun (congrFun h i) j
-  simp only [Matrix.smul_apply, smul_eq_mul] at this
-  exact (mul_cancel_left_mem_nonZeroDivisors hc).1 this
-
 private theorem alg' {n : Type} [Fintype n] [DecidableEq n] {D : Type} [CommRing D] (Φ : D →+* D)
     (L pf pg fE gE : D) (a N : ℕ) (xf xg Af Ag ε Fm : Matrix n n D)
     (h1f : (L * pf ^ N) • (xf * Af) = fE ^ (a + 2 * N) • (Fm * xf.map Φ))
@@ -151,7 +140,8 @@ private theorem alg' {n : Type} [Fintype n] [DecidableEq n] {D : Type} [CommRing
       (L * pf ^ N * pg ^ N * gE ^ N) • (xf * (fE ^ (a + N) • (ε * Ag))) := by
   have hΦR : pg ^ N • (xf.map Φ * ε.map Φ) = pf ^ N • xg.map Φ := by
     have := congrArg (fun M => M.map Φ) hR
-    simpa only [map_smul_ringHom', Matrix.map_mul, map_pow, hpf, hpg] using this
+    rw [Matrix.map_smul' Φ _ _ (map_mul Φ), Matrix.map_smul' Φ _ _ (map_mul Φ)] at this
+    simpa only [Matrix.map_mul, map_pow, hpf, hpg] using this
   calc (L * pf ^ N * pg ^ N * gE ^ N) • (xf * (gE ^ (a + N) • (Af * ε.map Φ)))
       = (pg ^ N * gE ^ (a + 2 * N)) • (((L * pf ^ N) • (xf * Af)) * ε.map Φ) := by
         simp only [Matrix.mul_smul, Matrix.smul_mul, smul_smul, Matrix.mul_assoc]; congr 1; ring
@@ -196,8 +186,10 @@ theorem rel_frob : ∀ (l : ℕ) [Fact l.Prime] (K : FinExt l) (bk : BK K) (d : 
     have c2 : IsDiscMap (l := _) (u := _) (ρ := _) (B.D.φ.comp (BK.hf h)) (Fh.comp (Disc.map (frobS l bk.a) hnS)) :=
       ⟨fun x => by simp [hFh.ext, hΦS.ext, hφ], fun x => (hFh.norm_le _).trans (hΦS.norm_le _)⟩
     have hc : Φ.comp Fh = Fh.comp (Disc.map (frobS l bk.a) hnS) := c1.unique c2
-    have hP := congrArg (fun M => M.map Fh) (_root_.GlobalTheory.BSP.Height.bas_frob l K bk d ρ τ s ht hτ _ hΦS)
-    simp only [map_smul_ringHom', Matrix.map_mul, Matrix.map_map, map_mul, map_pow, map_natCast] at hP
+    have hP := congrArg (fun M => M.map Fh)
+      (_root_.GlobalTheory.BSP.Height.bas_frob l K bk d ρ τ s ht hτ _ hΦS)
+    rw [Matrix.map_smul' Fh _ _ (map_mul Fh), Matrix.map_smul' Fh _ _ (map_mul Fh)] at hP
+    simp only [Matrix.map_mul, Matrix.map_map, map_mul, map_pow, map_natCast] at hP
     have eA : (ht.A.map (BK.hf h)).map (toDisc l (BK.hf f₀ X) bk.ρ₀) = ht.A.map (Fh ∘ toDisc l (X : bk.S) bk.ρ₀) := by
       ext i j; exact (hFh.ext _).symm
     have eF : s.F.map ((toDisc l (BK.hf f₀ X) bk.ρ₀).comp ((BK.hf h).comp C)) =
@@ -243,7 +235,7 @@ theorem rel_frob : ∀ (l : ℕ) [Fact l.Prime] (K : FinExt l) (bk : BK K) (d : 
     · exact ((isUnit_l_disc l (BK.hf f₀ X) bk.ρ₀).pow _).mem_nonZeroDivisors
     · exact ((hunit f _ hFf).pow _).mem_nonZeroDivisors
     · exact ((hunit g _ hFg).pow _).mem_nonZeroDivisors
-  have hM := smul_cancel' hc hAlg
+  have hM := (isLeftRegular_iff_mem_nonZeroDivisorsLeft.2 hc.1).matrix hAlg
   have hF0 : Disc.map (BK.hf f) (hn f).1 (toDisc l (X : bk.S) bk.ρ₀ bk.E) ∈ nonZeroDivisors _ :=
     (congrArg (· ∈ nonZeroDivisors (Disc l (BK.hf f₀ X) bk.ρ₀)) (hFf.ext bk.E)).mpr (hreg f)
   have := _root_.GlobalTheory.BSP.Height.bas_map_cancel_left l K bk d ρ τ s ht _ _ hF0 _ _ hM

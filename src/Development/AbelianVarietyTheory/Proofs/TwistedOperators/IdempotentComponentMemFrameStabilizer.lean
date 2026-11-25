@@ -44,6 +44,7 @@ import Mathlib.Tactic.ReduceModChar
 import Mathlib.Topology.Sheaves.Init
 import Development.AbelianVarietyTheory.Definitions.Divisors.IsUnitaryOnTheta
 import Formalism.LocalToGlobal.IndefiniteReal.LinksDefs
+import Development.AbelianVarietyTheory.Proofs.TwistedOperators.ExistsIdempotentComponentOfGroupElement
 
 @[expose] public section
 
@@ -56,19 +57,12 @@ namespace GlobalTheory.CompStab
 
 theorem idem_mul {R : Type} [CommRing R] {n : ℕ} (φ : R) (hφ : φ * φ = φ) (A B : Matrix (Fin n) (Fin n) R)
     (h : A * B = 1) : (φ • A + (1 - φ) • (1 : Matrix (Fin n) (Fin n) R)) * (φ • B + (1 - φ) • 1) = 1 := by
-  have h1 : φ * (1 - φ) = 0 := by rw [mul_sub, mul_one, hφ, sub_self]
-  have h2 : (1 - φ) * φ = 0 := by rw [mul_comm, h1]
-  have h3 : (1 - φ) * (1 - φ) = 1 - φ := by rw [mul_sub, mul_one, h2, sub_zero]
-  simp only [add_mul, mul_add, smul_mul_smul_comm, h, h1, h2, h3, hφ, zero_smul, mul_one, add_zero, zero_add]
-  rw [← add_smul, add_sub_cancel, one_smul]
+  exact GlobalTheory.GfCut.idem_mul φ hφ A B h
 
 theorem map_idem {R T : Type} [CommRing R] [CommRing T] {n : ℕ} (ψ : R →+* T) (f : R)
     (M : Matrix (Fin n) (Fin n) R) :
     (f • M + (1 - f) • (1 : Matrix (Fin n) (Fin n) R)).map ψ = ψ f • M.map ψ + (1 - ψ f) • 1 := by
-  ext i j
-  simp only [Matrix.map_apply, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul, Matrix.one_apply, map_add (f := _),
-    map_mul, map_sub, map_one]
-  split_ifs <;> simp
+  exact GlobalTheory.GfCut.map_idem ψ f M
 
 section General
 

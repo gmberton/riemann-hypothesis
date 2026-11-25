@@ -145,18 +145,9 @@ theorem card_true_eq {m : ℕ} {ε η : Fin m → Bool} (C : Matrix (Fin m) (Fin
   have h₂ := card_true_add_card_false_le_of_qEps_eq C hC'
   simp only [Fintype.card_subtype] at h₁ h₂
   simp only [Bool.not_eq_true', Bool.not_eq_false'] at h₂
-  have hε : (Finset.univ.filter fun a => ε a = true).card +
-      (Finset.univ.filter fun a => ε a = false).card = m := by
-    rw [Finset.card_filter, Finset.card_filter, ← Finset.sum_add_distrib]
-    have : ∀ a : Fin m, ((if ε a = true then 1 else 0) + (if ε a = false then 1 else 0) : ℕ) = 1 := by
-      intro a; cases ε a <;> simp
-    simp [this]
-  have hη : (Finset.univ.filter fun a => η a = true).card +
-      (Finset.univ.filter fun a => η a = false).card = m := by
-    rw [Finset.card_filter, Finset.card_filter, ← Finset.sum_add_distrib]
-    have : ∀ a : Fin m, ((if η a = true then 1 else 0) + (if η a = false then 1 else 0) : ℕ) = 1 := by
-      intro a; cases η a <;> simp
-    simp [this]
+  have hε := Finset.card_filter_add_card_filter_not (s := Finset.univ) (p := fun a => ε a = true)
+  have hη := Finset.card_filter_add_card_filter_not (s := Finset.univ) (p := fun a => η a = true)
+  simp only [Bool.not_eq_true, Finset.card_univ, Fintype.card_fin] at hε hη
   rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Fintype.card_subtype, Fintype.card_subtype]
   omega
 

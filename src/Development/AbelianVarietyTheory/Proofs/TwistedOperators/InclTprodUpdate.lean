@@ -60,10 +60,7 @@ theorem inclK_injective (h : KSm M) : Function.Injective (inclK h) := by
     unfold inclK
     rw [← PiTensorProduct.map_comp]
     simp only [hr, PiTensorProduct.map_id]
-  intro x y hxy
-  calc x = (PiTensorProduct.map r ∘ₗ inclK h) x := by rw [key, LinearMap.id_apply]
-    _ = (PiTensorProduct.map r ∘ₗ inclK h) y := by rw [LinearMap.comp_apply, hxy, ← LinearMap.comp_apply]
-    _ = y := by rw [key, LinearMap.id_apply]
+  exact Function.LeftInverse.injective (LinearMap.congr_fun key)
 
 theorem incl_tprod (h : KSm M) (v : ∀ ρ, kFin M ρ) :
     inclT M (inclK h (PiTensorProduct.tprod ℂ v)) = PiTensorProduct.tprod ℂ fun ρ => (v ρ : M.H ρ) := by
@@ -80,13 +77,8 @@ theorem incl_tprod_update (h : KSm M) (v : ∀ ρ, kFin M ρ) (τ : D.what₂.Ta
   · simp [Function.update_of_ne hρ]
 
 theorem act_tprod (τ : D.what₂.Tau) (g : Matrix (Fin V.rank) (Fin V.rank) ℂ) (v : ∀ ρ, M.H ρ) :
-    actT M τ g (PiTensorProduct.tprod ℂ v) = PiTensorProduct.tprod ℂ (Function.update v τ (M.rep τ g (v τ))) := by
-  simp only [actT, PiTensorProduct.map_tprod]
-  congr 1
-  funext ρ
-  rcases eq_or_ne ρ τ with rfl | hρ
-  · simp
-  · simp [Function.update_of_ne hρ]
+    actT M τ g (PiTensorProduct.tprod ℂ v) = PiTensorProduct.tprod ℂ (Function.update v τ (M.rep τ g (v τ))) :=
+  position_tprod τ (M.rep τ g : M.H τ →ₗ[ℂ] M.H τ) v
 
 theorem ell_update (w v : ∀ ρ, M.H ρ) (τ : D.what₂.Tau) (u : M.H τ) :
     ellT M w (PiTensorProduct.tprod ℂ (Function.update v τ u)) =

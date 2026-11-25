@@ -97,37 +97,26 @@ theorem csumAt_smul_left (a : K) (f f' : S.Cl → S.V) :
     csumAt S σ (a • f) f' = starRingEnd ℂ (σ a) * csumAt S σ f f' := by
   simpa using csumAt_smul S σ a 1 f f'
 
-private theorem csumAt_add_right (f g g' : S.Cl → S.V) :
-    csumAt S σ f (g + g') = csumAt S σ f g + csumAt S σ f g' := by
-  simp only [csumAt, pairAt, Pi.add_apply, map_add (f := _), Finsupp.add_apply, mul_add, Finset.sum_add_distrib]
-
-private theorem csumAt_smul_right' (b : K) (f f' : S.Cl → S.V) :
-    csumAt S σ f (b • f') = σ b * csumAt S σ f f' := by
-  simpa using csumAt_smul S σ 1 b f f'
-
-private theorem csumAt_sum_left {ι : Type} (s : Finset ι) (F : ι → S.Cl → S.V) (f' : S.Cl → S.V) :
-    csumAt S σ (∑ i ∈ s, F i) f' = ∑ i ∈ s, csumAt S σ (F i) f' := by
-  classical
-  refine Finset.induction_on s ?_ ?_
-  · simp [csumAt, pairAt]
-  · intro a s ha ih
-    rw [Finset.sum_insert ha, Finset.sum_insert ha, csumAt_add_left, ih]
-
-private theorem csumAt_sum_right {ι : Type} (s : Finset ι) (f : S.Cl → S.V) (F : ι → S.Cl → S.V) :
-    csumAt S σ f (∑ i ∈ s, F i) = ∑ i ∈ s, csumAt S σ f (F i) := by
-  classical
-  refine Finset.induction_on s ?_ ?_
-  · simp [csumAt, pairAt]
-  · intro a s ha ih
-    rw [Finset.sum_insert ha, Finset.sum_insert ha, csumAt_add_right, ih]
-
 theorem csumAt_map (hb : S.HasRatBasis) (U : Module.End K S.Forms)
     (hU : ∀ f : S.Forms, S.IsRat (f : S.Cl → S.V) → S.IsRat (U f : S.Cl → S.V))
     (hc : ∀ f f' : S.Forms, S.csum (U f : S.Cl → S.V) (U f' : S.Cl → S.V) = S.csum (f : S.Cl → S.V) (f' : S.Cl → S.V))
     (f f' : S.Forms) :
     csumAt S σ (U f : S.Cl → S.V) (U f' : S.Cl → S.V) = csumAt S σ (f : S.Cl → S.V) (f' : S.Cl → S.V) := by
   obtain ⟨b, hbr⟩ := hb
-
+  let addL (g : S.Cl → S.V) : (S.Cl → S.V) →+ ℂ :=
+    { toFun := fun u => csumAt S σ u g
+      map_zero' := by simp [csumAt, pairAt]
+      map_add' := fun x y => csumAt_add_left S σ x y g }
+  let addR (u : S.Cl → S.V) : (S.Cl → S.V) →+ ℂ :=
+    { toFun := fun g => csumAt S σ u g
+      map_zero' := by simp [csumAt, pairAt]
+      map_add' := fun x y => by
+        simp only [csumAt, pairAt, Pi.add_apply, map_add (f := _), Finsupp.add_apply, mul_add,
+          Finset.sum_add_distrib] }
+  have hSL : ∀ {ι : Type} (s : Finset ι) (F : ι → S.Cl → S.V) g,
+      csumAt S σ (∑ i ∈ s, F i) g = ∑ i ∈ s, csumAt S σ (F i) g := fun s F g => map_sum (addL g) F s
+  have hSR : ∀ {ι : Type} (s : Finset ι) u (F : ι → S.Cl → S.V),
+      csumAt S σ u (∑ i ∈ s, F i) = ∑ i ∈ s, csumAt S σ u (F i) := fun s u F => map_sum (addR u) F s
   have key : ∀ i j, csumAt S σ (U (b i) : S.Cl → S.V) (U (b j) : S.Cl → S.V) =
       csumAt S σ (b i : S.Cl → S.V) (b j : S.Cl → S.V) := by
     intro i j
@@ -135,8 +124,7 @@ theorem csumAt_map (hb : S.HasRatBasis) (U : Module.End K S.Forms)
 
   rw [← b.sum_repr f, ← b.sum_repr f']
 
-  simp only [map_sum, map_smul, Submodule.coe_sum, Submodule.coe_smul, csumAt_sum_left, csumAt_sum_right,
-  csumAt_smul_left, csumAt_smul_right', key]
+  simp only [map_sum, map_smul, Submodule.coe_sum, Submodule.coe_smul, hSL, hSR, csumAt_smul, key]
 
 end ClassSum
 

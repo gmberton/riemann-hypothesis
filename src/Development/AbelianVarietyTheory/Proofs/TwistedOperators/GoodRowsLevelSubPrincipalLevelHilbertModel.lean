@@ -2,6 +2,7 @@ module
 
 public import Formalism.LocalToGlobal.IndefiniteReal.LinksChar
 public import Development.AbelianVarietyTheory.Proofs.DivisorProofs.MultiplicativeInnerProductModel
+import Development.AbelianVarietyTheory.Definitions.AutomorphicMembership.ExistsIsAdelicChain
 import Mathlib.Algebra.Order.Floor.Extended
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Algebra.Order.Interval.Basic
@@ -62,23 +63,12 @@ theorem mem_lev_of_triv (R : RealDat D A Ks) (P : LevelP R.Pg D.R.r ℂ) {x : GL
 theorem isMultMap_triv (R : RealDat D A Ks) (P : LevelP R.Pg D.R.r ℂ) {S : MMap (R.MY 0)}
     (h : IsMultMap R.θ (R.MY 0) (levS _ (R.βY 0) (R.dat0 P)) (levChi _ (R.βY 0) (R.dat0 P)) S) :
     IsMultMap R.θ (R.MY 0) (levS _ (R.βY 0) (R.dat0 R.triv)) (levChi _ (R.βY 0) (R.dat0 R.triv)) S := by
-  refine ⟨h.aut, h.cusp, ?_, h.equiv, h.cont⟩
-  intro v k hk g
-  have hk2 : k ∈ GfC (Yc D 0) ⊓ (Formalism.L2.DIV.lev D.sp.cm (Yc D 0).gram (R.βY 0) (R.dat0 R.triv)).comap (finE (Yc D 0)) := hk
-  rw [Subgroup.mem_inf, Subgroup.mem_comap] at hk2
-  have hm := mem_lev_of_triv R P hk2.2
-  have hk' : k ∈ levS _ (R.βY 0) (R.dat0 P) :=
-    (show k ∈ GfC (Yc D 0) ⊓ (Formalism.L2.DIV.lev D.sp.cm (Yc D 0).gram (R.βY 0) (R.dat0 P)).comap (finE (Yc D 0)) from
-      Subgroup.mem_inf.2 ⟨hk2.1, Subgroup.mem_comap.2 hm.1⟩)
-  rw [h.lev v k hk' g]
-  simp only [levChi]
-  rw [hm.2]
+  refine ⟨h.aut, h.cusp, fun v k hk g => ?_, h.equiv, h.cont⟩
+  have hm := GlobalTheory.Mem.Th.principal_le_level (R.βY 0) (R.dat0 R.triv) P k hk
+  exact hm.2 ▸ h.lev v k hm.1 g
 
-theorem eeat_le_triv (R : RealDat D A Ks) (P : LevelP R.Pg D.R.r ℂ) : R.EEat P ≤ R.EEat R.triv := by
-  intro S hS
-  rw [RealDat.EEat, goodPart, Submodule.mem_inf] at hS ⊢
-  refine ⟨?_, hS.2⟩
-  exact Submodule.span_mono (fun S' hS' => isMultMap_triv R P hS') hS.1
+theorem eeat_le_triv (R : RealDat D A Ks) (P : LevelP R.Pg D.R.r ℂ) : R.EEat P ≤ R.EEat R.triv :=
+  GlobalTheory.Mem.Th.EEat_le_triv R P
 
 theorem eeat_sub_principal : ∀ {D : D7} {G : Type} [Group G] [Fintype G] {Pl0 T : Type} {A : FamIn D.what₂.LL G Pl0 T D.R.m} {Ks : Type} [Field Ks] [NumberField Ks] [Algebra Ks D.what₂.LL] (R : RealDat D A Ks), R.IsModels → (∀ P, R.EEat P ≤ R.EEat R.triv) ∧ (∀ P, R.EEat P ≤ LinearMap.range R.HE.e) ∧ ∀ P, ∀ S ∈ R.EEat P, ∀ S' ∈ R.EEat P, IsMultIP (R.MY 0) R.ν0 R.fd0 S S' (ipM (R.MY 0) R.ν0 R.fd0 S S') := by
   intro D G _ _ Pl0 T A Ks _ _ _ R hM

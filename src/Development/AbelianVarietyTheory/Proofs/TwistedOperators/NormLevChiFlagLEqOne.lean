@@ -58,14 +58,8 @@ theorem norm_levChi_flagL_eq_one :
     ∀ {D : D7} (V : HSp D) (β : GL (Fin V.rank) (Lev.EAf D)) (L : LevDat D.host.E ℂ V.rank),
       ∀ κ ∈ levG V β (flagL L), ‖levChi V β (flagL L) κ‖ = 1 := by
   intro D V β L κ _
-
-  have hP : ∀ x, ext1 (flagL L).P.H (flagL L).P.chi x = 1 := by
-    intro x
-    unfold ext1
-    split_ifs
-    · rfl
-    · rfl
-
+  have hP : ext1 (flagL L).P.H (flagL L).P.chi (rTup β (flagL L) (finE V κ)) = 1 :=
+    subgroupCharExtension_one_apply _ _
   rw [levChi, levFn, hP, one_mul, Units.val_mul, norm_mul, Units.coe_prod, Units.coe_prod, norm_prod,
     norm_prod, Finset.prod_eq_one, Finset.prod_eq_one, one_mul]
   · intro PP _

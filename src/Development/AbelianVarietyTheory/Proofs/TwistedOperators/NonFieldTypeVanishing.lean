@@ -805,29 +805,18 @@ theorem diagPart_mul {ε M A : Matrix (Fin r) (Fin r) k} (hε : ε * ε = ε) (h
   have hε' : (1 - ε) * (1 - ε) = 1 - ε := by
     rw [sub_mul, one_mul, mul_sub, mul_one, hε, sub_self, sub_zero]
   have h3 : ε * M * ε = ε := by rw [mul_assoc, h1, hε]
-  have hAε : ε * A = A * ε := hA.symm
-  have hA'' : (1 - ε) * A = A * (1 - ε) := hA'.symm
-  constructor
-  · have s1 : ε * (M * A) * ε = ε * A := by
-      calc ε * (M * A) * ε = ε * M * (A * ε) := by simp only [mul_assoc]
-        _ = ε * (M * ε) * A := by rw [hA]; simp only [mul_assoc]
-        _ = ε * A := by rw [h1, hε]
-    have s2 : (1 - ε) * (M * A) * (1 - ε) = (1 - ε) * A := by
-      calc (1 - ε) * (M * A) * (1 - ε) = (1 - ε) * M * (A * (1 - ε)) := by simp only [mul_assoc]
-        _ = (1 - ε) * M * (1 - ε) * A := by rw [hA']; simp only [mul_assoc]
-        _ = (1 - ε) * A := by rw [h2, hε']
-    rw [diagPart, s1, s2]
-    noncomm_ring
-  · have s1 : ε * (A * M) * ε = A * ε := by
-      calc ε * (A * M) * ε = (ε * A) * M * ε := by simp only [mul_assoc]
-        _ = A * (ε * M * ε) := by rw [hAε]; simp only [mul_assoc]
-        _ = A * ε := by rw [h3]
-    have s2 : (1 - ε) * (A * M) * (1 - ε) = A * (1 - ε) := by
-      calc (1 - ε) * (A * M) * (1 - ε) = ((1 - ε) * A) * M * (1 - ε) := by simp only [mul_assoc]
-        _ = A * ((1 - ε) * M * (1 - ε)) := by rw [hA'']; simp only [mul_assoc]
-        _ = A * (1 - ε) := by rw [h2, hε']
-    rw [diagPart, s1, s2]
-    noncomm_ring
+  have go (e : Matrix (Fin r) (Fin r) k) (he : e * M * e = e) (hae : A * e = e * A) :
+      e * (M * A) * e = e * A ∧ e * (A * M) * e = A * e :=
+    ⟨by calc e * (M * A) * e = e * M * (A * e) := by simp only [mul_assoc]
+        _ = (e * M * e) * A := by rw [hae]; simp only [mul_assoc]
+        _ = e * A := by rw [he],
+     by calc e * (A * M) * e = (e * A) * M * e := by simp only [mul_assoc]
+        _ = A * (e * M * e) := by rw [← hae]; simp only [mul_assoc]
+        _ = A * e := by rw [he]⟩
+  have g1 := go ε h3 hA
+  have g2 := go (1 - ε) (by rw [h2, hε']) hA'
+  exact ⟨by rw [diagPart, g1.1, g2.1]; noncomm_ring,
+    by rw [diagPart, g1.2, g2.2]; noncomm_ring⟩
 
 end GlobalTheory.RadicalOrb
 
@@ -1023,6 +1012,13 @@ namespace GlobalTheory.RadicalOrb
 
 variable {k : Type} [Field k] {r : ℕ}
 
+private lemma isClosed_N [ValuativeRel k] [TopologicalSpace k] [IsNonarchimedeanLocalField k]
+    [T2Space k] {ε : Matrix (Fin r) (Fin r) k} {N : Subgroup (GL (Fin r) k)}
+    (hN : ∀ g, g ∈ N ↔ ε * (g.1 - 1) * (1 - ε) = g.1 - 1) :
+    IsClosed (N : Set (GL (Fin r) k)) := by
+  have : (N : Set (GL (Fin r) k)) = {g | ε * (g.1 - 1) * (1 - ε) = g.1 - 1} := Set.ext hN
+  rw [this]; exact isClosed_eq (by fun_prop) (by fun_prop)
+
 theorem integral_twist [ValuativeRel k] [TopologicalSpace k] [IsNonarchimedeanLocalField k]
     [MeasurableSpace (GL (Fin r) k)] [BorelSpace (GL (Fin r) k)]
     {ε : Matrix (Fin r) (Fin r) k} (hε : ε * ε = ε) {N : Subgroup (GL (Fin r) k)}
@@ -1032,10 +1028,7 @@ theorem integral_twist [ValuativeRel k] [TopologicalSpace k] [IsNonarchimedeanLo
     (x : GL (Fin r) k) : ∫ n : N, f (((n : GL (Fin r) k) * x)⁻¹ * γ * (n * x)) ∂dn = 0 := by
   haveI : T2Space k := GlobalTheory.LocAtTopology.t2Space_of_nonarchimedeanLocalField k
   haveI : SecondCountableTopology k := GlobalTheory.LocAtTopology.secondCountable_localField k
-  have hNc : IsClosed (N : Set (GL (Fin r) k)) := by
-    have : (N : Set (GL (Fin r) k)) = {g | ε * (g.1 - 1) * (1 - ε) = g.1 - 1} := Set.ext fun g => hN g
-    rw [this]
-    exact isClosed_eq (by fun_prop) (by fun_prop)
+  have hNc := isClosed_N hN
   haveI : LocallyCompactSpace N := hNc.locallyCompactSpace
   have hg' : γ⁻¹.1 * ε = ε * γ⁻¹.1 := (Commute.units_inv_left (u := γ) hγε).eq
   have hmem : ∀ n ∈ N, γ⁻¹ * n⁻¹ * γ * n ∈ N := fun n hn => by
@@ -1117,10 +1110,7 @@ theorem GlobalTheory.RadicalOrb.hasQuotInt_zero : ∀ (k : Type) [Field k] [Valu
   haveI : dt.IsMulRightInvariant := ⟨fun g => by
     have : (fun x : cent γ => x * g) = (fun x => g * x) := funext fun x => hTc.is_comm.comm x g
     rw [this, map_mul_left_eq_self]⟩
-  have hNc : IsClosed (N : Set (GL (Fin r) k)) := by
-    have : (N : Set (GL (Fin r) k)) = {g | ε * (g.1 - 1) * (1 - ε) = g.1 - 1} := Set.ext fun g => hN g
-    rw [this]
-    exact isClosed_eq (by fun_prop) (by fun_prop)
+  have hNc := isClosed_N hN
   haveI : LocallyCompactSpace N := hNc.locallyCompactSpace
   let dn : Measure N := Measure.haar
   haveI : dn.IsMulRightInvariant := ⟨fun g => by

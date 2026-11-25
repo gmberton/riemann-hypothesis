@@ -58,27 +58,13 @@ def halfSympl (W : HSp D) {r : ℕ} (a t : Mx D W.rank r) : AF D.host.F :=
 
 theorem halfSympl_add_right (W : HSp D) {r : ℕ} (a t t' : Mx D W.rank r) :
     halfSympl W a (t + t') = halfSympl W a t + halfSympl W a t' := by
-  simp only [halfSympl, halfPair]
-  rw [← map_add (f := _), ← mul_add, ← Finset.sum_add_distrib]
-  congr 2
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  rw [← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  simp [mul_add]
+  simp only [halfSympl, halfPair, Matrix.add_apply, mul_add, Finset.sum_add_distrib,
+    map_add (f := _)]
 
 theorem halfSympl_add_left (W : HSp D) {r : ℕ} (a a' t : Mx D W.rank r) :
     halfSympl W (a + a') t = halfSympl W a t + halfSympl W a' t := by
-  simp only [halfSympl, halfPair]
-  rw [← map_add (f := _), ← mul_add, ← Finset.sum_add_distrib]
-  congr 2
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  rw [← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  simp [add_mul]
+  simp only [halfSympl, halfPair, Matrix.add_apply, mul_add, add_mul, Finset.sum_add_distrib,
+    map_add (f := _)]
 
 theorem halfSympl_zero_right (W : HSp D) {r : ℕ} (a : Mx D W.rank r) : halfSympl W a 0 = 0 := by
   simp [halfSympl, halfPair]

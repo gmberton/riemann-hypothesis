@@ -138,15 +138,10 @@ theorem cf_mem_HHa {φ : K' →+ K} (hφ : ∀ a x, φ (j a * x) = a * φ x) {T 
     · rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, hi s i i' hlt] at this
       exact this.symm
     · intro Q
-      simp only [AlgHom.toLinearMap_apply]
-      induction Q using MvPolynomial.induction_on with
-      | C x => simp [rowShift]
-      | add p q hp hq => simp only [map_add (f := _), hp, hq]
-      | mul_X p v hp =>
-        simp only [map_mul, hp, map_X]
-        congr 1
-        simp only [rowShift, aeval_X]
-        split_ifs <;> simp
+      simp only [AlgHom.toLinearMap_apply, rowShift]
+      rw [map_aeval_eq_aeval_map j (map j) (by ext x; simp [algebraMap_eq])]
+      refine congrArg (fun f => aeval f (map j Q)) (funext fun v => ?_)
+      split_ifs <;> simp
   · intro m hm
     refine hd m ?_
     rw [mem_support_iff] at hm ⊢
@@ -161,13 +156,10 @@ theorem polyAction_map {ι : Type} [Fintype ι] {n : ℕ} (lam : ι → DomWeigh
     simp only [detTwK, detPow, map_prod, Units.val_zpow_eq_zpow_val, map_zpow₀,
       Matrix.GeneralLinearGroup.val_det_apply, h, RingHom.map_det, RingHom.mapMatrix_apply]
   have h2 : trAct g' (map j F) = map j (trAct g F) := by
-    induction F using MvPolynomial.induction_on with
-    | C x => simp [trAct]
-    | add p q hp hq => simp only [map_add (f := _), hp, hq]
-    | mul_X p v hp =>
-      simp only [map_mul, hp, map_X]
-      congr 1
-      simp [trAct, Formalism.GradedWeylDivisibility.blockAct, h]
+    unfold trAct Formalism.GradedWeylDivisibility.blockAct
+    rw [map_aeval_eq_aeval_map j (map j) (by ext x; simp [algebraMap_eq])]
+    refine congrArg (fun f => aeval f (map j F)) (funext fun v => ?_)
+    simp [map_sum, h]
   simp only [actP, LinearMap.smul_apply, AlgHom.toLinearMap_apply, map_smul', h1, h2]
 
 end Coef
@@ -260,15 +252,12 @@ variable {E : Type} [Field E] [NumberField E] [IsCMField E] {H : Host E} {Dw : D
 
 theorem gaStar_map (ga : Matrix (Fin n) (Fin n) E) (P : MvPolynomial (LtN Dw n) c.F) :
     Formalism.L2.Pj.gaStar c' ga (map (incF c c' hle) P) = map (incF c c' hle) (Formalism.L2.Pj.gaStar c ga P) := by
-  induction P using MvPolynomial.induction_on with
-  | C x => rw [map_C, Formalism.L2.Pj.gaStar, Formalism.L2.Pj.gaStar, aeval_C, aeval_C, algebraMap_eq, algebraMap_eq, map_C]
-  | add p q hp hq => simp only [map_add (f := _), hp, hq]
-  | mul_X p v hp =>
-    simp only [map_mul, hp, map_X]
-    congr 1
-
-    simp only [Formalism.L2.Pj.gaStar, aeval_X, letB, map_sum, map_mul, map_C, map_X]
-    rfl
+  unfold Formalism.L2.Pj.gaStar
+  rw [map_aeval_eq_aeval_map (incF c c' hle) (map (incF c c' hle))
+    (by ext x; simp [algebraMap_eq])]
+  refine congrArg (fun f => aeval f (map (incF c c' hle) P)) (funext fun v => ?_)
+  simp only [letB, map_sum, map_mul, map_C, map_X]
+  rfl
 
 theorem pG_map (a : (E →+* ℂ) × ℕ → ℕ) :
     pG (Dw := Dw) c' a n = map (incF c c' hle) (pG (Dw := Dw) c a n) := by

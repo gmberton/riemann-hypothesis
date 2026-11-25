@@ -55,19 +55,14 @@ noncomputable section
 namespace GlobalTheory.ChF
 open MvPowerSeries
 
-private lemma gm_hs {R : Type} [CommRing R] {m n d : ℕ} (a : Fin m → Pt R n d)
-    (h : ∀ j i, constantCoeff (a j i) = 0) :
-    HasSubst (fun p : Fin m × Fin d => a p.1 p.2) :=
-  hasSubst_of_constantCoeff_zero (fun p => h p.1 p.2)
-
 private lemma ev_gm {R : Type} [CommRing R] {n r : ℕ} (a b : Pt R n r)
     (ha : ∀ i, constantCoeff (a i) = 0) (hb : ∀ i, constantCoeff (b i) = 0) (i : Fin r) :
     ev ![a, b] (gmF R r i) = a i + b i + a i * b i := by
-  have h := gm_hs (m := 2) ![a, b] (by
-    intro j i
-    fin_cases j
-    · exact ha i
-    · exact hb i)
+  have h := hasSubst_of_constantCoeff_zero (a := fun p : Fin 2 × Fin r => ![a, b] p.1 p.2)
+    fun ⟨j, i⟩ => by
+      fin_cases j
+      · exact ha i
+      · exact hb i
   unfold ev gmF
   rw [subst_add h, subst_add h, subst_mul h, subst_X h, subst_X h]
   rfl
@@ -75,10 +70,8 @@ private lemma ev_gm {R : Type} [CommRing R] {n r : ℕ} (a b : Pt R n r)
 private lemma ev_ch {R : Type} [CommRing R] {n r : ℕ} (a : Pt R n r)
     (ha : ∀ i, constantCoeff (a i) = 0) (i : Fin r) :
     ev ![a] (1 + X ((0 : Fin 1), i) : PS R 1 r) = 1 + a i := by
-  have h := gm_hs (m := 1) ![a] (by
-    intro j i
-    fin_cases j
-    exact ha i)
+  have h := hasSubst_of_constantCoeff_zero (a := fun p : Fin 1 × Fin r => ![a] p.1 p.2)
+    fun ⟨j, i⟩ => by fin_cases j; exact ha i
   have h1 := ev_one ![a]
   unfold ev at h1 ⊢
   rw [subst_add h, h1, subst_X h]

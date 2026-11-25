@@ -40,6 +40,7 @@ import Mathlib.Topology.Sheaves.Init
 import Formalism.LocalToGlobal.IndefiniteReal.LocalNewformFunction
 import Formalism.LocalToGlobal.IndefiniteReal.ScalarOnPartsFull
 import Formalism.LocalToGlobal.IndefiniteReal.SubgroupCharExtensionOneApply
+import Mathlib.LinearAlgebra.TensorProduct.Prod
 
 @[expose] public section
 
@@ -49,31 +50,22 @@ open scoped TensorProduct
 
 namespace GlobalTheory.FinRealComm
 
-private theorem eq_map_inl_fst_add_map_inr_snd_tmul {F A B E : Type} [CommRing F] [CommRing A] [CommRing B] [CommRing E]
-    [Algebra F A] [Algebra F B] [Algebra F E] (z : (A × B) ⊗[F] E) :
-    z = TensorProduct.map (LinearMap.inl F A B) LinearMap.id
-          (Algebra.TensorProduct.map (AlgHom.fst F A B) (AlgHom.id F E) z) +
-        TensorProduct.map (LinearMap.inr F A B) LinearMap.id
-          (Algebra.TensorProduct.map (AlgHom.snd F A B) (AlgHom.id F E) z) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
-  | tmul a e =>
-    rw [Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.map_tmul, TensorProduct.map_tmul,
-      TensorProduct.map_tmul, ← TensorProduct.add_tmul]
-    congr 1
-    ext <;> simp
-  | add u v hu hv =>
-    rw [map_add (f := _), map_add (f := _), map_add (f := _), map_add (f := _)]
-    conv_lhs => rw [hu, hv]
-    abel
-
 theorem tensor_prod_ext {F A B E : Type} [CommRing F] [CommRing A] [CommRing B] [CommRing E]
     [Algebra F A] [Algebra F B] [Algebra F E] (x y : (A × B) ⊗[F] E)
     (h1 : Algebra.TensorProduct.map (AlgHom.fst F A B) (AlgHom.id F E) x =
       Algebra.TensorProduct.map (AlgHom.fst F A B) (AlgHom.id F E) y)
     (h2 : Algebra.TensorProduct.map (AlgHom.snd F A B) (AlgHom.id F E) x =
       Algebra.TensorProduct.map (AlgHom.snd F A B) (AlgHom.id F E) y) : x = y := by
-  rw [eq_map_inl_fst_add_map_inr_snd_tmul x, eq_map_inl_fst_add_map_inr_snd_tmul y, h1, h2]
+  have eqv : ∀ z : (A × B) ⊗[F] E, TensorProduct.prodLeft F F A B E z =
+      (Algebra.TensorProduct.map (AlgHom.fst F A B) (AlgHom.id F E) z,
+        Algebra.TensorProduct.map (AlgHom.snd F A B) (AlgHom.id F E) z) := fun z => by
+    induction z using TensorProduct.induction_on with
+    | zero => simp; rfl
+    | tmul x _ => obtain ⟨a, b⟩ := x; simp [Algebra.TensorProduct.map_tmul]
+    | add _ _ ha hb =>
+      rw [map_add (f := _), ha, hb, map_add (f := _), map_add (f := _)]
+      rfl
+  exact (TensorProduct.prodLeft F F A B E).injective (by rw [eqv, eqv, h1, h2])
 
 theorem GA_ext_inf_fin {D : D7} (V : HSp D) (x y : GA D V)
     (h1 : infHom V x = infHom V y) (h2 : finHom V x = finHom V y) : x = y := by

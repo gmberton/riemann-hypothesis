@@ -40,18 +40,8 @@ theorem fockAct1_lower {p q n : ℕ} (a : Fin p) (b : Fin q) (Φ : Pol p q n 0) 
   simp only [Finset.univ_eq_empty, Finset.sum_empty, add_zero]
   refine Finset.sum_congr rfl fun c _ => ?_
   have hne : ((Sum.inr b, Sum.inl c) : Ln p q n 0) ≠ (Sum.inl a, Sum.inl c) := by simp
-  have hc : ∀ (i j : Ln p q n 0) (P : Pol p q n 0),
-      MvPolynomial.pderiv i (MvPolynomial.pderiv j P) = MvPolynomial.pderiv j (MvPolynomial.pderiv i P) := by
-    intro i j P
-    classical
-    induction P using MvPolynomial.induction_on with
-    | C a => simp
-    | add P Q hP hQ => simp [hP, hQ]
-    | mul_X P k hP =>
-      simp only [Derivation.leibniz, map_add (f := _), smul_eq_mul, hP, MvPolynomial.pderiv_X]
-      by_cases h1 : k = i <;> by_cases h2 : k = j <;> simp [Pi.single_apply, h1, h2] <;>
-        (try split_ifs) <;> (try simp) <;> (try ring)
-  simp [omE, raiB, lowB, linePos, hne, hc (Sum.inr b, Sum.inl c) (Sum.inl a, Sum.inl c)]
+  simp [omE, raiB, lowB, linePos, hne,
+    MvPolynomial.pderiv_comm ((Sum.inr b, Sum.inl c) : Ln p q n 0) (Sum.inl a, Sum.inl c) Φ]
 
 end GlobalTheory.IndefiniteRowSideFullHecke.FockSingularValues
 

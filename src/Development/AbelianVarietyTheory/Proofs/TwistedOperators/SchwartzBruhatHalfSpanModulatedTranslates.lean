@@ -87,12 +87,6 @@ theorem isSBHalf_modul (ψ : AddChar (AF D.host.F) ℂ) {a : AE D} {Λ : AddSubg
     (hLL' : ∀ u ∈ Λ ⊓ half S T a, ∀ y ∈ Λ ⊓ half S T (cA D a), ψ (symplO S T u y) = 1)
     {y : WO S T} (hy : IsHalf (cA D a) y) {k : ℕ} (hk : 0 < k) (hky : k • y ∈ Λ) {Φ : WO S T → ℂ}
     (hΦ : IsSBHalf a Λ Φ) : IsSBHalf a Λ fun t => ψ (symplO S T t y) * Φ t := by
-  have hb : IsBichar (fun x y : WO S T => ψ (symplO S T x y)) := by
-    refine ⟨?_, ?_, ?_, ?_⟩
-    · intro a b y; rw [symplO_add_left, AddChar.map_add_eq_mul]
-    · intro a b y; rw [symplO_add_right, AddChar.map_add_eq_mul]
-    · intro y; rw [symplO_zero_left, AddChar.map_zero_eq_one]
-    · intro y; rw [symplO_zero_right, AddChar.map_zero_eq_one]
   obtain ⟨a1, k', hk1, a2, a3⟩ := hΦ
   refine ⟨fun t ht => a1 t (right_ne_zero_of_mul ht), k * k', Nat.mul_pos hk hk1, fun u hu hh t => ?_,
     fun t ht => ?_⟩
@@ -101,8 +95,9 @@ theorem isSBHalf_modul (ψ : AddChar (AF D.host.F) ℂ) {a : AE D} {Λ : AddSubg
       exact a2 _ (nsmul_mem hu k) ((isHalf_iff S T).2 (nsmul_mem ((isHalf_iff S T).1 hh) k)) t
     have e2 : ψ (symplO S T ((k * k') • u) y) = 1 := by
       rw [mul_nsmul']
-      exact (hb.nsmul k _ y).trans (hLL' _ (nsmul_mem (AddSubgroup.mem_inf.2 ⟨hu, (isHalf_iff S T).1 hh⟩) k') _
-        ⟨hky, nsmul_mem ((isHalf_iff S T).1 hy) k⟩)
+      exact ((isBichar_symplO S T ψ).nsmul k _ y).trans
+        (hLL' _ (nsmul_mem (AddSubgroup.mem_inf.2 ⟨hu, (isHalf_iff S T).1 hh⟩) k') _
+          ⟨hky, nsmul_mem ((isHalf_iff S T).1 hy) k⟩)
     simp only [e1, symplO_add_left, AddChar.map_add_eq_mul, e2, mul_one]
   · rw [mul_nsmul']
     exact nsmul_mem (a3 t (right_ne_zero_of_mul ht)) k
@@ -144,12 +139,6 @@ theorem halfWaves_span : ∀ (D : D7) (ψ : AddChar (AF D.host.F) ℂ) (S T : HS
   have tf : ∀ k : ℕ, 0 < k → Function.Injective fun t : WO S T => k • t := fun k hk a b hab => by
     rw [← inv_smul_nsmul S T hk a, ← inv_smul_nsmul S T hk b]
     exact congrArg _ hab
-  have hb : IsBichar (fun x y : WO S T => ψ (symplO S T x y)) := by
-    refine ⟨?_, ?_, ?_, ?_⟩
-    · intro a b y; rw [symplO_add_left, AddChar.map_add_eq_mul]
-    · intro a b y; rw [symplO_add_right, AddChar.map_add_eq_mul]
-    · intro y; rw [symplO_zero_left, AddChar.map_zero_eq_one]
-    · intro y; rw [symplO_zero_right, AddChar.map_zero_eq_one]
   have hsb : ∀ x, IsHalf e x → IsSBHalf e (latO S T ΛS ΛT fun _ => True)
       fun t => halfInd e (latO S T ΛS ΛT fun _ => True) (t + x) := fun x hx => by
     obtain ⟨k, hk, hk'⟩ := exists_nsmul_mem_latO' hSfull hTfull x (infPart_of_half hinf hx)
@@ -165,7 +154,8 @@ theorem halfWaves_span : ∀ (D : D7) (ψ : AddChar (AF D.host.F) ℂ) (S T : HS
   · have hm : Φ ∈ waveSpan (fun x y : WO S T => ψ (symplO S T x y)) (half S T e) (half S T (cA D e))
         ((latO S T ΛS ΛT fun _ => True) ⊓ half S T e) := by
       obtain ⟨h1, k, hk, h2, h3⟩ := hΦ
-      exact mem_waveSpan hb inf_le_right inf_le_right hLL' hX (half_div S T e) (half_div S T _) tf hfin Φ
+      exact mem_waveSpan (isBichar_symplO S T ψ) inf_le_right inf_le_right hLL' hX (half_div S T e)
+        (half_div S T _) tf hfin Φ
         (fun t ht => (isHalf_iff S T).1 (h1 t ht)) k hk (fun u hu => h2 u hu.1 ((isHalf_iff S T).2 hu.2))
         fun t ht => ⟨h3 t ht, (half S T e).nsmul_mem ((isHalf_iff S T).1 (h1 t ht)) _⟩
     refine (Submodule.span_le.2 ?_) hm

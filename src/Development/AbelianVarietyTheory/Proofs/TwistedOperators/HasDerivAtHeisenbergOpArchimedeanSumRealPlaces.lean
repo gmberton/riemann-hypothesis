@@ -170,31 +170,20 @@ theorem hasDerivAt_realAd_smul : ∀ (D : D7) (ψ : AddChar (AF D.host.F) ℂ) (
     · rw [map_zero, symplOH, symplO_zero_right, mul_zero, AddChar.map_zero_eq_one]
     · intro s t
       rw [map_add (f := _), symplOH_add_right, AddChar.map_add_eq_mul]
-  have hpsi : ∀ s, ψ (symplOH S T x (Λ s)) = ∏ τ, ψ (symplOH S T x (lineAt θ τ (compAt θ τ w) (s τ))) := by
+  have hpsi : ∀ s, ψ (symplOH S T x (Λ s)) =
+      ∏ τ, ψ (symplOH S T x (lineAt θ τ (compAt θ τ w) (s τ))) := by
     intro s
-    rw [hΛ]
     let φ : WO S T →+ AF D.host.F :=
       ⟨⟨symplOH S T x, by rw [symplOH, symplO_zero_right, mul_zero]⟩, symplOH_add_right S T x⟩
-    have key : ∀ (s' : Finset D.what₂.Tau) (g : D.what₂.Tau → WO S T),
-        ψ (φ (∑ τ ∈ s', g τ)) = ∏ τ ∈ s', ψ (φ (g τ)) := by
-      intro s' g
-      induction s' using Finset.induction_on with
-      | empty => rw [Finset.sum_empty, Finset.prod_empty, map_zero, AddChar.map_zero_eq_one]
-      | insert a s' ha ih => rw [Finset.sum_insert ha, Finset.prod_insert ha, map_add (f := _), AddChar.map_add_eq_mul, ih]
-    exact key Finset.univ _
+    change ψ.toMonoidHom (Multiplicative.ofAdd (φ (Λ s))) = _
+    rw [hΛ, map_sum φ]
+    exact map_prod ψ.toMonoidHom
+      (fun τ => Multiplicative.ofAdd (φ (lineAt θ τ (compAt θ τ w) (s τ)))) Finset.univ
   have hGd : Differentiable ℝ G := by
     have h1 : Differentiable ℝ fun s : D.what₂.Tau → ℝ => ψ (symplOH S T x (Λ s)) := by
       simp only [hpsi]
-      have hp : ∀ s' : Finset D.what₂.Tau, Differentiable ℝ fun s : D.what₂.Tau → ℝ =>
-          ∏ τ ∈ s', ψ (symplOH S T x (lineAt θ τ (compAt θ τ w) (s τ))) := by
-        intro s'
-        induction s' using Finset.induction_on with
-        | empty => simp only [Finset.prod_empty]; exact differentiable_const _
-        | insert a s' ha ih =>
-          simp only [Finset.prod_insert ha]
-          have hτ : Differentiable ℝ fun s : D.what₂.Tau → ℝ => s a := differentiable_apply a
-          exact ((hχ a).comp hτ).mul ih
-      exact hp Finset.univ
+      exact fun s => (HasFDerivAt.finsetProd fun τ _ =>
+        ((hχ τ).comp (differentiable_apply τ) s).hasFDerivAt).differentiableAt
     have h2 : Differentiable ℝ fun s : D.what₂.Tau → ℝ => f (x + Λ s) := by
       let e := Fintype.equivFin D.what₂.Tau
       let ℓ : (Fin (Fintype.card D.what₂.Tau) → ℝ) ≃L[ℝ] (D.what₂.Tau → ℝ) :=

@@ -43,6 +43,7 @@ import Mathlib.Tactic.NormNum.Parity
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.NormNum.RealSqrt
 import Mathlib.Topology.Sheaves.Init
+import Mathlib.Topology.Instances.Matrix
 import Mathlib.Topology.UniformSpace.Uniformizable
 import Development.AbelianVarietyTheory.Definitions.Foundations.NormEulerPolySubOneLe
 
@@ -63,21 +64,12 @@ theorem coe_GLint (O : Subring L) : (GLint n O : Set (GL n L)) =
 
 theorem isOpen_GLint (O : Subring L) (hO : IsOpen (O : Set L)) : IsOpen (GLint n O : Set (GL n L)) := by
   rw [coe_GLint]
-  simp only [Set.ofPred_forall]
-  refine IsOpen.inter ?_ ?_
-  · exact isOpen_iInter_of_finite fun i => isOpen_iInter_of_finite fun j =>
-      hO.preimage (Units.continuous_val.matrix_elem i j)
-  · exact isOpen_iInter_of_finite fun i => isOpen_iInter_of_finite fun j =>
-      hO.preimage (Units.continuous_coe_inv.matrix_elem i j)
+  exact (hO.matrix.preimage Units.continuous_val).inter
+    (hO.matrix.preimage Units.continuous_coe_inv)
 
 theorem isCompact_GLint [T2Space L] (O : Subring L) (hO : IsCompact (O : Set L)) :
     IsCompact (GLint n O : Set (GL n L)) := by
-  have hM : IsCompact {A : Matrix n n L | ∀ i j, A i j ∈ O} := by
-    have := isCompact_univ_pi fun _ : n => isCompact_univ_pi fun _ : n => hO
-    have e : {A : Matrix n n L | ∀ i j, A i j ∈ O} =
-        Set.univ.pi fun _ : n => Set.univ.pi fun _ : n => (O : Set L) :=
-      Set.ext fun A => ⟨fun h i _ j _ => h i j, fun h i j => h i trivial j trivial⟩
-    exact e ▸ this
+  have hM : IsCompact ((O : Set L).matrix : Set (Matrix n n L)) := hO.matrix
   have := (Units.isClosedEmbedding_embedProduct (α := Matrix n n L)).isCompact_preimage
     (hM.prod (hM.image MulOpposite.continuous_op))
   convert this using 1

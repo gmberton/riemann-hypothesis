@@ -68,11 +68,6 @@ def finOrbit (τ : Representation ℂ G M) (K : Subgroup G) : Submodule ℂ M wh
     rintro _ ⟨k, rfl⟩
     exact ⟨_, ⟨k, rfl⟩, by simp⟩)
 
-private theorem mem_fixed_iff_twisted_operators {W : Type} [AddCommGroup W] [Module ℂ W] (τ : Representation ℂ G W)
-    (L : Subgroup G) (v : W) : v ∈ fixed τ L ↔ ∀ k : L, τ k v = v := by
-  change (∀ k : L, τ k v = ((1 : L →* ℂˣ) k : ℂ) • v) ↔ _
-  simp
-
 theorem exists_fixed_preimage {τ : Representation ℂ G M} (π : M →ₗ[ℂ] V) (hπ : ∀ g m, π (τ g m) = ρ g (π m))
     {m : M} (hm : m ∈ finOrbit τ K) (hy : π m ∈ fixed ρ K) : ∃ m' ∈ fixed τ K, π m' = π m := by
   classical
@@ -106,15 +101,14 @@ theorem exists_fixed_preimage {τ : Representation ℂ G M} (π : M →ₗ[ℂ] 
     have hm' : m ∈ O := (hO m).2 ⟨1, by simp⟩
     exact Nat.cast_ne_zero.2 (Finset.card_ne_zero_of_mem hm')
   refine ⟨(O.card : ℂ)⁻¹ • ∑ o ∈ O, o, ?_, ?_⟩
-  · rw [mem_fixed_iff_twisted_operators]
-    intro a
-
-    rw [map_smul, map_sum, hperm a]
+  · rw [_root_.GlobalTheory.LGrp.mem_fixed]
+    intro a ha
+    rw [map_smul, map_sum, hperm ⟨a, ha⟩]
   · have hconst : ∀ o ∈ O, π o = π m := by
       intro o ho
       obtain ⟨k, rfl⟩ := (hO o).1 ho
       rw [hπ]
-      exact (mem_fixed_iff_twisted_operators ρ K (π m)).1 hy k
+      exact _root_.GlobalTheory.LGrp.mem_fixed.1 hy k k.2
 
     rw [map_smul, map_sum, Finset.sum_congr rfl hconst, Finset.sum_const, ← Nat.cast_smul_eq_nsmul ℂ,
     smul_smul, inv_mul_cancel₀ hne, one_smul]
@@ -129,13 +123,8 @@ theorem permRep_single (g : G) (c : G ⧸ K) (a : ℂ) :
   change Finsupp.mapDomain (g • ·) (Finsupp.single c a) = _
   exact Finsupp.mapDomain_single
 
-private theorem permRep_apply_eq_mapDomain (g : G) (φ : G ⧸ K →₀ ℂ) :
-    permRep K g φ = Finsupp.mapDomain (g • ·) φ :=
-  rfl
-
-theorem permRep_apply (g : G) (φ : G ⧸ K →₀ ℂ) (c : G ⧸ K) : permRep K g φ (g • c) = φ c := by
-  rw [permRep_apply_eq_mapDomain]
-  exact Finsupp.mapDomain_apply_of_injective (MulAction.injective g) φ c
+theorem permRep_apply (g : G) (φ : G ⧸ K →₀ ℂ) (c : G ⧸ K) : permRep K g φ (g • c) = φ c :=
+  Finsupp.mapDomain_apply_of_injective (MulAction.injective g) φ c
 
 theorem mem_finOrbit (hK : IsCommensurated K) (φ : G ⧸ K →₀ ℂ) : φ ∈ finOrbit (permRep K) K := by
   classical
@@ -152,8 +141,8 @@ theorem mem_finOrbit (hK : IsCommensurated K) (φ : G ⧸ K →₀ ℂ) : φ ∈
   · rw [Set.mem_univ_pi]
     intro c
     exact MulAction.mem_orbit _ k
-  · show (∑ c : φ.support, Finsupp.single (k • (c : G ⧸ K)) (φ c)) = permRep K (k : G) φ
-    rw [permRep_apply_eq_mapDomain]
+  · show (∑ c : φ.support, Finsupp.single (k • (c : G ⧸ K)) (φ c)) =
+        Finsupp.mapDomain ((k : G) • ·) φ
     exact Finset.sum_coe_sort φ.support fun a => Finsupp.single ((k : G) • a) (φ a)
 
 def orbitMap (ρ : Representation ℂ G V) (K : Subgroup G) (x : V) : (G ⧸ K →₀ ℂ) →ₗ[ℂ] V :=
@@ -163,7 +152,7 @@ theorem orbitMap_single (hx : x ∈ fixed ρ K) (g : G) (a : ℂ) :
     orbitMap ρ K x (Finsupp.single (g : G ⧸ K) a) = a • ρ g x := by
   obtain ⟨k, hk⟩ := QuotientGroup.mk_out_eq_mul (s := K) g
   simp only [orbitMap, Finsupp.linearCombination_single]
-  rw [hk, map_mul, Module.End.mul_apply, (mem_fixed_iff_twisted_operators ρ K x).1 hx k]
+  rw [hk, map_mul, Module.End.mul_apply, _root_.GlobalTheory.LGrp.mem_fixed.1 hx k k.2]
 
 theorem orbitMap_permRep (hx : x ∈ fixed ρ K) (g : G) (φ : G ⧸ K →₀ ℂ) :
     orbitMap ρ K x (permRep K g φ) = ρ g (orbitMap ρ K x φ) := by

@@ -56,16 +56,6 @@ open ReciprocityTheory.ChartRestriction.G.I2
 
 namespace GlobalTheory
 
-private theorem ext_ballVolume : _root_.ReciprocityTheory.ChartRestriction.G.I2.Ext.BallVolume := by
-  unfold _root_.ReciprocityTheory.ChartRestriction.G.I2.Ext.BallVolume
-  intro D rr hr
-  exact _root_.GlobalTheory.volume_ball_of_finrank_eq_two_mul (by simp) 0 hr
-
-private theorem ext_gHadamard : _root_.ReciprocityTheory.ChartRestriction.G.I2.Ext.GHadamard := by
-  unfold _root_.ReciprocityTheory.ChartRestriction.G.I2.Ext.GHadamard
-  intro n M
-  simpa [Real.norm_eq_abs, sq_abs] using _root_.GlobalTheory.Hadamard.norm_det_le_prod_col M
-
 private theorem ext_cauchyBinetMax' : _root_.ReciprocityTheory.ChartRestriction.G.I2.Ext.CauchyBinetMax := by
   unfold _root_.ReciprocityTheory.ChartRestriction.G.I2.Ext.CauchyBinetMax
   intro i N r M hM hr
@@ -176,15 +166,15 @@ private theorem two_pow_add_pow_sub_two_pow_mul_le (c : ℕ) (ε : ℝ) (h0 : 0 
     rw [k4]
     exact add_le_add (k1.trans k2) k3
 
-private theorem ext_detProductRest : _root_.ReciprocityTheory.ChartRestriction.G.I2.Ext.DetProductRest := by
-  unfold _root_.ReciprocityTheory.ChartRestriction.G.I2.Ext.DetProductRest
-  intro i c ε h0 h1
-  exact two_pow_add_pow_sub_two_pow_mul_le c ε h0 h1 i
-
 theorem _root_.GlobalTheory.ext_all_inputs : _root_.ReciprocityTheory.ChartRestriction.G.I2.Ext.All := by
   unfold _root_.ReciprocityTheory.ChartRestriction.G.I2.Ext.All
-  exact ⟨_root_.GlobalTheory.packingCount, _root_.GlobalTheory.gaussTail_of_card_le, ext_ballVolume, ext_gHadamard,
+  exact ⟨_root_.GlobalTheory.packingCount, _root_.GlobalTheory.gaussTail_of_card_le,
+    (fun _ _ hr => _root_.GlobalTheory.volume_ball_of_finrank_eq_two_mul (by simp) 0 hr),
+    (fun _ M => by
+      simpa [Real.norm_eq_abs, sq_abs] using
+        _root_.GlobalTheory.Hadamard.norm_det_le_prod_col M),
     _root_.GlobalTheory.nearestPlane_rounding, ext_cauchyBinetMax', ext_detPerturbation,
-    ext_detPerturbNumeric, ext_detProductRest⟩
+    ext_detPerturbNumeric,
+    (fun i c ε h0 h1 => two_pow_add_pow_sub_two_pow_mul_le c ε h0 h1 i)⟩
 
 end GlobalTheory

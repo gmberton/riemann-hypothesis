@@ -66,22 +66,10 @@ theorem _root_.GlobalTheory.exists_isUnit_sub_of_ringHom_ne : ∀ (A O : Type) [
     (Ideal.span_singleton_le_iff_mem _).mpr hgm
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := ℤ) (M := A)
   set J : Ideal O := Ideal.span ((fun a => σ a - σ' a) '' (s : Set A)) with hJ
-  have hmem : ∀ a : A, σ a - σ' a ∈ J := by
-    intro a
-    have ha : a ∈ Submodule.span ℤ (s : Set A) := hs ▸ Submodule.mem_top
-    induction ha using Submodule.span_induction with
-    | mem y hy => exact Ideal.subset_span ⟨y, hy, rfl⟩
-    | zero => simp
-    | add y z _ _ hy hz =>
-        have : σ (y + z) - σ' (y + z) = (σ y - σ' y) + (σ z - σ' z) := by
-          rw [map_add (f := _), map_add (f := _)]; ring
-        rw [this]
-        exact J.add_mem hy hz
-    | smul n y _ hy =>
-        have : σ (n • y) - σ' (n • y) = (n : O) * (σ y - σ' y) := by
-          simp [zsmul_eq_mul, mul_sub]
-        rw [this]
-        exact J.mul_mem_left _ hy
+  have hmem : ∀ a : A, σ a - σ' a ∈ J := fun a =>
+    (Submodule.image_span_subset (σ.toAddMonoidHom - σ'.toAddMonoidHom).toIntLinearMap
+      (s : Set A) (J.restrictScalars ℤ)).2 (fun y hy => Ideal.subset_span ⟨y, hy, rfl⟩)
+      ⟨a, by rw [hs]; trivial, rfl⟩
   have hgk : (g : IsLocalRing.ResidueField O) = 0 := by
     rw [← map_natCast (IsLocalRing.residue O), IsLocalRing.residue_eq_zero_iff]
     exact hgm

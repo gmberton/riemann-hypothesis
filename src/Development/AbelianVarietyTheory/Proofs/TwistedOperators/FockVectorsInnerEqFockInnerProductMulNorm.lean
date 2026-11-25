@@ -249,21 +249,9 @@ theorem ipO_pureTensorO : ∀ (D : D7) (ψ : AddChar (AF D.host.F) ℂ) (θ : In
       GlobalTheory.Size.ipO_add_right hψ hHaar hFD hx (thd _ _ _ hy) (GlobalTheory.OrientedHeis.theta_smul _ (thd _ _ _ hy)),
       GlobalTheory.Size.ipO_smul_right, hconj, Complex.conj_I]
     ring
-  have hadj2 : ∀ i (x y : thetaSub), GlobalTheory.Ker.ipO μ 𝓕 x (a i y) = GlobalTheory.Ker.ipO μ 𝓕 (b i x) y := by
-    intro i x y
-    have hx : IsThetaFunO ψ S T x := x.2
-    have hy : IsThetaFunO ψ S T y := y.2
-    change GlobalTheory.Ker.ipO μ 𝓕 x (aPlus (heisO ψ S T) θ i.1 (cplxO (sS i.1) (sT i.1))
-        (unitMap (BS i.1) (BT i.1) i.2.1 i.2.2) y) =
-      GlobalTheory.Ker.ipO μ 𝓕 ((-(fockScale D i.1 : ℂ)⁻¹) • annih (heisO ψ S T) θ i.1 (cplxO (sS i.1) (sT i.1))
-        (unitMap (BS i.1) (BT i.1) i.2.1 i.2.2) x) y
-    rw [GlobalTheory.FockIndep.aPlus_eq, hann, GlobalTheory.Size.ipO_smul_right,
-      GlobalTheory.Size.ipO_add_right hψ hHaar hFD hx (thd _ _ _ hy) (GlobalTheory.OrientedHeis.theta_smul _ (thd _ _ _ hy)),
-      GlobalTheory.Size.ipO_smul_right, GlobalTheory.Size.ipO_smul_left,
-      GlobalTheory.Size.ipO_add_left hψ hHaar hFD (thd _ _ _ hx) (GlobalTheory.OrientedHeis.theta_smul _ (thd _ _ _ hx)) hy,
-      GlobalTheory.Size.ipO_smul_left, sk _ _ _ _ hx hy, sk _ _ _ _ hx hy, map_inv₀, Complex.conj_ofReal, map_neg,
-      Complex.conj_I]
-    ring
+  have hadj2 : ∀ i (x y : thetaSub),
+      GlobalTheory.Ker.ipO μ 𝓕 x (a i y) = GlobalTheory.Ker.ipO μ 𝓕 (b i x) y := fun i x y => by
+    rw [← GlobalTheory.Size.ipO_conj μ 𝓕 (a i y) x, hadj1 i y x, GlobalTheory.Size.ipO_conj]
   have hzero : ∀ x : WO S T → ℂ, GlobalTheory.Ker.ipO μ 𝓕 x 0 = 0 := fun x => by
     simp [GlobalTheory.Ker.ipO]
   have key : ∀ β R, GlobalTheory.Ker.ipO μ 𝓕 (pureTensorO ψ θ S T sS sT BS BT f R)

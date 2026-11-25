@@ -62,13 +62,9 @@ theorem exists_rest_arch : ∀ {F : Type} [Field F] [NumberField F] (κ : Type) 
   have hSc : IsClosed S := isClosed_set_pi fun _ _ => hIc
   have hSk : IsCompact S := isCompact_univ_pi fun _ => hIk
   let g : (κ → FiniteAdeleRing (𝓞 F) F) → ℂ := S.indicator 1
-  have hg : g ∈ SB (κ → FiniteAdeleRing (𝓞 F) F) := by
-    refine ⟨?_, HasCompactSupport.intro hSk fun x hx => Set.indicator_of_notMem hx _⟩
-    rw [IsLocallyConstant.iff_exists_open]
-    intro x
-    by_cases hx : x ∈ S
-    · exact ⟨S, hSo, hx, fun y hy => by simp only [g, Set.indicator_of_mem hy, Set.indicator_of_mem hx, Pi.one_apply]⟩
-    · exact ⟨Sᶜ, hSc.isOpen_compl, hx, fun y hy => by simp only [g, Set.indicator_of_notMem hy, Set.indicator_of_notMem hx]⟩
+  have hg : g ∈ SB (κ → FiniteAdeleRing (𝓞 F) F) :=
+    ⟨(LocallyConstant.indicator (LocallyConstant.const _ (1 : ℂ)) ⟨hSc, hSo⟩).isLocallyConstant,
+      HasCompactSupport.intro hSk fun x hx => Set.indicator_of_notMem hx _⟩
   refine ⟨fun x => g fun i => (x i).2, ?_, fun f => ⟨?_, ?_⟩⟩
   · have h0 : (fun i => ((0 : κ → AF F) i).2) ∈ S := fun i _ => (GroundTheory.Global.integralFiniteAdeles (𝓞 F) F).zero_mem
     simp only [g, Set.indicator_of_mem h0, Pi.one_apply]

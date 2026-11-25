@@ -135,14 +135,8 @@ theorem _root_.GlobalTheory.HL.RatExt.rational_extend : ∀ {F E : Type} [Field 
     intro x y h
     funext i
     exact (A.loc p).ιE.injective (congrFun h i)
-  have hspan : Submodule.span (A.loc p).Ep (Set.range (A.bc (n := n) p)) = ⊤ := by
-    rw [eq_top_iff, ← (Pi.basisFun (A.loc p).Ep (Fin n)).span_eq]
-    refine Submodule.span_mono ?_
-    rintro _ ⟨i, rfl⟩
-    refine ⟨Pi.single i 1, ?_⟩
-    rw [hbc, Pi.basisFun_apply]
-    funext j
-    rcases eq_or_ne j i with rfl | h <;> simp [*]
+  have hspan : Submodule.span (A.loc p).Ep (Set.range (A.bc (n := n) p)) = ⊤ :=
+    span_range (A.loc p).ιE
   have hext : ∀ g : (Fin n → E) ≃ₗ[E] (Fin n → E), ∃ g', A.Ext p g g' := by
     intro g
     obtain ⟨g', hg'⟩ := _root_.GlobalTheory.HL.RatExt.exists_equiv (A.loc p).ιE g
@@ -151,9 +145,7 @@ theorem _root_.GlobalTheory.HL.RatExt.rational_extend : ∀ {F E : Type} [Field 
   · obtain ⟨g', hg'⟩ := hext g
     refine ⟨g', hg', fun g'' hg'' => ?_⟩
     apply LinearEquiv.toLinearMap_injective
-    refine LinearMap.ext_on_range hspan fun x => ?_
-    simp only [LinearEquiv.coe_coe]
-    rw [hg'' x, hg' x]
+    exact lin_ext (A.loc p).ιE _ _ fun x => (hg'' x).trans (hg' x).symm
   · unfold _root_.GlobalTheory.HL.Places.lat
     rw [Submodule.smul_span]
     congr 1

@@ -51,30 +51,22 @@ open scoped MatrixGroups ModularForm Manifold
 
 namespace GlobalTheory.Hk
 
-private theorem im_mul_pos' {q : ℕ} (hq : 0 < q) {z : ℂ} (hz : 0 < z.im) : 0 < ((q : ℂ) * z).im := by
-  have : (0 : ℝ) < q := by exact_mod_cast hq
-  simpa using mul_pos this hz
-
-private theorem im_div_pos' {q : ℕ} (hq : 0 < q) {z : ℂ} (hz : 0 < z.im) (j : ℕ) :
-    0 < ((z + j) / (q : ℂ)).im := by
-  have : (0 : ℝ) < q := by exact_mod_cast hq
-  rw [Complex.div_natCast_im]
-  simpa using div_pos hz this
-
 theorem uOp_mdiff {q : ℕ} (hq : 0 < q) {f : ℍ → ℂ} (hf : MDiff f) : MDiff (uOp q f) := by
   rw [UpperHalfPlane.mdifferentiable_iff] at hf ⊢
   have h : DifferentiableOn ℂ (fun z : ℂ =>
       (q : ℂ)⁻¹ * ∑ j ∈ Finset.range q, (f ∘ ofComplex) ((z + j) / q)) {z : ℂ | 0 < z.im} := by
     refine DifferentiableOn.const_mul ?_ _
     refine DifferentiableOn.fun_sum fun j _ => ?_
-    exact hf.comp (f := fun z : ℂ => (z + j) / (q : ℂ)) (by fun_prop) fun z hz => im_div_pos' hq hz j
+    exact hf.comp (f := fun z : ℂ => (z + j) / (q : ℂ)) (by fun_prop) fun z hz =>
+      by simpa [Complex.div_natCast_im] using div_pos hz (Nat.cast_pos.2 hq)
   refine h.congr fun z hz => ?_
   simp only [Function.comp, uOp, ofComplex_apply_of_im_pos hz]
 
 theorem vOp_mdiff {q : ℕ} (hq : 0 < q) {f : ℍ → ℂ} (hf : MDiff f) : MDiff (vOp q f) := by
   rw [UpperHalfPlane.mdifferentiable_iff] at hf ⊢
   have h : DifferentiableOn ℂ (fun z : ℂ => (f ∘ ofComplex) ((q : ℂ) * z)) {z : ℂ | 0 < z.im} :=
-    hf.comp (f := fun z : ℂ => (q : ℂ) * z) (by fun_prop) fun z hz => im_mul_pos' hq hz
+    hf.comp (f := fun z : ℂ => (q : ℂ) * z) (by fun_prop)
+      fun z hz => by simpa using mul_pos (Nat.cast_pos.2 hq) hz
   refine h.congr fun z hz => ?_
   simp only [Function.comp, vOp, ofComplex_apply_of_im_pos hz]
 

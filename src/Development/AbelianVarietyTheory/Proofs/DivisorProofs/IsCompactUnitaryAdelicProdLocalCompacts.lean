@@ -142,21 +142,10 @@ theorem continuous_tv (v : AwayP p) :
 theorem continuous_piV (v : AwayP p) : Continuous (piV G v) := by
   letI : TopologicalSpace (AfP p ⊗[ℚ] G.C) := moduleTopology (AfP p) (AfP p ⊗[ℚ] G.C)
   letI : TopologicalSpace (Qv v ⊗[ℚ] G.C) := moduleTopology (Qv v) (Qv v ⊗[ℚ] G.C)
-  have ht := continuous_tv G v
-  have hval : Continuous fun x : G.GAf => ((x : (AfP p ⊗[ℚ] G.C)ˣ × (AfP p)ˣ).1 : AfP p ⊗[ℚ] G.C) :=
-    Units.continuous_val.comp (continuous_fst.comp continuous_subtype_val)
-  have hinv : Continuous fun x : G.GAf => ((((x : (AfP p ⊗[ℚ] G.C)ˣ × (AfP p)ˣ).1)⁻¹ : (AfP p ⊗[ℚ] G.C)ˣ) : AfP p ⊗[ℚ] G.C) :=
-    Units.continuous_coe_inv.comp (continuous_fst.comp continuous_subtype_val)
-  have hval2 : Continuous fun x : G.GAf => ((x : (AfP p ⊗[ℚ] G.C)ˣ × (AfP p)ˣ).2 : AfP p) :=
-    Units.continuous_val.comp (continuous_snd.comp continuous_subtype_val)
-  have hinv2 : Continuous fun x : G.GAf => ((((x : (AfP p ⊗[ℚ] G.C)ˣ × (AfP p)ˣ).2)⁻¹ : (AfP p)ˣ) : AfP p) :=
-    Units.continuous_coe_inv.comp (continuous_snd.comp continuous_subtype_val)
-  apply Continuous.subtype_mk
-  apply Continuous.prodMk
-  · rw [Units.continuous_iff]
-    exact ⟨ht.comp hval, ht.comp hinv⟩
-  · rw [Units.continuous_iff]
-    exact ⟨(continuous_eval v).comp hval2, (continuous_eval v).comp hinv2⟩
+  exact (((Continuous.units_map _ (continuous_tv G v)).comp
+      (continuous_fst.comp continuous_subtype_val)).prodMk
+    ((Continuous.units_map _ (continuous_eval v)).comp
+      (continuous_snd.comp continuous_subtype_val))).subtype_mk _
 
 end GlobalTheory.OrbFinAf.CompactOrbitVectors
 

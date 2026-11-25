@@ -62,15 +62,9 @@ def infChar (θ : InfFam D) (n : D.what₂.Tau → ℤ) : (AE D)ˣ →* Circle :
 theorem coe_infChar (θ : InfFam D) (n : D.what₂.Tau → ℤ) (x : (AE D)ˣ) :
     ((infChar θ n x : Circle) : ℂ) =
       ∏ τ, (θ τ (infPart D (x : AE D)) / (‖θ τ (infPart D (x : AE D))‖ : ℂ)) ^ n τ := by
-  have h : ∀ s : Finset D.what₂.Tau, (((∏ τ ∈ s, phaseAt θ τ ^ n τ : (AE D)ˣ →* Circle) x : Circle) : ℂ) =
-      ∏ τ ∈ s, ((phaseAt θ τ x : Circle) : ℂ) ^ n τ := by
-    intro s
-    induction s using Finset.induction_on with
-    | empty => simp
-    | insert a s ha ih =>
-      rw [Finset.prod_insert ha, Finset.prod_insert ha, MonoidHom.mul_apply, Circle.coe_mul, ih,
-        MonoidHom.zpow_apply, Circle.coe_zpow]
-  exact h Finset.univ
+  change Circle.coeHom (infChar θ n x) = _
+  simp only [infChar, MonoidHom.finsetProd_apply, map_prod, MonoidHom.zpow_apply, map_zpow]
+  rfl
 
 def chi {N : ℕ} (c : HeckeU D N) (θ : InfFam D) (e : ℤ) : (AE D)ˣ →* Circle := (finChar c * infChar θ c.n) ^ e
 
@@ -78,17 +72,10 @@ theorem continuous_phaseAt {θ : InfFam D} (hθ : IsInfFam θ) (τ : D.what₂.T
   GlobalTheory.ChrEqUnique.continuous_phase.comp (Continuous.units_map _ (GlobalTheory.FockCompare.continuous_comp hθ τ))
 
 theorem continuous_infChar {θ : InfFam D} (hθ : IsInfFam θ) (n : D.what₂.Tau → ℤ) : Continuous (infChar θ n) := by
-  have h : ∀ s : Finset D.what₂.Tau,
-      Continuous (((∏ τ ∈ s, phaseAt θ τ ^ n τ : (AE D)ˣ →* Circle)) : (AE D)ˣ → Circle) := by
-    intro s
-    induction s using Finset.induction_on with
-    | empty =>
-      change Continuous (fun _ : (AE D)ˣ => (1 : Circle))
-      exact continuous_const
-    | insert a s ha ih =>
-      rw [Finset.prod_insert ha]
-      exact ((continuous_phaseAt hθ a).zpow (n a)).mul ih
-  exact h Finset.univ
+  have e : ⇑(infChar θ n) = fun x => ∏ τ, phaseAt θ τ x ^ n τ :=
+    funext fun x => by simp [infChar, MonoidHom.finsetProd_apply]
+  rw [e]
+  exact continuous_finsetProd _ fun τ _ => (continuous_phaseAt hθ τ).zpow (n τ)
 
 theorem finY_incA (a : D.host.Eˣ) :
     finY D (Units.map (incA D).toMonoidHom a) = Units.map (Formalism.MainNotions.StandardLatticesGL3.inc D).toMonoidHom a := by
