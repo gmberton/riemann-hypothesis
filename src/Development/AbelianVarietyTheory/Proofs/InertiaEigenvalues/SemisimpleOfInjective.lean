@@ -237,12 +237,8 @@ theorem IsChar.of_hom (ψ : Γ →* L) : IsChar (fun g => ψ g) := by
 
 theorem IsChar.sum {α : Type} (s : Finset α) (T : α → Γ → L) (h : ∀ a ∈ s, IsChar (T a)) :
     IsChar (fun g => ∑ a ∈ s, T a g) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using IsChar.zero
-  | insert a s ha ih =>
-    simp only [Finset.sum_insert ha]
-    exact (h a (Finset.mem_insert_self _ _)).add (ih fun b hb => h b (Finset.mem_insert_of_mem hb))
+  simpa only [← Finset.sum_apply] using
+    Finset.sum_induction T IsChar (fun _ _ => IsChar.add) IsChar.zero h
 
 end Char
 

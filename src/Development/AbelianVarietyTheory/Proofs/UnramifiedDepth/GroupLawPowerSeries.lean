@@ -49,11 +49,6 @@ open scoped CategoryTheory.Obj CategoryTheory.MonObj
 
 namespace GlobalTheory.ChLaw
 
-private lemma nil_of_mem_span {S : Type} [CommRing S] {s : Set S} (hs : ∀ a ∈ s, IsNilpotent a)
-    {c : S} (hc : c ∈ Ideal.span s) : IsNilpotent c := by
-  have h : Ideal.span s ≤ nilradical S := Ideal.span_le.2 fun a ha => mem_nilradical.2 (hs a ha)
-  exact mem_nilradical.1 (h hc)
-
 theorem groupLaw_powerSeries :
   (∀ {R₀ : Type} [CommRing R₀] {κ : Type} [Fintype κ] [DecidableEq κ] (f : MvPowerSeries κ R₀) (S : Type) [CommRing S] [Algebra R₀ S] (a : κ → S),
     (∀ N : ℕ, (∀ i, a i ^ N = 0) → nEval f a = tEval N f a) ∧
@@ -81,8 +76,9 @@ theorem groupLaw_powerSeries :
         x S a * x S b = x S c := by
     intro S _ _ a b ha hb
     set I : Ideal S := Ideal.span (Set.range a ∪ Set.range b) with hI
-    have hnil : ∀ c ∈ I, IsNilpotent c := fun c hc =>
-      nil_of_mem_span (by rintro _ (⟨i, rfl⟩ | ⟨i, rfl⟩); exacts [ha i, hb i]) hc
+    have hnil : ∀ c ∈ I, IsNilpotent c := fun c hc => mem_nilradical.1 <| Ideal.span_le.2
+      (Set.union_subset (Set.range_subset_iff.2 fun i => mem_nilradical.2 (ha i))
+        (Set.range_subset_iff.2 fun i => mem_nilradical.2 (hb i))) hc
     have hker : ∀ c, c ∈ RingHom.ker (Ideal.Quotient.mkₐ R₀ I) ↔ c ∈ I := fun c => by
       rw [RingHom.mem_ker, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
     have hz : spMap (Ideal.Quotient.mkₐ R₀ I) ≫ (x S a * x S b) = 1 := by

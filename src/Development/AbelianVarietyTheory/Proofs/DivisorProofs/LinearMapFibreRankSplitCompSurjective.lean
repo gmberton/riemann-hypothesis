@@ -40,10 +40,7 @@ theorem fibre_ranks : ∀ (O : Type) [CommRing O] (M : Type) [AddCommGroup M] [M
   · intro h
     exact surjective_of_fibre_rank O M N f h
   · intro _ q
-    haveI : Nontrivial O := by
-      by_contra hn
-      rw [not_nontrivial_iff_subsingleton] at hn
-      exact q.isPrime.ne_top (Subsingleton.elim _ _)
+    haveI : Nontrivial O := q.nontrivial
     exact Module.finrank_baseChange
 
 end GlobalTheory.FibreRanks

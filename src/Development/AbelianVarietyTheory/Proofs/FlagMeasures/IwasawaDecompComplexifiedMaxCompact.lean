@@ -74,13 +74,8 @@ theorem lo_iff {a : Matrix (Fin n) (Fin n) ℂ} : IsLo a ↔ a.IsLowerTriangular
   · intro h i j hij
     exact h (OrderDual.toDual_lt_toDual.mpr hij)
 
-theorem lo_mul {a b : Matrix (Fin n) (Fin n) ℂ} (ha : IsLo a) (hb : IsLo b) : IsLo (a * b) := by
-  intro i j hij
-  rw [Matrix.mul_apply]
-  refine Finset.sum_eq_zero fun k _ => ?_
-  rcases lt_or_ge i k with h | h
-  · rw [ha i k h, zero_mul]
-  · rw [hb k j (lt_of_le_of_lt h hij), mul_zero]
+theorem lo_mul {a b : Matrix (Fin n) (Fin n) ℂ} (ha : IsLo a) (hb : IsLo b) : IsLo (a * b) :=
+  lo_iff.mpr ((lo_iff.mp ha).mul (lo_iff.mp hb))
 
 theorem lo_inv {a : Matrix (Fin n) (Fin n) ℂ} (ha : IsLo a) (hu : IsUnit a) : IsLo a⁻¹ := by
   rw [lo_iff] at ha ⊢
@@ -310,12 +305,11 @@ theorem iwasawaKC : IwasawaKC := by
     rw [show (κ y)ᴴ * y = (κ y)ᴴ * (κ y * β y) by rw [← hy'], ← Matrix.mul_assoc,
       ← Matrix.star_eq_conjTranspose, hu, Matrix.one_mul]
   have unitK : ∀ k ∈ Kset ε, IsUnit k := fun k hk =>
-    (Matrix.isUnit_iff_isUnit_det k).2 (IsUnit.of_mul_eq_one (star k).det
-      (by rw [← Matrix.det_mul, Matrix.mem_unitaryGroup_iff.mp hk.1, Matrix.det_one]))
+    (Matrix.isUnit_iff_isUnit_det k).2
+      (Matrix.isUnit_det_of_right_inverse (Matrix.mem_unitaryGroup_iff.mp hk.1))
   have unitKh : ∀ k ∈ Kset ε, IsUnit kᴴ := fun k hk =>
-    (Matrix.isUnit_iff_isUnit_det kᴴ).2 (IsUnit.of_mul_eq_one k.det
-      (by rw [← Matrix.det_mul, ← Matrix.star_eq_conjTranspose,
-        Matrix.mem_unitaryGroup_iff'.mp hk.1, Matrix.det_one]))
+    (Matrix.isUnit_iff_isUnit_det kᴴ).2
+      (Matrix.isUnit_det_of_right_inverse (Matrix.mem_unitaryGroup_iff'.mp hk.1))
 
   have hKc : IsCompact (Kset ε) := by
     have hB := isCompact_univ_pi fun _ : Fin n =>

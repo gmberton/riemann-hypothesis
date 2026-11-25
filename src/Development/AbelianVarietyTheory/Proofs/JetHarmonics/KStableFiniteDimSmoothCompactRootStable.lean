@@ -165,11 +165,8 @@ private lemma unitary_conj_mem_and_commute_Jmat {n : ℕ} (Jmat M Q g : Matrix (
       _ = g * (gᴴ * M * g) := by simp only [Matrix.mul_assoc]
       _ = g * M := by rw [hgM']
   refine ⟨?_, ?_, ?_⟩
-  · have hs : Qᴴ ∈ Matrix.unitaryGroup (Fin n) ℂ := by
-      rw [Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose,
-        Matrix.conjTranspose_conjTranspose]
-      exact q1
-    exact Submonoid.mul_mem _ (Submonoid.mul_mem _ hQ hgU) hs
+  · exact Submonoid.mul_mem _ (Submonoid.mul_mem _ hQ hgU)
+      (Matrix.star_eq_conjTranspose Q ▸ Unitary.star_mem hQ)
   · rw [hJ]
     calc Q * g * Qᴴ * (Q * M * Qᴴ) = Q * g * (Qᴴ * Q) * M * Qᴴ := by simp only [Matrix.mul_assoc]
       _ = Q * (M * g) * Qᴴ := by

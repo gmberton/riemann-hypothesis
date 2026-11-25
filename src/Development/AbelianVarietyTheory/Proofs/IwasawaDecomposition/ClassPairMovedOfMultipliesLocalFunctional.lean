@@ -97,44 +97,38 @@ section Tied
 
 variable {D : D7} {u : D.what₂.Word} {i : ℕ} {hi : i ≤ D.R.m}
 
-theorem ld_lattice (c : (D.mem u).C.cls i) : Submodule.IsLattice D.host.E (Ld D u i hi c) := by
-  letI := D.host.cmStar
+private lemma clsCrd_fullLattice (c : (D.mem u).C.cls i)
+    [Submodule.IsLattice D.host.E (clsCrd D u i hi c)] :
+    Submodule.IsFullLattice D.host.E (clsCrd D u i hi c) := by
   let φ := (D.sp.X i).frame.equivFun.trans
     (LinearEquiv.funCongrLeft D.host.E D.host.E (finCongr (rankN D i hi)).symm)
+  constructor
+  change Submodule.span D.host.E (((D.clsLat u i c).map
+    (φ.toLinearMap.restrictScalars (𝓞 D.host.E)) :
+      Submodule (𝓞 D.host.E) (Fin (D.R.N i) → D.host.E)) :
+    Set (Fin (D.R.N i) → D.host.E)) = ⊤
+  rw [show Submodule.span D.host.E (((D.clsLat u i c).map
+      (φ.toLinearMap.restrictScalars (𝓞 D.host.E)) :
+        Submodule (𝓞 D.host.E) (Fin (D.R.N i) → D.host.E)) :
+      Set (Fin (D.R.N i) → D.host.E)) =
+      (Submodule.span D.host.E (D.clsLat u i c : Set _)).map φ.toLinearMap by
+        rw [Submodule.map_span]; rfl,
+    (D.clsLat_lat u i c).span_eq_top, Submodule.map_top, LinearMap.range_eq_top]
+  exact φ.surjective
+
+theorem ld_lattice (c : (D.mem u).C.cls i) : Submodule.IsLattice D.host.E (Ld D u i hi c) := by
+  letI := D.host.cmStar
   letI : Submodule.IsLattice D.host.E (clsCrd D u i hi c) := bwB_clsCrd_lat D u i hi c
-  have hL : Submodule.IsFullLattice D.host.E (clsCrd D u i hi c) := by
-    constructor
-    change Submodule.span D.host.E (((D.clsLat u i c).map
-      (φ.toLinearMap.restrictScalars (𝓞 D.host.E)) : Submodule (𝓞 D.host.E) (Fin (D.R.N i) → D.host.E)) : Set (Fin (D.R.N i) → D.host.E)) = ⊤
-    rw [show Submodule.span D.host.E (((D.clsLat u i c).map
-        (φ.toLinearMap.restrictScalars (𝓞 D.host.E)) : Submodule (𝓞 D.host.E) (Fin (D.R.N i) → D.host.E)) : Set (Fin (D.R.N i) → D.host.E)) =
-        (Submodule.span D.host.E (D.clsLat u i c : Set _)).map φ.toLinearMap by
-          rw [Submodule.map_span]; rfl,
-      (D.clsLat_lat u i c).span_eq_top, Submodule.map_top, LinearMap.range_eq_top]
-    exact φ.surjective
+  have hL : Submodule.IsFullLattice D.host.E (clsCrd D u i hi c) := clsCrd_fullLattice c
   obtain ⟨d, hd, hle⟩ := LocB.dual_le_bnd (sigD D : D.host.E →+* D.host.E) (gramN D i hi) (bwB_gramN_det D i hi) _ hL
   exact Submodule.IsLattice.of_fg D.host.E (LocB.fg_of_le_bnd hd hle)
-
-
-
 
 theorem ld_loc (K : ClsTied u i hi) (v : HeightOneSpectrum (𝓞 D.host.F)) (c : (D.mem u).C.cls i)
     (x : Fin (D.R.N i) → D.host.E ⊗[D.host.F] v.adicCompletion D.host.F) :
     x ∈ latS (F := D.host.F) (v.adicCompletion D.host.F) (intV D.host.E v) (Ld D u i hi c) ↔
       ((bc (prV (E := D.host.E) v) (K.y c).1)⁻¹).1 *ᵥ x ∈ dualV K v := by
-  let φ := (D.sp.X i).frame.equivFun.trans
-    (LinearEquiv.funCongrLeft D.host.E D.host.E (finCongr (rankN D i hi)).symm)
   letI : Submodule.IsLattice D.host.E (clsCrd D u i hi c) := bwB_clsCrd_lat D u i hi c
-  have hL : Submodule.IsFullLattice D.host.E (clsCrd D u i hi c) := by
-    constructor
-    change Submodule.span D.host.E (((D.clsLat u i c).map
-      (φ.toLinearMap.restrictScalars (𝓞 D.host.E)) : Submodule (𝓞 D.host.E) (Fin (D.R.N i) → D.host.E)) : Set (Fin (D.R.N i) → D.host.E)) = ⊤
-    rw [show Submodule.span D.host.E (((D.clsLat u i c).map
-        (φ.toLinearMap.restrictScalars (𝓞 D.host.E)) : Submodule (𝓞 D.host.E) (Fin (D.R.N i) → D.host.E)) : Set (Fin (D.R.N i) → D.host.E)) =
-        (Submodule.span D.host.E (D.clsLat u i c : Set _)).map φ.toLinearMap by
-          rw [Submodule.map_span]; rfl,
-      (D.clsLat_lat u i c).span_eq_top, Submodule.map_top, LinearMap.range_eq_top]
-    exact φ.surjective
+  have hL : Submodule.IsFullLattice D.host.E (clsCrd D u i hi c) := clsCrd_fullLattice c
   letI : Submodule.IsLattice D.host.E K.lev.Lb :=
     Submodule.IsLattice.of_fg D.host.E (Module.Finite.iff_fg.1 K.lev.Lb_fin)
   have hLb : Submodule.IsFullLattice D.host.E K.lev.Lb := ⟨K.lev.Lb_span⟩

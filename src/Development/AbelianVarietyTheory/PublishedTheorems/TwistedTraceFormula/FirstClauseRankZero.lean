@@ -77,13 +77,8 @@ theorem two_mul_finrank_le {E : Type} [Field E] [NumberField E] [StarRing E] (B 
   have h3 := Subspace.finrank_add_finrank_dualCoannihilator_eq (Submodule.span E (Set.range fun i => B.hT (b i)))
   rw [finrank_span_eq_card hl, Fintype.card_fin, B.rank_eq] at h3
   have h4 : W ≤ (Submodule.span E (Set.range fun i => B.hT (b i))).dualCoannihilator := fun y hy => by
-    rw [Submodule.mem_dualCoannihilator]
-    intro φ hφ
-    induction hφ using Submodule.span_induction with
-    | mem _ h => obtain ⟨i, rfl⟩ := h; exact hW _ (b i).2 _ hy
-    | zero => rfl
-    | add _ _ _ _ h h' => rw [LinearMap.add_apply, h, h', add_zero]
-    | smul _ _ _ h => rw [LinearMap.smul_apply, h, smul_zero]
+    rw [← SetLike.mem_coe, Submodule.coe_dualCoannihilator_span]
+    rintro _ ⟨i, rfl⟩; exact hW _ (b i).2 _ hy
   have := Submodule.finrank_mono h4
   omega
 

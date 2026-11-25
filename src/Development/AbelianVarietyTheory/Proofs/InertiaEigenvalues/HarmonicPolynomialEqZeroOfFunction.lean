@@ -170,12 +170,7 @@ theorem Eig.pow {x : R} (hx : Eig φ h x) (k : ℕ) : Eig φ h (x ^ k) := by
   | succ k ih => rw [pow_succ]; exact ih.mul hx
 
 theorem Eig.prod {ι : Type} (s : Finset ι) (x : ι → R) (hx : ∀ i ∈ s, Eig φ h (x i)) : Eig φ h (∏ i ∈ s, x i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using Eig.one
-  | insert a s ha ih =>
-    rw [Finset.prod_insert ha]
-    exact (hx a (Finset.mem_insert_self _ _)).mul (ih fun i hi => hx i (Finset.mem_insert_of_mem hi))
+  exact Finset.prod_induction x (Eig φ h) (fun _ _ => Eig.mul) Eig.one hx
 
 end Eig
 

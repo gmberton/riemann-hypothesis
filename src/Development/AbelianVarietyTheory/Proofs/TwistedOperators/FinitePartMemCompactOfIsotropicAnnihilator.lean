@@ -163,11 +163,8 @@ namespace GlobalTheory.TwistCoords
 
 theorem trace_tmul_base {F E R : Type} [Field F] [Field E] [Algebra F E] [FiniteDimensional F E]
     [CommRing R] [Algebra F R] (r : R) (x : E) :
-    Algebra.trace R (R ⊗[F] E) (r ⊗ₜ[F] x) = r * algebraMap F R (Algebra.trace F E x) := by
-  have h1 : (r ⊗ₜ[F] x : R ⊗[F] E) = r • ((1 : R) ⊗ₜ[F] x) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [h1, map_smul, Algebra.trace_apply, Algebra.trace_apply, ← Algebra.baseChange_lmul,
-    LinearMap.trace_baseChange, smul_eq_mul]
+    Algebra.trace R (R ⊗[F] E) (r ⊗ₜ[F] x) = r * algebraMap F R (Algebra.trace F E x) :=
+  _root_.GlobalTheory.LatVac.trace_tmul R r x
 
 theorem repr_eq_trace {F E : Type} [Field F] [Field E] [Algebra F E] [FiniteDimensional F E]
     [Algebra.IsSeparable F E] {ι : Type} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι F E)

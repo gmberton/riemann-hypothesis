@@ -53,14 +53,8 @@ namespace GlobalTheory.RowInt
 variable {D : D7}
 
 theorem latO_negSp_le (S T : HSp D) (LS : Set (Fin S.rank → D.host.E)) (LT : Set (Fin T.rank → D.host.E))
-    (P : HeightOneSpectrum (𝓞 D.host.F) → Prop) : latO (negSp S) T LS LT P ≤ latO S T LS LT P := by
-  unfold latO
-  rw [AddSubgroup.closure_le]
-  rintro w ⟨α, hα, hP, a, ha, s, hs, t, ht, rfl⟩
-  rw [← neg_neg (Matrix.of _)]
-  refine neg_mem (AddSubgroup.subset_closure ⟨α, hα, hP, a, ha, s, hs, t, ht, ?_⟩)
-  funext i j
-  simp [negSp_gram, Finset.sum_neg_distrib, TensorProduct.tmul_neg]
+    (P : HeightOneSpectrum (𝓞 D.host.F) → Prop) : latO (negSp S) T LS LT P ≤ latO S T LS LT P :=
+  (_root_.GlobalTheory.CoreRowLat.latO_negSp S T LS LT P).le
 
 theorem smul_mem_latO_at : All fun {D} _ _ _ {G} _ _ =>
     ∀ i, i < D.R.m → ∀ v, ∀ e ∈ intAt D (· = v), ∀ u ∈ latRow G i,

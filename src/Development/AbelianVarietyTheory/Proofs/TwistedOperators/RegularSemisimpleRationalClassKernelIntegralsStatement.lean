@@ -53,6 +53,7 @@ import Mathlib.RingTheory.PicardGroup
 import Formalism.LocalToGlobal.IndefiniteReal.FinitePlaces.IdemElt
 import Mathlib.Tactic.Polynomial.Basic
 import Mathlib.Tactic.ReduceModChar
+import Development.AbelianVarietyTheory.Proofs.DivisorProofs.HyperbolicTermsVanish
 
 -- This file was produced by scripts/clump.py from the modules listed below.
 -- Members: Development.AbelianVarietyTheory.Proofs.DivisorProofs.NilpotentEqZeroOfCommuteSepAlg, Development.AbelianVarietyTheory.Proofs.TwistedOperators.RegularSemisimpleRationalClassKernelIntegrals, Development.AbelianVarietyTheory.Proofs.TwistedOperators.RegularSemisimpleRationalClassKernelIntegralsStatement
@@ -170,8 +171,8 @@ open GlobalTheory.IndefiniteRowSideFullHecke.NonFieldTypeVanishingAlt
 
 variable {D : D7} {V : HSp D}
 
-theorem rat_mem (g : GF V) : rat V g ∈ GQ V := by
-  rw [show GQ V = (rat V).range from (range_ratEmb ..).symm]; exact ⟨g, rfl⟩
+theorem rat_mem (g : GF V) : rat V g ∈ GQ V :=
+  _root_.GlobalTheory.SplitTorusZero.rat_mem_GQ g
 
 def classEquiv (γ : GF V) : {δ : GF V | IsConj γ δ} ≃ ratClass (GQ V) (rat V γ) :=
   Equiv.ofBijective (fun δ => ⟨rat V δ, by
@@ -190,14 +191,8 @@ theorem classKernel_eq (γ : GF V) (f : GA D V → ℂ) (x : GA D V) :
   ((classEquiv γ).tsum_eq fun δ : ratClass (GQ V) (rat V γ) => f (x⁻¹ * δ * x)).symm
 
 theorem summable_class {f : GA D V → ℂ} (hf : HasCompactSupport f) {γ : GA D V} (hγ : γ ∈ GQ V) (x : GA D V) :
-    Summable fun δ : ratClass (GQ V) γ => f (x⁻¹ * δ * x) := by
-  have hmem : ∀ δ : ratClass (GQ V) γ, (δ : GA D V) ∈ GQ V := fun ⟨δ, k, hk, e⟩ => e ▸ mul_mem (mul_mem (inv_mem hk) hγ) hk
-  let ι : ratClass (GQ V) γ → GQ V := fun δ => ⟨δ, hmem δ⟩
-  have hι : Function.Injective ι := fun a b e => Subtype.ext (congrArg (fun z : GQ V => (z : GA D V)) e)
-  apply summable_of_hasFiniteSupport
-  refine ((GlobalTheory.AutomorphicL2Unitary.finite_support_kernel (Γ := GQ V) hf x x).preimage hι.injOn).subset ?_
-  intro δ hδ
-  exact hδ
+    Summable fun δ : ratClass (GQ V) γ => f (x⁻¹ * δ * x) :=
+  _root_.GlobalTheory.SplitTorusZero.summable_class hf hγ x
 
 theorem fd_iff {μ : Measure (GA D V)} [μ.IsHaarMeasure] {𝓕 : Set (GA D V)} (h𝓕 : IsFundamentalDomain (GQ V) 𝓕 μ)
     {φ : GA D V → ℂ} (hφ : GlobalTheory.AutomorphicL2Unitary.LeftInv (GQ V) φ) :

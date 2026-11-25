@@ -159,10 +159,6 @@ theorem stab : ∀ (D : D7) (W : HSp D) (s : ℕ) (L : Matrix (Fin W.rank) (Fin 
       _ = L.map (incA D) := by rw [← Matrix.mul_assoc, mt_inv_mul, Matrix.one_mul]
   have hPΓ : P.map (incA D) * Formalism.L2.Theta.mt W γ = P.map (incA D) := by
     rw [hγ₀, ← Matrix.map_mul, hPγ]
-  have hPΓi : P.map (incA D) * Formalism.L2.Theta.mt W γ⁻¹ = P.map (incA D) := by
-    calc P.map (incA D) * Formalism.L2.Theta.mt W γ⁻¹
-        = P.map (incA D) * Formalism.L2.Theta.mt W γ * Formalism.L2.Theta.mt W γ⁻¹ := by rw [hPΓ]
-      _ = P.map (incA D) := by rw [Matrix.mul_assoc, mt_mul_inv, Matrix.mul_one]
 
   have key : NI W L ≤ (NI W L).comap (MulAut.conj γ).toMonoidHom := by
     refine (Subgroup.closure_le _).2 fun m hm => ?_

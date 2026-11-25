@@ -72,11 +72,10 @@ theorem kapX_one (X : HSp D) {d : ℕ} (e : Fin X.rank ≃ Fin d) {J : Matrix (F
   rw [map_one, map_one]
 
 theorem continuous_kapX (X : HSp D) {d : ℕ} (e : Fin X.rank ≃ Fin d) {J : Matrix (Fin d) (Fin d) D.host.E}
-    (hJ : J = D.host.xi0 • reindex e e X.gramᵀ) : Continuous (kapX X e hJ) := by
-  have h1 : Continuous (matHom X) := continuous_subtype_val
-  refine Continuous.subtype_mk (Units.continuous_iff.2 ⟨?_, ?_⟩) _
-  · exact (Units.continuous_val.comp h1).matrix_reindex e e
-  · exact (Units.continuous_coe_inv.comp h1).matrix_reindex e e
+    (hJ : J = D.host.xi0 • reindex e e X.gramᵀ) : Continuous (kapX X e hJ) :=
+  Continuous.subtype_mk ((Continuous.units_map
+    (Matrix.reindexAlgEquiv (AE D) (AE D) e).toMonoidHom
+    (continuous_id.matrix_reindex e e)).comp continuous_subtype_val) _
 
 theorem smul_eq_zero_of_finTens {u : AF D.host.F} (hu : GlobalTheory.IndefiniteRowSideFullHecke.WeilTensorModels.evI D.host.F u = 0) {z : AE D}
     (hz : GlobalTheory.LFun.finTens D.host.F D.host.E z = 0) : u • z = 0 := by

@@ -143,19 +143,15 @@ theorem mem_loc_iff {W : Type} [AddCommGroup W] [Module (𝓞 K) W] (L : Submodu
     x ∈ loc (K := K) P L ↔ ∃ s ∉ v.asIdeal, algebraMap (𝓞 (maximalRealSubfield K)) (𝓞 K) s • x ∈ L := by
   constructor
   · rintro ⟨s, hs, hx⟩
-    have key : ∀ s ∈ hcompl (K := K) P, s ∉ P ∧ IsCMField.ringOfIntegersComplexConj K s ∉ P := by
-      intro s hs
-      induction hs using Submonoid.closure_induction with
-      | mem s h => exact ⟨h.1, h.2 _ (hst _).symm⟩
-      | one => rw [map_one, and_self]; exact (Ideal.ne_top_iff_one _).1 hP.ne_top
-      | mul a b _ _ ha hb =>
-        rw [map_mul]
-        exact ⟨fun h => (hP.mem_or_mem h).elim ha.1 hb.1, fun h => (hP.mem_or_mem h).elim ha.2 hb.2⟩
+    have key : hcompl (K := K) P ≤ P.primeCompl ⊓ P.primeCompl.comap
+        (IsCMField.ringOfIntegersComplexConj K).toMonoidHom :=
+      haveI := hP
+      Submonoid.closure_le.2 fun s h => ⟨h.1, h.2 _ (hst _).symm⟩
     obtain ⟨m, hm⟩ := (IsCMField.ringOfIntegersComplexConj_eq_self_iff K
       (IsCMField.ringOfIntegersComplexConj K s * s)).1 (by ext; simp [mul_comm])
     refine ⟨m, ?_, ?_⟩
     · rw [← hPv, Ideal.mem_comap, hm]
-      exact fun h => (hP.mem_or_mem h).elim (key s hs).2 (key s hs).1
+      exact fun h => (hP.mem_or_mem h).elim (key hs).2 (key hs).1
     · rw [hm, mul_smul]
       exact L.smul_mem _ hx
   · rintro ⟨s, hs, hx⟩

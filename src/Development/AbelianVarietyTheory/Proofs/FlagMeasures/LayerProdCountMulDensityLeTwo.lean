@@ -138,7 +138,7 @@ theorem layerProd_le_exp (n f : ℕ) {a : ℕ} (j : Fin a → ℕ) (τ : Fin a �
   apply mul_le_mul_of_nonneg_right _ hx
   exact_mod_cast layerProd_exponent_le_three_mul_sum_mul n f j hn
 
-private theorem mul_prod_mul_le_prod_of_le_one {a : ℕ} (X : ℝ) (u v : Fin a → ℝ) (hX0 : 0 ≤ X) (hX1 : X ≤ 1)
+private theorem mul_prod_mul_le_prod_of_le_one {a : ℕ} (X : ℝ) (u v : Fin a → ℝ) (hX1 : X ≤ 1)
     (hu : ∀ i, 0 ≤ u i) (hv0 : ∀ i, 0 ≤ v i) (hv1 : ∀ i, v i ≤ 1) :
     X * ∏ i, u i * v i ≤ ∏ i, u i := by
   rw [Finset.prod_mul_distrib]
@@ -179,13 +179,8 @@ theorem layerProd_count_mul_density_le_two :
       _ = 2 := Real.exp_log (by norm_num)
   · unfold layerProd
     refine mul_prod_mul_le_prod_of_le_one _ (fun i => τ i ^ (2 * j i * (n - 2 * ∑ l, j l) * f))
-      (fun i => (τ i ^ 2) ^ (j i ^ 2 * f)) ?_ ?_ (fun i => pow_nonneg (hpos i).le _)
+      (fun i => (τ i ^ 2) ^ (j i ^ 2 * f)) ?_ (fun i => pow_nonneg (hpos i).le _)
       (fun i => pow_nonneg (pow_pos (hpos i) 2).le _) ?_
-    · apply Finset.prod_nonneg
-      intro i _
-      apply Finset.prod_nonneg
-      intro k _
-      exact mul_nonneg (pow_nonneg (div_pos (hpos i) (hpos k)).le _) (pow_nonneg (mul_pos (hpos i) (hpos k)).le _)
     · apply Finset.prod_le_one₀
       · intro i _
         apply Finset.prod_nonneg

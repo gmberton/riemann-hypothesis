@@ -100,12 +100,7 @@ lemma fam_mem {R : Type} [Ring R] [Module R V] (t : Term V M r) (A : Submodule R
     exact (A.sub_mem_iff_left (h b)).symm
   | some g => simp only [Sum.forall, Sum.elim_inl, Sum.elim_inr]
 
-lemma th_ne (S : Frames M.L r k) : S.th ≠ 0 := by
-  unfold Frames.th
-  split_ifs
-  · intro h
-    exact S.ϖ_irr.ne_zero (Subtype.ext h)
-  · exact one_ne_zero
+lemma th_ne (S : Frames M.L r k) : S.th ≠ 0 := _root_.GlobalTheory.HL.WitIndep.th_ne S
 
 lemma lat_span (t : Term V M r) :
     c.lat (Submodule.span M.L.O (Set.range (H.MMfam t))) =

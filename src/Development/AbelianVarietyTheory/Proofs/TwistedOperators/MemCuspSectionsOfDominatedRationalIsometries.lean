@@ -372,11 +372,8 @@ theorem flow_nsmul (X : Data E r) {n : ℕ} (hn : 0 < n) (v : Fin r → E) (t : 
   field_simp
 
 theorem lact_mul_q {Ψ : Finset (E →+* ℂ)} (a b : GL (Fin r) E) (x : Frame Ψ r) :
-    lact (a * b) x = lact a (lact b x) := by
-  funext τ
-  simp only [lact, mat, Units.val_mul, Matrix.map_mul]
-  rw [Matrix.mul_assoc]
-  rfl
+    lact (a * b) x = lact a (lact b x) :=
+  (_root_.GlobalTheory.Dict.Extend.lact_lact a b x).symm
 
 theorem norm_chi (X : Data E r) (la : Wt X.Ψ r) {g : GL (Fin r) E} (hg : g ∈ X.Γ) : ‖X.χ la g‖ = 1 := by
   obtain ⟨n, hn, h⟩ := X.χ_fin la

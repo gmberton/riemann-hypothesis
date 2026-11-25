@@ -89,12 +89,8 @@ theorem theta_zero' (ψ : AddChar (AF D.host.F) ℂ) (S T : HSp D) : IsThetaFunO
 
 theorem theta_sum' {ψ : AddChar (AF D.host.F) ℂ} {S T : HSp D} {ι : Type*} (s : Finset ι) (F : ι → WO S T → ℂ)
     (hF : ∀ i ∈ s, IsThetaFunO ψ S T (F i)) : IsThetaFunO ψ S T (fun w => ∑ i ∈ s, F i w) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using theta_zero' ψ S T
-  | insert i s hi ih =>
-    simp only [Finset.sum_insert hi]
-    exact theta_add' (hF i (Finset.mem_insert_self i s)) (ih fun j hj => hF j (Finset.mem_insert_of_mem hj))
+  simpa only [← Finset.sum_apply] using
+    Finset.sum_induction F (IsThetaFunO ψ S T) (fun _ _ => theta_add') (theta_zero' ψ S T) hF
 
 section Ops
 

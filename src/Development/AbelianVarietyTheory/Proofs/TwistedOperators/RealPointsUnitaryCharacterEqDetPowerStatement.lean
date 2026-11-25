@@ -416,11 +416,8 @@ variable {E : Type} [Field E] {n : ℕ} {σ : E →+* E} {G : Matrix (Fin n) (Fi
 theorem isU_one : IsU σ G 1 := fun x y => by simp
 
 theorem isU_refl (hG : IsHerm σ G) {x : Fin n → E} {u : E} (hx : hf σ G x x ≠ 0) (hu : u * σ u = 1) :
-    IsU σ G (tv σ G x ((u - 1) / hf σ G x x)) := by
-  apply Calc.isU_tv σ G hG.invol hG.herm
-  rw [map_div₀, Calc.hf_conj σ G hG.invol hG.herm, map_sub, map_one]
-  field_simp
-  linear_combination hu
+    IsU σ G (tv σ G x ((u - 1) / hf σ G x x)) :=
+  _root_.GlobalTheory.UTrans.ReflChar0.isU_refl hG hx hu
 
 theorem refl_mul {x : Fin n → E} (u v : E) (hx : hf σ G x x ≠ 0) :
     tv σ G x ((u - 1) / hf σ G x x) * tv σ G x ((v - 1) / hf σ G x x) =

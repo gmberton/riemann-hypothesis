@@ -235,13 +235,8 @@ theorem relIndex_matrix_lattice : ∀ (F : Type) [Field F] [NumberField F] (v : 
   have hdetB : LinearMap.det B ≠ 0 := by
     rw [hBdet, hG, hH]
     exact mul_ne_zero (pow_ne_zero _ x.ne_zero) (pow_ne_zero _ y.ne_zero)
-  have hBbij : Function.Bijective B := by
-    obtain ⟨U, hU⟩ := (LinearMap.isUnit_iff_isUnit_det B).2 (Ne.isUnit hdetB)
-    have h1 : ∀ w, U.inv (B w) = w := fun w => by
-      rw [← hU]; exact LinearMap.congr_fun U.inv_val w
-    have h2 : ∀ w, B (U.inv w) = w := fun w => by
-      rw [← hU]; exact LinearMap.congr_fun U.val_inv w
-    exact ⟨Function.LeftInverse.injective h1, Function.RightInverse.surjective h2⟩
+  have hBbij : Function.Bijective B :=
+    (Module.End.isUnit_iff B).mp ((LinearMap.isUnit_iff_isUnit_det B).2 (Ne.isUnit hdetB))
 
   obtain ⟨π0, hπ0⟩ := v.valuation_exists_uniformizer' F
   set pK : Fv F v := algebraMap F (Fv F v) (π0 : F) with hpK

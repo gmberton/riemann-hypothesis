@@ -106,12 +106,7 @@ theorem isCompact_bounded : ∀ (E : Type) [Field E] [NumberField E] (w : Height
   intro E _ _ w n c
   set K := w.adicCompletion E
   set S : Set (Matrix (Fin n) (Fin n) K) := {A | ∀ i j, Valued.v (A i j) ≤ c} with hS
-  have hK : IsCompact S := by
-    have h : IsCompact (Set.pi Set.univ fun _ : Fin n => Set.pi Set.univ fun _ : Fin n => {x : K | Valued.v x ≤ c}) :=
-      isCompact_univ_pi fun _ => isCompact_univ_pi fun _ => isCompact_le w c
-    have e : S = (Set.pi Set.univ fun _ : Fin n => Set.pi Set.univ fun _ : Fin n => {x : K | Valued.v x ≤ c}) :=
-      Set.ext fun x => ⟨fun hx i _ j _ => hx i j, fun hx i j => hx i trivial j trivial⟩
-    rw [e]; exact h
+  have hK : IsCompact S := (isCompact_le w c).matrix
   have h := (Units.isClosedEmbedding_embedProduct (α := Matrix (Fin n) (Fin n) K)).isCompact_preimage
     (hK.prod (hK.image MulOpposite.continuous_op))
   convert h using 1

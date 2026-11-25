@@ -141,10 +141,6 @@ theorem rad_le_ker : ∀ (ι Q Pi : Type) [AddCommGroup Q] [Module ℂ Q] [AddCo
   GlobalTheory.RealQuot.rad ρ C ≤ LinearMap.ker β := by
   intro ι Q Pi _ _ _ _ ρ C σ β hi hk hrad hss
   by_contra hne
-  have hKs : IsStab ρ (LinearMap.ker β) := fun i x hx => by
-    rw [LinearMap.mem_ker] at hx ⊢
-    rw [← LinearMap.comp_apply, hi i, LinearMap.comp_apply, hx, map_zero]
-  have hK : LinearMap.ker β ≠ ⊤ := fun h => hne (h ▸ le_top)
   have hTs : IsStab σ ((rad ρ C).map β) := by
     rintro i _ ⟨x, hx, rfl⟩
     exact ⟨ρ i x, isStab_rad ρ C i x hx, by rw [← LinearMap.comp_apply, hi i, LinearMap.comp_apply]⟩

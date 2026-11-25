@@ -73,9 +73,8 @@ section Sympl
 
 variable {S T : HSp D}
 
-theorem symplOH_skew (x y : WO S T) : symplOH S T y x = -symplOH S T x y := by
-  unfold symplOH
-  rw [GlobalTheory.OrientedHeis.symplO_skew, mul_neg]
+theorem symplOH_skew (x y : WO S T) : symplOH S T y x = -symplOH S T x y :=
+  _root_.GlobalTheory.MixModel.symplOH_skew S T x y
 
 theorem symplOH_neg_right (x y : WO S T) : symplOH S T x (-y) = -symplOH S T x y := by
   have h := GlobalTheory.OrientedHeis.symplOH_add_right x y (-y)

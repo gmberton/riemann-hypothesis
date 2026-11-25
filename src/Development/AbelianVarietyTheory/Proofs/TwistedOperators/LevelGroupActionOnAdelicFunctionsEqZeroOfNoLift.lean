@@ -65,12 +65,8 @@ section General
 
 variable {D : D7} {V : HSp D} {S : D.what₂.Tau → SPar}
 
-theorem topGroup (V : HSp D) : IsTopologicalGroup (GA D V) := by
-  have : IsModuleTopology (AF D.host.F) (AF D.host.F ⊗[D.host.F] D.host.E) := ⟨rfl⟩
-  have : Module.Finite D.host.F D.host.E := Module.Finite.of_restrictScalars_finite ℚ _ _
-  have : IsTopologicalRing (AF D.host.F ⊗[D.host.F] D.host.E) :=
-    IsModuleTopology.isTopologicalRing (AF D.host.F) _
-  exact inferInstanceAs (IsTopologicalGroup (HR (AF D.host.F) D.sp.cm.sig V.gram))
+theorem topGroup (V : HSp D) : IsTopologicalGroup (GA D V) :=
+  _root_.GlobalTheory.AutFunCounterexample.topGroup_GA D V
 
 theorem isMeasLev_unique {K : Subgroup (GL (Fin V.rank) (Lev.EAf D))} {μ μ' : Measure (GA D V)}
     (h : IsMeasLev V K μ) (h' : IsMeasLev V K μ') : μ' = μ := by

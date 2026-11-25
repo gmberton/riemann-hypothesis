@@ -163,17 +163,15 @@ theorem exists_eq_span_of_fg (L : LocE F E) [IsPrincipalIdealRing L.O] {n : ℕ}
 
 theorem hf_sum_l (L : LocE F E) {n : ℕ} (Hm : Matrix (Fin n) (Fin n) E) {ι : Type*} [Fintype ι]
     (a : ι → E) (b : ι → Fin n → E) (y : Fin n → E) :
-    hf L Hm (∑ k, a k • b k) y = ∑ k, a k * hf L Hm (b k) y := by
-  induction (Finset.univ : Finset ι) using Finset.induction_on with
-  | empty => simp [hf]
-  | insert x s hx ih => rw [Finset.sum_insert hx, Finset.sum_insert hx, hf_add_l, hf_smul_l, ih]
+    hf L Hm (∑ k, a k • b k) y = ∑ k, a k * hf L Hm (b k) y :=
+  Finset.sum_hom_rel (r := fun u v => hf L Hm u y = v)
+    (by simp [hf]) fun k _ _ h => by rw [hf_add_l, hf_smul_l, h]
 
 theorem hf_sum_r (L : LocE F E) {n : ℕ} (Hm : Matrix (Fin n) (Fin n) E) {ι : Type*} [Fintype ι]
     (a : ι → E) (b : ι → Fin n → E) (y : Fin n → E) :
-    hf L Hm y (∑ k, a k • b k) = ∑ k, L.cj (a k) * hf L Hm y (b k) := by
-  induction (Finset.univ : Finset ι) using Finset.induction_on with
-  | empty => simp [hf]
-  | insert x s hx ih => rw [Finset.sum_insert hx, Finset.sum_insert hx, hf_add_r, hf_smul_r, ih]
+    hf L Hm y (∑ k, a k • b k) = ∑ k, L.cj (a k) * hf L Hm y (b k) :=
+  Finset.sum_hom_rel (r := fun u v => hf L Hm y u = v)
+    (by simp [hf]) fun k _ _ h => by rw [hf_add_r, hf_smul_r, h]
 
 theorem span_range_eq_top (L : LocE F E) {n : ℕ} {ι : Type*} {b : ι → Fin n → E}
     (h : IsLat L (Submodule.span L.O (Set.range b))) : Submodule.span E (Set.range b) = ⊤ := by

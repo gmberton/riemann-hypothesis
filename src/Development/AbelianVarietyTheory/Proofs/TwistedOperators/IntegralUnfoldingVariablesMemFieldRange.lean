@@ -173,12 +173,9 @@ theorem integral_mem_range [MeasurableSpace X] [OpensMeasurableSpace X] [Measura
     (hc : HasCompactSupport f) (hv : ∀ e, f e ∈ Set.range σ) : ∫ e, f e ∂μ ∈ Set.range σ := by
   classical
   set h : X → ℂ := H.indicator (fun _ => 1) with hh
-  have hloc : IsLocallyConstant h := by
-    refine (IsLocallyConstant.iff_exists_open _).2 fun x => ?_
-    by_cases hx : x ∈ H
-    · exact ⟨H, hHo, hx, fun y hy => by rw [hh, Set.indicator_of_mem hy, Set.indicator_of_mem hx]⟩
-    · exact ⟨Hᶜ, hHc.isClosed.isOpen_compl, hx, fun y hy => by
-        rw [hh, Set.indicator_of_notMem hy, Set.indicator_of_notMem hx]⟩
+  have hloc : IsLocallyConstant h :=
+    (LocallyConstant.indicator (LocallyConstant.const _ (1 : ℂ))
+      ⟨hHc.isClosed, hHo⟩).isLocallyConstant
   have hch : HasCompactSupport h := HasCompactSupport.intro hHc fun x hx => Set.indicator_of_notMem hx _
   set U := stab f ⊓ stab h with hU
   have hUo : IsOpen (U : Set X) := by

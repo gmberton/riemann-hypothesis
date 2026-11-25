@@ -65,12 +65,8 @@ theorem pieceHt_dualFlag : ∀ (I : AutInst) (xf : I.Gf) (a : ℕ) (j : Fin a �
   have hmain := GlobalTheory.Count.PerpStep.main I (1, xf)
   have hht1 : Formalism.HN.ht (bas I) (frm I (1, xf)) (lamX I (1, xf)) = 1 := hmain.1
   have hperp := hmain.2.2.2
-  have hfg : ∀ N : Submodule (𝓞 I.E) (Fin I.n → I.E), N ≤ lamX I (1, xf) → N.FG := by
-    intro N hN
-    haveI := isNoetherian_of_fg_of_noetherian _ hΛfg
-    have h1 : (N.comap (lamX I (1, xf)).subtype).FG := IsNoetherian.noetherian _
-    have h2 := h1.map (lamX I (1, xf)).subtype
-    rwa [Submodule.map_comap_subtype, inf_eq_right.mpr hN] at h2
+  have hfg : ∀ N : Submodule (𝓞 I.E) (Fin I.n → I.E), N ≤ lamX I (1, xf) → N.FG :=
+    fun _ hN => hΛfg.of_le hN
 
   have hrat : ∀ N T : Submodule (𝓞 I.E) (Fin I.n → I.E), N ≤ lamX I (1, xf) →
       Formalism.HN.IsSat (Formalism.HermitianLatticesTheory.realize (bas I) (frm I (1, xf))) N T →

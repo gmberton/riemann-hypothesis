@@ -191,22 +191,18 @@ theorem range_le {L L' M : Type} [Field L] [NumberField L] [Algebra K L] [IsAbel
   have hψ' : ∀ 𝔭 hp, UnramIn L' 𝔭 ∧ IsFrob L' 𝔭 (ψ' (primeElt 𝔪 𝔭 hp)) := fun 𝔭 hp =>
     ⟨unramIn_of_isModulus h' hp, by rw [extend_primeElt]; exact hfr 𝔭⟩
   let ψ : idealsPrimeTo 𝔪 →* (L ≃ₐ[K] L) := Art.toMonoidHom.comp (QuotientGroup.mk' _)
-  have key : ∀ g : M ≃ₐ[K] M, ∃ J, AlgEquiv.restrictNormalHom L g = ψ J ∧ AlgEquiv.restrictNormalHom L' g = ψ' J := by
+  have key : ∀ g : M ≃ₐ[K] M,
+      ∃ J, AlgEquiv.restrictNormalHom L g = ψ J ∧ AlgEquiv.restrictNormalHom L' g = ψ' J := by
     intro g
-    have hg : g ∈ Subgroup.closure _ := hM ▸ Subgroup.mem_top g
-    induction hg using Subgroup.closure_induction with
-    | mem x hx =>
-      obtain ⟨𝔭, hp, hx⟩ := hx
-      exact ⟨primeElt 𝔪 𝔭 hp, isFrob_unique L (hA 𝔭 hp).1 (isFrob_restrictNormal hx) (hA 𝔭 hp).2,
-        isFrob_unique L' (hψ' 𝔭 hp).1 (isFrob_restrictNormal hx) (hψ' 𝔭 hp).2⟩
-    | one => exact ⟨1, by simp, by simp⟩
-    | mul x y _ _ hx hy =>
-      obtain ⟨a, h1, h2⟩ := hx
-      obtain ⟨b, h3, h4⟩ := hy
-      exact ⟨a * b, by rw [map_mul, map_mul, h1, h3], by rw [map_mul, map_mul, h2, h4]⟩
-    | inv x _ hx =>
-      obtain ⟨a, h1, h2⟩ := hx
-      exact ⟨a⁻¹, by rw [map_inv, map_inv, h1], by rw [map_inv, map_inv, h2]⟩
+    obtain ⟨J, hJ⟩ := (Subgroup.closure_le (K := (ψ.prod ψ').range.comap
+      ((AlgEquiv.restrictNormalHom (K₁ := M) L).prod
+        (AlgEquiv.restrictNormalHom (K₁ := M) L')))).2 (by
+      rintro x ⟨𝔭, hp, hx⟩
+      exact ⟨primeElt 𝔪 𝔭 hp, Prod.ext
+        (isFrob_unique L (hA 𝔭 hp).1 (isFrob_restrictNormal hx) (hA 𝔭 hp).2).symm
+        (isFrob_unique L' (hψ' 𝔭 hp).1 (isFrob_restrictNormal hx)
+          (hψ' 𝔭 hp).2).symm⟩) (hM ▸ Subgroup.mem_top g)
+    exact ⟨J, (congrArg Prod.fst hJ).symm, (congrArg Prod.snd hJ).symm⟩
   have hker : ∀ J, ψ J = 1 → ψ' J = 1 := by
     intro J hJ
     have hJ' : J ∈ (rayPrincipal 𝔪).subgroupOf (idealsPrimeTo 𝔪) :=

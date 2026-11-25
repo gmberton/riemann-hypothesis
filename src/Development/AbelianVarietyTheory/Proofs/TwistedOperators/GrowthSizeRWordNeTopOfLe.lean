@@ -75,12 +75,8 @@ theorem RderC_eq_sum_glDer (hθ : IsInfFam θ) (hs : φ ∈ SmFun θ V) (τ : D.
     RderC θ V τ Z φ = ∑ a : Fin V.rank × Fin V.rank, Z a.1 a.2 • glDer θ V (τ, a) φ := by
 
   have hZ : Z = ∑ a : Fin V.rank × Fin V.rank, Z a.1 a.2 • Matrix.single a.1 a.2 (1 : ℂ) := by
-    ext i j
-    simp only [Matrix.sum_apply, Matrix.smul_apply, Matrix.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
-      Fintype.sum_prod_type]
-
-    rw [Fintype.sum_eq_single i fun x hx => by simp [hx], Fintype.sum_eq_single j fun y hy => by simp [hy]]
-    simp
+    simpa only [Fintype.sum_prod_type, Matrix.smul_single, smul_eq_mul, mul_one]
+      using Matrix.matrix_eq_sum_single Z
   conv_lhs => rw [hZ]
   rw [rderC_sum_smul hθ hs τ]
   simp only [glDer]
