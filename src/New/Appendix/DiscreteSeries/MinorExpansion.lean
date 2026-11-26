@@ -289,7 +289,7 @@ lemma flenstedJensen_shift_eq_conj (hl : l.HasGap h) {u : Matrix n n ℂ}
         weightMinors l.lowestKType ((1 - u) * (k : Matrix n n ℂ)) =
           weightMinors l.lowestKType (k : Matrix n n ℂ) := by
       rw [hl.isKDominant_lowestKType.weightMinors_oppBorel_mul hl.neg.injective
-        ((Matrix.isUnit_iff_isUnit_det _).1 k.1.1.isUnit).ne_zero hu_mem hu_borel]
+        ((Matrix.isUnit_iff_isUnit_det _).1 k.val.val.isUnit).ne_zero hu_mem hu_borel]
       simp [diagChar, show ∀ i, u i i = 0 from fun i ↦ hu i i (by simp)]
     simp [flenstedJensen, h_minors]
   rw [← conj_flenstedJensen_one, ← h_move, h_char]
@@ -386,7 +386,7 @@ lemma exists_principalMinor_eq_exp (hl : l.HasGap h) (g : USign ε)
   have hP_compl : IsStarProjection (1 - P) := hP.one_sub
   have hA_nonneg : 0 ≤ ‖A‖ := norm_nonneg A
   have hPk_nonneg : 0 ≤ ‖⁅P, k⁆‖ := norm_nonneg _
-  have hP_star : Pᴴ = P := hP.2
+  have hP_star : Pᴴ = P := hP.isSelfAdjoint
   have hV : ‖V‖ ≤ 2 * ‖X‖ := norm_inv_one_add_sub_one_le hX_half
   have hB_le : ‖B‖ ≤ ‖A‖ := by
     rw [show B = lowerMask ε (-l) A from h_mask (-l)]
