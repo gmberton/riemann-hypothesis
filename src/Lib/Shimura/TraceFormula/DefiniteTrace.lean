@@ -87,7 +87,7 @@ private lemma New.pi_sum_apply_mem_coindV_inf_levelSpace {A G Γ W : Type*} [Fie
         rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel_left])
   have invariant (k : K) (g : G) : S (g * k) = S g := by
     ext γ
-    rw [h_mem_S, h_mem_S, mul_inv_rev, mul_assoc, mul_mem_cancel_left (inv_mem k.2)]
+    rw [h_mem_S, h_mem_S, mul_inv_rev, mul_assoc, mul_mem_cancel_left (inv_mem k.property)]
   refine ⟨⟨fun γ g ↦ ?_, fun g hg ↦ ?_⟩, fun k ↦ funext fun g ↦ ?_⟩
   · rw [LinearMap.pi_apply, LinearMap.pi_apply, LinearMap.sum_apply, LinearMap.sum_apply, map_sum,
       equivariant γ g]
@@ -319,7 +319,7 @@ private lemma New.Variety.exists_isCompact_gram_mkAdelicGL_mem (E n : Type) [Fie
   rw [Pi.inv_apply]
   dsimp only [u]
   rw [← map_inv]
-  exact (⟨_, ha w⟩⁻¹ : unitary (Matrix n n ℂ)).2
+  exact (⟨_, ha w⟩⁻¹ : unitary (Matrix n n ℂ)).property
 
 /-- If `r` and `y` are frames for the same rational form `β` and lie in one coset of `V`, then
 `r` and `Y y`, for `Y` in `GL_n(E)`, lie in one double coset `GL_n(E) r (GU E n ⊓ V)`. -/
